@@ -9,6 +9,7 @@ if (!isset($content)) $content = '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
 </head>
 <body>
@@ -16,7 +17,7 @@ if (!isset($content)) $content = '';
     <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="index.php">
-          <strong>Aetia Talant Agency</strong>
+          <img src="img/logo.png" alt="Aetia Talant Agency Logo" style="max-height: 3rem;">
         </a>
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
           <span aria-hidden="true"></span>
