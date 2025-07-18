@@ -1,18 +1,20 @@
 /* Custom styles for Aetia Talant Agency */
 .aetia-service-card {
-  background: #181a1b;
-  border-radius: 1rem;
-  border: 2px solid transparent;
-  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
-  transition: border-color 0.2s, transform 0.2s;
-  color: #fff;
-  min-height: 320px;
+    background: #181a1b;
+    border-radius: 1rem;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+    transition: border-color 0.2s, transform 0.2s;
+    color: #fff;
+    min-height: 320px;
+    padding-left: 2rem;
+    padding-right: 2rem;
 }
 .aetia-service-card:hover {
-  border-color: #209cee;
-  transform: translateY(-6px) scale(1.03);
-  box-shadow: 0 8px 40px 0 rgba(32,156,238,0.18);
+    border-color: #209cee;
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 8px 40px 0 rgba(32,156,238,0.18);
 }
 .aetia-service-icon {
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
 }
