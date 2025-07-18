@@ -8,8 +8,11 @@ ob_start();
         <div class="container has-text-centered">
             <img src="img/logo.png" alt="Aetia Logo" style="width:480px; height:270px; object-fit:cover; object-position:center 30%; margin-bottom:2rem; filter:brightness(0) invert(1);">
             <h1 class="title is-1 has-text-light">Aetia Talant Agency</h1>
-            <h2 class="subtitle is-4 has-text-grey-light">Catalyst for Creative Talent</h2>
-            <p class="mb-5 has-text-grey-light">Your trusted partner in talent management and agency services.<br>We connect exceptional talent with outstanding opportunities in the digital and multimedia space.</p>
+            <h2 class="subtitle is-3 has-text-info" style="font-weight:700;">Talent, Unfiltered. Opportunity, Unlocked.</h2>
+            <p class="mb-5 has-text-grey-light" style="font-size:1.25rem;max-width:700px;margin-left:auto;margin-right:auto;">
+                Founded by creators, for creators. At Aetia Talant Agency, we break the awkwardness—empowering you to be boldly original, not just another face in the crowd.<br>
+                We’re a new kind of agency: creative, collaborative, and real. Honestly? We don’t have all the answers—but we’re figuring it out together, with you. If you want to grow, experiment, and make something different, you’re in the right place.
+            </p>
             <a class="button is-info is-medium mr-2" href="about.php">
                 <span class="icon"><i class="fas fa-info-circle"></i></span>
                 <span>Learn More About Us</span>
