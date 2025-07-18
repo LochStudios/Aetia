@@ -6,7 +6,7 @@ ob_start();
 <section class="hero is-dark is-fullheight-with-navbar">
     <div class="hero-body">
         <div class="container has-text-centered">
-            <img src="img/logo.png" alt="Aetia Logo" style="max-width:120px; margin-bottom:1.5rem;filter:brightness(0) invert(1);">
+            <img src="img/logo.png" alt="Aetia Logo" style="max-width:200px; margin-bottom:2rem;filter:brightness(0) invert(1);">
             <h1 class="title is-1 has-text-light">Aetia Talant Agency</h1>
             <h2 class="subtitle is-4 has-text-grey-light">Catalyst for Creative Talent</h2>
             <p class="mb-5 has-text-grey-light">Your trusted partner in talent management and agency services.<br>We connect exceptional talent with outstanding opportunities in the digital and multimedia space.</p>
