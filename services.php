@@ -7,39 +7,31 @@ ob_start();
     <h2>Our Services</h2>
     <div class="columns is-multiline">
         <div class="column is-6-tablet is-4-desktop">
-            <div class="card has-shadow mb-5">
-                <div class="card-content has-text-centered">
-                    <span class="icon is-large has-text-link mb-2"><i class="fas fa-user-tie fa-2x"></i></span>
-                    <p class="title is-5">Talent Representation</p>
-                    <p>Connecting talent with top opportunities in various industries.</p>
-                </div>
+            <div class="aetia-service-card mb-5 has-text-centered">
+                <span class="icon is-large aetia-service-icon has-text-link"><i class="fas fa-user-tie fa-2x"></i></span>
+                <p class="title is-5 has-text-light">Talent Representation</p>
+                <p>Connecting talent with top opportunities in various industries.</p>
             </div>
         </div>
         <div class="column is-6-tablet is-4-desktop">
-            <div class="card has-shadow mb-5">
-                <div class="card-content has-text-centered">
-                    <span class="icon is-large has-text-primary mb-2"><i class="fas fa-chart-line fa-2x"></i></span>
-                    <p class="title is-5">Career Management</p>
-                    <p>Personalized guidance and support for career growth.</p>
-                </div>
+            <div class="aetia-service-card mb-5 has-text-centered">
+                <span class="icon is-large aetia-service-icon has-text-primary"><i class="fas fa-chart-line fa-2x"></i></span>
+                <p class="title is-5 has-text-light">Career Management</p>
+                <p>Personalized guidance and support for career growth.</p>
             </div>
         </div>
         <div class="column is-6-tablet is-4-desktop">
-            <div class="card has-shadow mb-5">
-                <div class="card-content has-text-centered">
-                    <span class="icon is-large has-text-info mb-2"><i class="fas fa-bullhorn fa-2x"></i></span>
-                    <p class="title is-5">Event Promotion</p>
-                    <p>Organizing and promoting events for our clients and talent.</p>
-                </div>
+            <div class="aetia-service-card mb-5 has-text-centered">
+                <span class="icon is-large aetia-service-icon has-text-info"><i class="fas fa-bullhorn fa-2x"></i></span>
+                <p class="title is-5 has-text-light">Event Promotion</p>
+                <p>Organizing and promoting events for our clients and talent.</p>
             </div>
         </div>
         <div class="column is-6-tablet is-4-desktop">
-            <div class="card has-shadow mb-5">
-                <div class="card-content has-text-centered">
-                    <span class="icon is-large has-text-success mb-2"><i class="fas fa-lightbulb fa-2x"></i></span>
-                    <p class="title is-5">Consulting</p>
-                    <p>Industry insights and consulting for both talent and businesses.</p>
-                </div>
+            <div class="aetia-service-card mb-5 has-text-centered">
+                <span class="icon is-large aetia-service-icon has-text-success"><i class="fas fa-lightbulb fa-2x"></i></span>
+                <p class="title is-5 has-text-light">Consulting</p>
+                <p>Industry insights and consulting for both talent and businesses.</p>
             </div>
         </div>
     </div>
