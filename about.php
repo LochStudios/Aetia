@@ -24,10 +24,6 @@ ob_start();
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>Contact Us</span>
                 </a>
-                <a class="button is-light is-medium" href="index.php">
-                    <span class="icon"><i class="fas fa-home"></i></span>
-                    <span>Back to Home</span>
-                </a>
             </div>
         </div>
     </div>

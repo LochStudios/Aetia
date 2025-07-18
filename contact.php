@@ -37,10 +37,6 @@ ob_start();
                 <button class="button is-link" type="submit" disabled>Send</button>
             </div>
         </form>
-        <a class="button is-light mt-4" href="index.php">
-            <span class="icon"><i class="fas fa-home"></i></span>
-            <span>Back to Home</span>
-        </a>
     </div>
 </div>
 <?php

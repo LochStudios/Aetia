@@ -35,8 +35,6 @@ ob_start();
             </div>
         </div>
     </div>
-    <a class="button is-primary" href="contact.php">Contact Us</a>
-    <a class="button is-light" href="index.php">Back to Home</a>
 </div>
 <?php
 $content = ob_get_clean();
