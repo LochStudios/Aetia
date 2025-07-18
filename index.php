@@ -3,8 +3,8 @@
 $pageTitle = 'Home | Aetia Talant Agency';
 ob_start();
 ?>
-<section class="hero is-dark is-fullheight-with-navbar">
-    <div class="hero-body">
+<section class="hero is-dark" style="min-height:60vh;display:flex;align-items:center;">
+    <div class="hero-body py-4">
         <div class="container has-text-centered">
             <img src="img/logo.png" alt="Aetia Logo" style="width:480px; height:270px; object-fit:cover; object-position:center 30%; margin-bottom:2rem; filter:brightness(0) invert(1);">
             <h1 class="title is-1 has-text-light">Aetia Talant Agency</h1>
