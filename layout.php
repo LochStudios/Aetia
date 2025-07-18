@@ -54,6 +54,10 @@ if (!isset($content)) $content = '';
           </span>
         </p>
         <p class="is-size-7 has-text-grey-light">&copy; <?= date('Y') ?> Aetia Talant Agency. All rights reserved.</p>
+        <hr class="my-2" style="background:rgba(255,255,255,0.08);height:1px;border:none;">
+        <p class="is-size-7 has-text-grey-light mb-0">
+          Aetia Talant Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
+        </p>
       </div>
     </footer>
     <script src="js/navbar.js"></script>
