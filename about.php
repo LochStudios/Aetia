@@ -4,16 +4,30 @@ $pageTitle = 'About | Aetia Talant Agency';
 ob_start();
 ?>
 <div class="content">
-    <h2>About Us</h2>
-    <div class="box" style="margin-bottom:1.5rem;">
-        <h3 class="title is-5" style="margin-bottom:0.5rem;">What does <strong>Aetia</strong> mean?</h3>
-        <p><em>Pronounced:</em> <strong>AY-tee-uh</strong></p>
-        <p>The meaning of <strong>Aetia</strong> stems from its subtle connection to Greek roots:</p>
-        <p>It suggests being the underlying cause or catalyst for creative talent, implying an ethereal force that sparks and elevates careers within the digital and multimedia space.</p>
+  <div class="columns is-vcentered">
+    <div class="column is-5">
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-5 mb-2">What does <strong>Aetia</strong> mean?</h3>
+          <p><span class="icon has-text-link"><i class="fas fa-bolt"></i></span> <em>Pronounced:</em> <strong>AY-tee-uh</strong></p>
+          <p class="mt-2">The meaning of <strong>Aetia</strong> stems from its subtle connection to Greek roots:</p>
+          <p>It suggests being the underlying cause or catalyst for creative talent, implying an ethereal force that sparks and elevates careers within the digital and multimedia space.</p>
+        </div>
+      </div>
     </div>
-    <p>Aetia Talant Agency is dedicated to discovering, nurturing, and representing top talent across various industries. Our experienced team ensures both clients and talent receive the best possible service.</p>
-    <a class="button is-primary" href="contact.php">Contact Us</a>
-    <a class="button is-light" href="index.php">Back to Home</a>
+    <div class="column is-7">
+      <h2 class="title is-3">About Us</h2>
+      <p class="mb-4">Aetia Talant Agency is dedicated to discovering, nurturing, and representing top talent across various industries. Our experienced team ensures both clients and talent receive the best possible service.</p>
+      <a class="button is-primary is-medium mr-2" href="contact.php">
+        <span class="icon"><i class="fas fa-envelope"></i></span>
+        <span>Contact Us</span>
+      </a>
+      <a class="button is-light is-medium" href="index.php">
+        <span class="icon"><i class="fas fa-home"></i></span>
+        <span>Back to Home</span>
+      </a>
+    </div>
+  </div>
 </div>
 <?php
 $content = ob_get_clean();
