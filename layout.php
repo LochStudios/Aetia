@@ -4,7 +4,7 @@ if (!isset($pageTitle)) $pageTitle = 'Aetia Talant Agency';
 if (!isset($content)) $content = '';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="height:100%;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,7 @@ if (!isset($content)) $content = '';
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/custom.css">
 </head>
-<body>
+<body style="min-height:100vh;display:flex;flex-direction:column;">
     <!-- Navigation Bar -->
     <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
@@ -39,12 +39,12 @@ if (!isset($content)) $content = '';
         </div>
       </div>
     </nav>
-    <section class="section">
+    <section class="section" style="flex:1 0 auto;">
         <div class="container">
             <?= $content ?>
         </div>
     </section>
-    <footer class="footer has-background-dark has-text-light mt-6" style="padding-top:2rem;padding-bottom:2rem;">
+    <footer class="footer has-background-dark has-text-light mt-6" style="padding-top:2rem;padding-bottom:2rem;flex-shrink:0;">
       <div class="content has-text-centered">
         <p>
           <img src="img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;filter:brightness(0) invert(1);"> <strong class="has-text-light">Aetia Talant Agency</strong><br>
