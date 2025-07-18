@@ -1,4 +1,18 @@
-/* Custom styles for Aetia Talant Agency */
+/* About page card styling */
+.aetia-about-card {
+    background: #181a1b;
+    border-radius: 1rem;
+    border: 2px solid #209cee;
+    box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+}
+
+/* About page dark box styling */
+.aetia-about-box {
+    border-radius: 1rem;
+    box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+}
+
+/* Services card styling */
 .aetia-service-card {
     background: #181a1b;
     border-radius: 1rem;
