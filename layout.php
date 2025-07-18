@@ -10,7 +10,11 @@ if (!isset($content)) $content = '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle) ?></title>
     <link rel="icon" type="image/x-icon" href="img/logo.ico">
+    <!-- Bulma CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.css">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
@@ -53,7 +57,5 @@ if (!isset($content)) $content = '';
       </div>
     </footer>
     <script src="js/navbar.js"></script>
-    <!-- Font Awesome for icons -->
-    <script src="https://kit.fontawesome.com/7b8e1e2e2a.js" crossorigin="anonymous"></script>
 </body>
 </html>
