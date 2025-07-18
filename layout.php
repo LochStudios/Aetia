@@ -11,6 +11,7 @@ if (!isset($content)) $content = '';
     <title><?= htmlspecialchars($pageTitle) ?></title>
     <link rel="icon" type="image/x-icon" href="img/logo.ico">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
     <!-- Navigation Bar -->
