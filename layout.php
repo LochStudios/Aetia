@@ -39,16 +39,16 @@ if (!isset($content)) $content = '';
             <?= $content ?>
         </div>
     </section>
-    <footer class="footer has-background-light mt-6">
+    <footer class="footer has-background-dark has-text-light mt-6" style="padding-top:2rem;padding-bottom:2rem;">
       <div class="content has-text-centered">
         <p>
-          <img src="img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;"> <strong>Aetia Talant Agency</strong><br>
+          <img src="img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;filter:brightness(0) invert(1);"> <strong class="has-text-light">Aetia Talant Agency</strong><br>
           <span class="icon-text">
-            <span class="icon"><i class="fas fa-envelope"></i></span>
-            <span><a href="mailto:talant@aetia.com.au">talant@aetia.com.au</a></span>
+            <span class="icon has-text-info"><i class="fas fa-envelope"></i></span>
+            <span><a href="mailto:talant@aetia.com.au" class="has-text-info">talant@aetia.com.au</a></span>
           </span>
         </p>
-        <p class="is-size-7">&copy; <?= date('Y') ?> Aetia Talant Agency. All rights reserved.</p>
+        <p class="is-size-7 has-text-grey-light">&copy; <?= date('Y') ?> Aetia Talant Agency. All rights reserved.</p>
       </div>
     </footer>
     <script src="js/navbar.js"></script>
