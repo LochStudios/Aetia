@@ -110,10 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Process password change for manual accounts
+// Process password change for users with passwords set
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
-    if ($user['account_type'] !== 'manual') {
-        $error_message = 'Password change is only available for manual accounts.';
+    // Check if user has a password set (regardless of account type)
+    if (empty($user['password_hash'])) {
+        $error_message = 'No password is currently set for this account. Please set a password first.';
     } else {
         $currentPassword = trim($_POST['current_password'] ?? '');
         $newPassword = trim($_POST['new_password'] ?? '');
@@ -126,30 +127,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } elseif (strlen($newPassword) < 8) {
             $error_message = 'New password must be at least 8 characters long.';
         } else {
-            // Verify current password
-            $authResult = $userModel->authenticateManualUser($user['username'], $currentPassword);
+            // Use the new changeUserPassword method which includes current password verification
+            $changeResult = $userModel->changeUserPassword($_SESSION['user_id'], $currentPassword, $newPassword);
             
-            if (!$authResult['success']) {
-                $error_message = 'Current password is incorrect.';
-            } else {
-                // Change password
-                $changeResult = $userModel->changePassword($_SESSION['user_id'], $newPassword);
+            if ($changeResult['success']) {
+                $success_message = $changeResult['message'];
                 
-                if ($changeResult) {
-                    // If this is the auto-generated admin account, mark setup as complete
-                    if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated') {
-                        $setupResult = $userModel->markAdminSetupComplete($_SESSION['user_id']);
-                        // Also set a session flag to immediately hide the warning
-                        $_SESSION['admin_setup_complete'] = true;
-                    }
-                    
-                    $success_message = 'Password changed successfully!';
-                    
-                    // Refresh user data to reflect changes in the UI
-                    $user = $userModel->getUserById($_SESSION['user_id']);
-                } else {
-                    $error_message = 'Failed to change password. Please try again.';
+                // If this is the auto-generated admin account, mark setup as complete
+                if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated') {
+                    $setupResult = $userModel->markAdminSetupComplete($_SESSION['user_id']);
+                    // Also set a session flag to immediately hide the warning
+                    $_SESSION['admin_setup_complete'] = true;
                 }
+                
+                // Refresh user data to reflect changes in the UI
+                $user = $userModel->getUserById($_SESSION['user_id']);
+            } else {
+                $error_message = $changeResult['message'];
             }
         }
     }
@@ -258,7 +252,7 @@ ob_start();
                 </div>
             </div>
             
-            <?php if ($user['account_type'] === 'manual'): ?>
+            <?php if (!empty($user['password_hash'])): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
                     <h4 class="title is-5 has-text-light mb-4">

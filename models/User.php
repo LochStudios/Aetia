@@ -408,6 +408,53 @@ class User {
         }
     }
     
+    // Change password for any user (with current password verification)
+    public function changeUserPassword($userId, $currentPassword, $newPassword) {
+        try {
+            $this->ensureConnection();
+            
+            // Get user details
+            $stmt = $this->mysqli->prepare("SELECT username, password_hash FROM users WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$user) {
+                return ['success' => false, 'message' => 'User not found.'];
+            }
+            
+            if (empty($user['password_hash'])) {
+                return ['success' => false, 'message' => 'No password is currently set for this account.'];
+            }
+            
+            // Verify current password
+            if (!password_verify($currentPassword, $user['password_hash'])) {
+                return ['success' => false, 'message' => 'Current password is incorrect.'];
+            }
+            
+            // Hash the new password
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            // Update the user's password
+            $stmt = $this->mysqli->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $stmt->bind_param("si", $passwordHash, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'Password changed successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to change password.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Change user password error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while changing password.'];
+        }
+    }
+    
     // Get all pending users for admin review
     public function getPendingUsers() {
         $stmt = $this->mysqli->prepare("
