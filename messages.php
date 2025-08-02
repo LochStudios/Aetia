@@ -257,7 +257,7 @@ ob_start();
                                 </div>
                             </div>
                             <div class="is-size-7 has-text-grey">
-                                <?= date('M j, Y g:i A', strtotime($msg['created_at'])) ?>
+                                <?= formatDateForUser($msg['created_at']) ?>
                                 <?php if ($msg['comment_count'] > 0): ?>
                                 <span class="ml-2">
                                     <i class="fas fa-comments"></i> <?= $msg['comment_count'] ?>
@@ -284,7 +284,7 @@ ob_start();
                             <p class="subtitle is-6">
                                 From: <strong><?= htmlspecialchars($currentMessage['created_by_username']) ?></strong>
                                 <span class="ml-2">•</span>
-                                <span class="ml-2"><?= date('M j, Y g:i A', strtotime($currentMessage['created_at'])) ?></span>
+                                <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
                             </p>
                         </div>
                     </div>
@@ -360,7 +360,7 @@ ob_start();
                                     <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     <br>
                                     <small class="has-text-grey">
-                                        <?= date('M j, Y g:i A', strtotime($comment['created_at'])) ?>
+                                        <?= formatDateForUser($comment['created_at']) ?>
                                     </small>
                                 </p>
                             </div>

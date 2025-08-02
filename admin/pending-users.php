@@ -146,9 +146,9 @@ ob_start();
                         <?php if ($user['social_username']): ?>
                         <p><strong>Social Username:</strong> <?= htmlspecialchars($user['social_username']) ?></p>
                         <?php endif; ?>
-                        <p><strong>Signed up:</strong> <?= date('M j, Y g:i A', strtotime($user['created_at'])) ?></p>
+                        <p><strong>Signed up:</strong> <?= formatDateForUser($user['created_at']) ?></p>
                         <?php if ($user['contact_attempted'] && $user['contact_date']): ?>
-                        <p><strong>Last contact:</strong> <?= date('M j, Y g:i A', strtotime($user['contact_date'])) ?></p>
+                        <p><strong>Last contact:</strong> <?= formatDateForUser($user['contact_date']) ?></p>
                         <?php endif; ?>
                     </div>
                 </div>

@@ -1,6 +1,45 @@
 <?php
 // layout.php - Main layout template for Aetia Talant Agency
 session_start();
+
+// Handle timezone setting from JavaScript
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_timezone') {
+    if (isset($_POST['timezone'])) {
+        $_SESSION['user_timezone'] = $_POST['timezone'];
+    }
+    exit; // Don't render the page for AJAX requests
+}
+
+// Get user's timezone (fallback to Australia/Sydney)
+function getUserTimezone() {
+    // Check session first
+    if (isset($_SESSION['user_timezone'])) {
+        return $_SESSION['user_timezone'];
+    }
+    
+    // Check cookie as fallback
+    if (isset($_COOKIE['user_timezone'])) {
+        $_SESSION['user_timezone'] = $_COOKIE['user_timezone'];
+        return $_COOKIE['user_timezone'];
+    }
+    
+    // Default to Australia/Sydney
+    return 'Australia/Sydney';
+}
+
+// Format date/time for user's timezone
+function formatDateForUser($dateString, $format = 'M j, Y g:i A') {
+    try {
+        $userTimezone = getUserTimezone();
+        $date = new DateTime($dateString, new DateTimeZone('Australia/Sydney')); // Server timezone
+        $date->setTimezone(new DateTimeZone($userTimezone)); // Convert to user's timezone
+        return $date->format($format);
+    } catch (Exception $e) {
+        // Fallback to original formatting if timezone conversion fails
+        return date($format, strtotime($dateString));
+    }
+}
+
 if (!isset($pageTitle)) $pageTitle = 'Aetia Talant Agency';
 if (!isset($content)) $content = '';
 ?>
@@ -146,7 +185,51 @@ if (!isset($content)) $content = '';
                     this.parentElement.style.display = 'none';
                 });
             });
+            
+            // Detect and store user's timezone
+            detectUserTimezone();
         });
+        
+        function detectUserTimezone() {
+            try {
+                // Get user's timezone using Intl API
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                
+                // Store in session via AJAX if different from current
+                const currentTimezone = getCookie('user_timezone');
+                if (userTimezone !== currentTimezone) {
+                    setCookie('user_timezone', userTimezone, 30); // Store for 30 days
+                    
+                    // Also send to server for session storage
+                    fetch('<?= $_SERVER['PHP_SELF'] ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=set_timezone&timezone=' + encodeURIComponent(userTimezone)
+                    }).catch(e => console.log('Timezone sync failed:', e));
+                }
+            } catch (e) {
+                console.log('Timezone detection failed:', e);
+            }
+        }
+        
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+        }
+        
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
     </script>
     <?php if (isset($scripts) && !empty($scripts)): ?>
     <?= $scripts ?>

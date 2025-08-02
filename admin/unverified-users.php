@@ -136,7 +136,7 @@ ob_start();
                         <?php if ($user['social_username']): ?>
                         <p><strong>Social Username:</strong> <?= htmlspecialchars($user['social_username']) ?></p>
                         <?php endif; ?>
-                        <p><strong>Account Created:</strong> <?= date('M j, Y g:i A', strtotime($user['created_at'])) ?></p>
+                        <p><strong>Account Created:</strong> <?= formatDateForUser($user['created_at']) ?></p>
                         <p><strong>Status:</strong> 
                             <span class="tag is-warning">
                                 <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>

@@ -122,7 +122,7 @@ ob_start();
                     <?php endif; ?>
                     
                     <p class="has-text-grey-light is-size-7">
-                        Member since <?= date('M j, Y', strtotime($user['created_at'])) ?>
+                        Member since <?= formatDateForUser($user['created_at']) ?>
                     </p>
                 </div>
             </div>
