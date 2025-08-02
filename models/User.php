@@ -331,6 +331,66 @@ class User {
         return $pendingUsers;
     }
     
+    // Get unverified users
+    public function getUnverifiedUsers() {
+        $this->ensureConnection();
+        $stmt = $this->mysqli->prepare("
+            SELECT id, username, email, first_name, last_name, account_type, social_username, 
+                   profile_image, created_at, approval_status, is_verified, is_active
+            FROM users 
+            WHERE is_verified = 0 AND is_active = 1
+            ORDER BY created_at ASC
+        ");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $unverifiedUsers = [];
+        while ($row = $result->fetch_assoc()) {
+            $unverifiedUsers[] = $row;
+        }
+        
+        $stmt->close();
+        return $unverifiedUsers;
+    }
+    
+    // Verify a user
+    public function verifyUser($userId, $verifiedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_verified = 1, verified_date = CURRENT_TIMESTAMP, verified_by = ?
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $verifiedBy, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Verify user error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Deactivate user (soft delete)
+    public function deactivateUser($userId, $reason, $deactivatedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_active = 0, deactivation_reason = ?, deactivated_by = ?, deactivation_date = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->bind_param("ssi", $reason, $deactivatedBy, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Deactivate user error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
     // Approve a user
     public function approveUser($userId, $approvedBy) {
         $stmt = $this->mysqli->prepare("

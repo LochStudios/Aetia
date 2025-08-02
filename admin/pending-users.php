@@ -79,10 +79,16 @@ ob_start();
             </h2>
         </div>
         <div class="level-right">
-            <a href="../index.php" class="button is-light">
-                <span class="icon"><i class="fas fa-home"></i></span>
-                <span>Back to Website</span>
-            </a>
+            <div class="buttons">
+                <a href="unverified-users.php" class="button is-warning is-small">
+                    <span class="icon"><i class="fas fa-user-check"></i></span>
+                    <span>Unverified Users</span>
+                </a>
+                <a href="../index.php" class="button is-light is-small">
+                    <span class="icon"><i class="fas fa-home"></i></span>
+                    <span>Back to Website</span>
+                </a>
+            </div>
         </div>
     </div>
     

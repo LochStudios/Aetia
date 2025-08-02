@@ -89,7 +89,12 @@ class Database {
                 contact_notes TEXT,
                 is_admin BOOLEAN DEFAULT FALSE,
                 is_verified BOOLEAN DEFAULT FALSE,
+                verified_date TIMESTAMP NULL,
+                verified_by VARCHAR(100),
                 is_active BOOLEAN DEFAULT TRUE,
+                deactivation_reason TEXT,
+                deactivated_by VARCHAR(100),
+                deactivation_date TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
