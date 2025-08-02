@@ -418,15 +418,15 @@ async function showNewMessageModal() {
         title: 'New Talant Team Message',
         html: `
             <div class="field">
-                <label class="label has-text-left">Subject</label>
+                <label class="label has-text-left has-text-dark">Subject</label>
                 <div class="control">
-                    <input id="swal-subject" class="input" type="text" placeholder="Enter message subject">
+                    <input id="swal-subject" class="input" type="text" placeholder="Enter message subject" style="color: #363636; background-color: #ffffff;">
                 </div>
             </div>
             <div class="field">
-                <label class="label has-text-left">Message</label>
+                <label class="label has-text-left has-text-dark">Message</label>
                 <div class="control">
-                    <textarea id="swal-message" class="textarea" rows="5" placeholder="Enter your message to the Talant Team"></textarea>
+                    <textarea id="swal-message" class="textarea" rows="5" placeholder="Enter your message to the Talant Team" style="color: #363636; background-color: #ffffff;"></textarea>
                 </div>
             </div>
         `,
