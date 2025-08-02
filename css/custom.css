@@ -104,3 +104,75 @@
     border-radius: 1rem;
     box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
 }
+
+/* Message system styling */
+
+/* Profile image styling */
+.profile-image {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Attachment card styling */
+.attachment-card {
+    width: 300px;
+}
+
+/* Attachment filename styling */
+.attachment-filename {
+    word-break: break-word;
+}
+
+/* Inline form styling */
+.inline-form {
+    display: inline;
+}
+
+/* Discussion image styling */
+.discussion-image {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.discussion-image img {
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Upload progress styling */
+.upload-progress-hidden {
+    display: none;
+}
+
+/* SweetAlert modal input styling */
+.swal-light-input {
+    color: #363636 !important;
+    background-color: #ffffff !important;
+}
+
+/* Fade-in animation for new content */
+.fade-in-new {
+    opacity: 0;
+    animation: fadeIn 0.5s ease-in forwards;
+}
+
+/* SweetAlert image responsive styling */
+.swal-image-responsive {
+    max-width: 100% !important;
+    max-height: 80vh !important;
+    object-fit: contain !important;
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}

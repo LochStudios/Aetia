@@ -467,7 +467,7 @@ ob_start();
                     <div class="field is-grouped is-grouped-multiline">
                         <?php foreach ($messageAttachments as $attachment): ?>
                         <div class="control">
-                            <div class="card" style="width: 300px;">
+                            <div class="card attachment-card">
                                 <div class="card-content">
                                     <div class="media">
                                         <div class="media-left">
@@ -488,7 +488,7 @@ ob_start();
                                             </span>
                                         </div>
                                         <div class="media-content">
-                                            <p class="title is-6" style="word-break: break-word;"><?= htmlspecialchars($attachment['original_filename']) ?></p>
+                                            <p class="title is-6 attachment-filename"><?= htmlspecialchars($attachment['original_filename']) ?></p>
                                             <p class="subtitle is-7">
                                                 <?= FileUploader::formatFileSize($attachment['file_size']) ?><br>
                                                 <small>Uploaded by <?= htmlspecialchars($attachment['uploaded_by_display_name']) ?></small><br>
@@ -530,7 +530,7 @@ ob_start();
                                 <?php if ($item['profile_image']): ?>
                                     <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                          alt="Profile Picture" 
-                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                                         class="profile-image">
                                 <?php else: ?>
                                     <span class="icon is-large has-text-grey">
                                         <i class="fas fa-user-circle fa-2x"></i>
@@ -616,7 +616,7 @@ ob_start();
                                 <?php if ($item['profile_image']): ?>
                                     <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                          alt="Profile Picture" 
-                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                                         class="profile-image">
                                 <?php else: ?>
                                     <span class="icon is-large has-text-grey">
                                         <i class="fas fa-user-circle fa-2x"></i>
@@ -668,7 +668,7 @@ ob_start();
                                     </label>
                                 </div>
                                 <div id="file-list" class="mt-2"></div>
-                                <div id="upload-progress" class="mt-3" style="display: none;">
+                                <div id="upload-progress" class="mt-3 upload-progress-hidden">
                                     <div class="notification is-info">
                                         <div class="is-flex is-align-items-center">
                                             <span class="icon mr-3">
@@ -816,10 +816,10 @@ document.addEventListener('DOMContentLoaded', function() {
             contentHTML = `
                 <div class="has-text-centered">
                     <p class="mb-2"><strong>Shared an image:</strong></p>
-                    <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                    <figure class="image discussion-image">
                         <img src="view-image.php?id=${item.attachment_id}" 
                              alt="${item.original_filename}"
-                             style="border-radius: 8px; cursor: pointer;"
+                             class="discussion-image img"
                              onclick="showImageModal('${item.original_filename}', 'view-image.php?id=${item.attachment_id}')">
                     </figure>
                     <p class="is-size-7 has-text-grey mt-2">
@@ -830,12 +830,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const profileImage = item.profile_image ? 
-            `<img src="${item.profile_image}" alt="Profile Picture" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">` :
+            `<img src="${item.profile_image}" alt="Profile Picture" class="profile-image">` :
             `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
         
         if (isAdmin) {
             return `
-                <article class="media" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
+                <article class="media fade-in-new">
                     <figure class="media-left">
                         <p class="image is-48x48">${profileImage}</p>
                     </figure>
@@ -857,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         } else {
             return `
-                <article class="media" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
+                <article class="media fade-in-new">
                     <div class="media-content">
                         <div class="content">
                             <div class="box has-background-grey-dark has-text-light">
@@ -960,8 +960,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         return `
-            <div class="control" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
-                <div class="card" style="width: 300px;">
+            <div class="control fade-in-new">
+                <div class="card attachment-card">
                     <div class="card-content">
                         <div class="media">
                             <div class="media-left">
@@ -970,7 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </span>
                             </div>
                             <div class="media-content">
-                                <p class="title is-6" style="word-break: break-word;">${attachment.original_filename}</p>
+                                <p class="title is-6 attachment-filename">${attachment.original_filename}</p>
                                 <p class="subtitle is-7">
                                     ${attachment.formatted_file_size}<br>
                                     <small>Uploaded by ${attachment.display_name}</small><br>
@@ -1025,7 +1025,7 @@ async function showNewMessageModal() {
             <div class="field">
                 <label class="label has-text-left has-text-dark">Subject</label>
                 <div class="control">
-                    <input id="swal-subject" class="input" type="text" placeholder="Enter message subject" style="color: #363636; background-color: #ffffff;">
+                    <input id="swal-subject" class="input swal-light-input" type="text" placeholder="Enter message subject">
                 </div>
             </div>
             <div class="field">
