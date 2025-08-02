@@ -169,6 +169,55 @@ class Message {
         }
     }
     
+    // Get comments and image attachments in chronological order for discussion display
+    public function getMessageDiscussion($messageId) {
+        try {
+            $this->ensureConnection();
+            
+            // Get comments
+            $stmt = $this->mysqli->prepare("
+                SELECT 'comment' as type, mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
+                       NULL as attachment_id, NULL as filename, NULL as original_filename, 
+                       NULL as file_size, NULL as mime_type, NULL as file_path
+                FROM message_comments mc
+                LEFT JOIN users u ON mc.user_id = u.id
+                WHERE mc.message_id = ?
+                
+                UNION ALL
+                
+                SELECT 'image' as type, ma.id, NULL as comment, 
+                       CASE WHEN u.is_admin = 1 THEN 1 ELSE 0 END as is_admin_comment, 
+                       ma.uploaded_at as created_at,
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
+                       ma.id as attachment_id, ma.filename, ma.original_filename,
+                       ma.file_size, ma.mime_type, ma.file_path
+                FROM message_attachments ma
+                LEFT JOIN users u ON ma.user_id = u.id
+                WHERE ma.message_id = ? AND ma.mime_type LIKE 'image/%'
+                
+                ORDER BY created_at ASC
+            ");
+            
+            $stmt->bind_param("ii", $messageId, $messageId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $discussion = [];
+            while ($row = $result->fetch_assoc()) {
+                $discussion[] = $row;
+            }
+            
+            $stmt->close();
+            return $discussion;
+        } catch (Exception $e) {
+            error_log("Get message discussion error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
     // Add a comment to a message
     public function addComment($messageId, $userId, $comment, $isAdminComment = false) {
         try {

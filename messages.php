@@ -162,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Get current message if viewing one
 $currentMessage = null;
 $messageComments = [];
+$messageDiscussion = [];
 $messageAttachments = [];
 $messageId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
@@ -169,6 +170,7 @@ if ($messageId) {
     $currentMessage = $messageModel->getMessage($messageId, $userId);
     if ($currentMessage) {
         $messageComments = $messageModel->getMessageComments($messageId);
+        $messageDiscussion = $messageModel->getMessageDiscussion($messageId);
         $messageAttachments = $messageModel->getMessageAttachments($messageId);
         // Mark as read if it's unread
         if ($currentMessage['status'] === 'unread') {
@@ -528,22 +530,22 @@ ob_start();
                 </div>
                 <?php endif; ?>
                 
-                <!-- Comments -->
-                <?php if (!empty($messageComments)): ?>
+                <!-- Discussion (Comments & Images) -->
+                <?php if (!empty($messageDiscussion)): ?>
                 <div class="content">
                     <h4 class="title is-5">
                         <span class="icon"><i class="fas fa-comments"></i></span>
                         Discussion
                     </h4>
                     
-                    <?php foreach ($messageComments as $comment): ?>
+                    <?php foreach ($messageDiscussion as $item): ?>
                     <article class="media">
-                        <?php if ($comment['is_admin_comment']): ?>
-                        <!-- Admin comment - icon on left -->
+                        <?php if ($item['is_admin_comment']): ?>
+                        <!-- Admin item - icon on left -->
                         <figure class="media-left">
                             <p class="image is-48x48">
-                                <?php if ($comment['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                <?php if ($item['profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                          alt="Profile Picture" 
                                          style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                                 <?php else: ?>
@@ -559,45 +561,77 @@ ob_start();
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-dark">
-                                                <?= $comment['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['display_name']) ?>
+                                                <?= $item['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                             <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
                                         <small class="has-text-dark">
-                                            <?= formatDateForUser($comment['created_at']) ?>
+                                            <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
                                     <div class="has-text-dark">
-                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                        <?php if ($item['type'] === 'comment'): ?>
+                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                        <?php elseif ($item['type'] === 'image'): ?>
+                                            <div class="has-text-centered">
+                                                <p class="mb-2"><strong>Shared an image:</strong></p>
+                                                <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                                                    <img src="view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                         alt="<?= htmlspecialchars($item['original_filename']) ?>"
+                                                         style="border-radius: 8px; cursor: pointer;"
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', 'view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                </figure>
+                                                <p class="is-size-7 has-text-grey mt-2">
+                                                    <?= htmlspecialchars($item['original_filename']) ?> 
+                                                    (<?= FileUploader::formatFileSize($item['file_size']) ?>)
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <?php else: ?>
-                        <!-- User comment - icon on right -->
+                        <!-- User item - icon on right -->
                         <div class="media-content">
                             <div class="content">
                                 <div class="box has-background-light has-text-dark">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-dark">
-                                                <?= htmlspecialchars($comment['display_name']) ?>
+                                                <?= htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                         </div>
                                         <small class="has-text-dark">
-                                            <?= formatDateForUser($comment['created_at']) ?>
+                                            <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
                                     <div class="has-text-dark">
-                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                        <?php if ($item['type'] === 'comment'): ?>
+                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                        <?php elseif ($item['type'] === 'image'): ?>
+                                            <div class="has-text-centered">
+                                                <p class="mb-2"><strong>Shared an image:</strong></p>
+                                                <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                                                    <img src="view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                         alt="<?= htmlspecialchars($item['original_filename']) ?>"
+                                                         style="border-radius: 8px; cursor: pointer;"
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', 'view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                </figure>
+                                                <p class="is-size-7 has-text-grey mt-2">
+                                                    <?= htmlspecialchars($item['original_filename']) ?> 
+                                                    (<?= FileUploader::formatFileSize($item['file_size']) ?>)
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <figure class="media-right">
                             <p class="image is-48x48">
-                                <?php if ($comment['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                <?php if ($item['profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                          alt="Profile Picture" 
                                          style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                                 <?php else: ?>
@@ -903,6 +937,25 @@ function archiveMessage(messageId) {
     });
 }
 
+// Image modal function
+function showImageModal(filename, imageUrl) {
+    Swal.fire({
+        title: filename,
+        imageUrl: imageUrl,
+        imageAlt: filename,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: '90%',
+        padding: '1rem',
+        background: '#fff',
+        customClass: {
+            popup: 'has-text-dark',
+            title: 'has-text-dark',
+            image: 'swal-image-responsive'
+        }
+    });
+}
+
 // File upload functions
 function updateFileList(input) {
     const fileList = document.getElementById('file-list');
@@ -1022,6 +1075,15 @@ function deleteAttachment(attachmentId) {
     });
 }
 </script>
+
+<style>
+.swal-image-responsive {
+    max-width: 100% !important;
+    max-height: 80vh !important;
+    object-fit: contain !important;
+}
+</style>
+
 <?php
 $scripts = ob_get_clean();
 include 'layout.php';
