@@ -664,11 +664,15 @@ ob_start();
                         
                         <div class="field">
                             <div class="control is-flex is-justify-content-space-between">
-                                <!-- Archive Message Button -->
+                                <!-- Archive Message Button - only show if message is not closed -->
+                                <?php if ($currentMessage['status'] !== 'closed'): ?>
                                 <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
                                     <span class="icon"><i class="fas fa-archive"></i></span>
                                     <span>Archive Message</span>
                                 </button>
+                                <?php else: ?>
+                                <div></div> <!-- Empty div to maintain layout -->
+                                <?php endif; ?>
                                 
                                 <!-- Send Admin Response Button -->
                                 <button id="submit-button" class="button is-info" type="submit">
@@ -683,17 +687,6 @@ ob_start();
                 <div class="notification is-warning is-light">
                     <span class="icon"><i class="fas fa-lock"></i></span>
                     This message has been closed and no longer accepts responses.
-                </div>
-                <!-- Archive button for closed messages -->
-                <div class="content">
-                    <div class="field">
-                        <div class="control">
-                            <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
-                                <span class="icon"><i class="fas fa-archive"></i></span>
-                                <span>Archive Message</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
                 <?php endif; ?>
             </div>

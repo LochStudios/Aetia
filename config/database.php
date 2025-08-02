@@ -296,7 +296,10 @@ class Database {
         try {
             // Check if columns exist and add them if they don't
             $columnsToAdd = [
-                'tags' => 'VARCHAR(255) DEFAULT NULL'
+                'tags' => 'VARCHAR(255) DEFAULT NULL',
+                'archived_by' => 'INT NULL',
+                'archived_at' => 'TIMESTAMP NULL',
+                'archive_reason' => 'TEXT NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {
@@ -314,6 +317,12 @@ class Database {
                         if ($columnName === 'tags') {
                             $indexQuery = "ALTER TABLE messages ADD INDEX idx_tags (tags)";
                             $this->mysqli->query($indexQuery);
+                        }
+                        
+                        // Add foreign key for archived_by column
+                        if ($columnName === 'archived_by') {
+                            $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (archived_by) REFERENCES users(id)";
+                            $this->mysqli->query($fkQuery);
                         }
                     }
                 }
