@@ -194,7 +194,11 @@ ob_start();
                     </a>
                     <?php endforeach; ?>
                 </div>
-                <?php endif; ?>
+                
+                <!-- Pagination -->
+                <?php if (count($archivedMessages) === $limit || $page > 1): ?>
+                <nav class="pagination is-small mt-4" role="navigation" aria-label="pagination">
+                    <?php if ($page > 1): ?>
                     <a class="pagination-previous" href="?page=<?= $page - 1 ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $messageId ? '&id=' . $messageId : '' ?>">Previous</a>
                     <?php endif; ?>
                     
