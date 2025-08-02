@@ -30,8 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $formName = $_POST['form_name'] ?? '';
         $formToken = $_POST['form_token'] ?? '';
         
-        if (empty($formName) || empty($formToken)) {
-            $error = 'Invalid form submission. Please try again.';
+        // Debug information
+        if (empty($formName)) {
+            $error = 'Invalid form submission: Missing form name. Please refresh the page and try again.';
+        } elseif (empty($formToken)) {
+            $error = 'Invalid form submission: Missing form token. Please refresh the page and try again.';
         } elseif (!FormTokenManager::validateToken($formName, $formToken)) {
             $error = 'This form has already been submitted or has expired. Please refresh the page and try again.';
         } elseif (FormTokenManager::isRecentSubmission($formName)) {

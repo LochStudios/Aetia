@@ -3,13 +3,17 @@
 class FormTokenManager {
     private static $sessionKey = 'form_tokens';
     
+    // Set to false to disable token validation (for debugging)
+    private static $enableValidation = true;
+    
     /**
      * Generate a new form token
      * @param string $formName The name/identifier of the form
      * @return string The generated token
      */
     public static function generateToken($formName) {
-        if (!isset($_SESSION)) {
+        // Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
@@ -29,7 +33,7 @@ class FormTokenManager {
             'used' => false
         ];
         
-        // Clean up old tokens (older than 1 hour)
+        // Clean up old tokens
         self::cleanupTokens();
         
         return $token;
@@ -42,7 +46,13 @@ class FormTokenManager {
      * @return bool True if token is valid and unused
      */
     public static function validateToken($formName, $token) {
-        if (!isset($_SESSION)) {
+        // If validation is disabled, always return true
+        if (!self::$enableValidation) {
+            return true;
+        }
+        
+        // Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
@@ -90,7 +100,8 @@ class FormTokenManager {
      * @return bool True if form was recently submitted
      */
     public static function isRecentSubmission($formName) {
-        if (!isset($_SESSION)) {
+        // Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
@@ -126,8 +137,15 @@ class FormTokenManager {
      * @return string HTML input field with the token
      */
     public static function getTokenField($formName) {
-        $token = self::generateToken($formName);
-        return '<input type="hidden" name="form_token" value="' . htmlspecialchars($token) . '">' . 
-               '<input type="hidden" name="form_name" value="' . htmlspecialchars($formName) . '">';
+        try {
+            $token = self::generateToken($formName);
+            return '<input type="hidden" name="form_token" value="' . htmlspecialchars($token) . '">' . 
+                   '<input type="hidden" name="form_name" value="' . htmlspecialchars($formName) . '">';
+        } catch (Exception $e) {
+            // Fallback: return empty fields with error logging
+            error_log("FormTokenManager: Failed to generate token for form '$formName': " . $e->getMessage());
+            return '<input type="hidden" name="form_token" value="">' . 
+                   '<input type="hidden" name="form_name" value="">';
+        }
     }
 }
