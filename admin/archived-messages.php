@@ -70,9 +70,10 @@ ob_start();
 
 .archive-reason {
     font-style: italic;
-    color: #666;
+    color: #444;
     margin-top: 0.5rem;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .archived-message-header {
@@ -84,11 +85,21 @@ ob_start();
 }
 
 .archive-info {
-    background-color: #fff3cd;
-    border: 1px solid #ffeaa7;
+    background-color: #fff8e1;
+    border: 1px solid #ffcc02;
     border-radius: 0.375rem;
     padding: 1rem;
     margin-bottom: 1rem;
+    color: #333;
+}
+
+.archive-info strong {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.archive-info .column {
+    color: #2c2c2c;
 }
 
 .admin-badge {
@@ -184,14 +195,14 @@ ob_start();
                                     <p class="title is-6 mb-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                         <?= htmlspecialchars($msg['subject']) ?>
                                     </p>
-                                    <p class="subtitle is-7 has-text-grey mb-1">
+                                    <p class="subtitle is-7 has-text-grey-dark mb-1">
                                         <?php if ($msg['owner_first_name']): ?>
                                         <?= htmlspecialchars($msg['owner_first_name'] . ' ' . $msg['owner_last_name']) ?>
                                         <?php else: ?>
                                         Unknown User
                                         <?php endif; ?>
                                     </p>
-                                    <p class="is-size-7 has-text-grey">
+                                    <p class="is-size-7 has-text-grey-dark">
                                         Archived: <?= formatDateForUser($msg['archived_at'], 'M j, g:i A') ?>
                                     </p>
                                 </div>
@@ -313,10 +324,10 @@ ob_start();
                     <div class="level-left">
                         <div>
                             <h2 class="title is-4 mb-1"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
-                            <p class="subtitle is-6 has-text-grey">
+                            <p class="subtitle is-6 has-text-grey-dark">
                                 From: <?= htmlspecialchars($currentMessage['created_by_username'] ?? 'Unknown') ?>
-                                <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
-                                <span class="ml-2">
+                                <span class="ml-2 has-text-dark"><?= formatDateForUser($currentMessage['created_at']) ?></span>
+                                <span class="ml-2 has-text-dark">
                                     To: <?= ($currentMessage['target_username'] ?? 'Unknown') === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
                                 </span>
                             </p>
@@ -388,7 +399,7 @@ ob_start();
                                     <br>
                                     <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     <br>
-                                    <small class="has-text-grey">
+                                    <small class="has-text-grey-dark">
                                         <?= formatDateForUser($comment['created_at']) ?>
                                     </small>
                                 </p>

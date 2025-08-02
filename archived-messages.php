@@ -58,8 +58,9 @@ ob_start();
 
 .archive-reason {
     font-style: italic;
-    color: #666;
+    color: #444;
     margin-top: 0.5rem;
+    font-weight: 500;
 }
 </style>
 
@@ -139,7 +140,7 @@ ob_start();
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="is-size-7 has-text-grey">
+                            <div class="is-size-7 has-text-grey-dark">
                                 Archived: <?= formatDateForUser($msg['archived_at']) ?>
                             </div>
                         </div>
@@ -196,7 +197,7 @@ ob_start();
                     <div class="level-left">
                         <div>
                             <h2 class="title is-4 mb-1"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
-                            <p class="subtitle is-6 has-text-grey">
+                            <p class="subtitle is-6 has-text-grey-dark">
                                 Created: <?= formatDateForUser($currentMessage['created_at']) ?>
                                 <span class="ml-2">Archived: <?= formatDateForUser($currentMessage['archived_at'] ?? $currentMessage['updated_at']) ?></span>
                             </p>
