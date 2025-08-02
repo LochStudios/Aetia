@@ -1,5 +1,6 @@
 <?php
 // layout.php - Main layout template for Aetia Talant Agency
+session_start();
 if (!isset($pageTitle)) $pageTitle = 'Aetia Talant Agency';
 if (!isset($content)) $content = '';
 ?>
@@ -37,6 +38,53 @@ if (!isset($content)) $content = '';
           <a class="navbar-item" href="services.php">Services</a>
           <a class="navbar-item" href="contact.php">Contact</a>
         </div>
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <div class="buttons">
+              <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+                <div class="dropdown is-hoverable">
+                  <div class="dropdown-trigger">
+                    <button class="button is-light is-small" aria-haspopup="true" aria-controls="dropdown-menu">
+                      <?php if (isset($_SESSION['social_data']['profile_image_url'])): ?>
+                        <img src="<?= htmlspecialchars($_SESSION['social_data']['profile_image_url']) ?>" alt="Profile" style="width:20px;height:20px;border-radius:50%;margin-right:0.5rem;">
+                      <?php else: ?>
+                        <span class="icon"><i class="fas fa-user"></i></span>
+                      <?php endif; ?>
+                      <span><?= htmlspecialchars($_SESSION['username'] ?? 'User') ?></span>
+                      <span class="icon is-small">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                      </span>
+                    </button>
+                  </div>
+                  <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                      <div class="dropdown-item">
+                        <p class="is-size-7 has-text-grey">
+                          Logged in via <?= ucfirst($_SESSION['account_type'] ?? 'manual') ?>
+                        </p>
+                      </div>
+                      <hr class="dropdown-divider">
+                      <a href="profile.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-user-cog"></i></span>
+                        <span>Profile Settings</span>
+                      </a>
+                      <hr class="dropdown-divider">
+                      <a href="logout.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                        <span>Logout</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              <?php else: ?>
+                <a class="button is-primary is-small" href="login.php">
+                  <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+                  <span>Login</span>
+                </a>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
       </div>
     </nav>
     <section class="section" style="flex:1 0 auto;">
@@ -61,5 +109,16 @@ if (!isset($content)) $content = '';
       </div>
     </footer>
     <script src="js/navbar.js"></script>
+    <script>
+        // Handle notification dismissal
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.notification .delete');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.parentElement.style.display = 'none';
+                });
+            });
+        });
+    </script>
 </body>
 </html>
