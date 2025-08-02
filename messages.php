@@ -121,23 +121,27 @@ ob_start();
         <!-- Messages List Sidebar -->
         <div class="column is-4">
             <div class="box">
-                <h3 class="title is-4 has-text-info">
-                    <span class="icon"><i class="fas fa-envelope"></i></span>
-                    Your Messages
-                </h3>
-                
-                <!-- Message Counts -->
-                <div class="field is-grouped is-grouped-multiline mb-4">
-                    <div class="control">
-                        <div class="tags has-addons">
-                            <span class="tag is-dark">Unread</span>
-                            <span class="tag is-danger"><?= $messageCounts['unread'] ?></span>
-                        </div>
+                <div class="level mb-4">
+                    <div class="level-left">
+                        <h3 class="title is-4 has-text-info mb-0">
+                            <span class="icon"><i class="fas fa-envelope"></i></span>
+                            Your Messages
+                        </h3>
                     </div>
-                    <div class="control">
-                        <div class="tags has-addons">
-                            <span class="tag is-dark">Total</span>
-                            <span class="tag is-info"><?= array_sum($messageCounts) ?></span>
+                    <div class="level-right">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <div class="tags has-addons">
+                                    <span class="tag is-dark">Unread</span>
+                                    <span class="tag is-danger"><?= $messageCounts['unread'] ?></span>
+                                </div>
+                            </div>
+                            <div class="control">
+                                <div class="tags has-addons">
+                                    <span class="tag is-dark">Total</span>
+                                    <span class="tag is-info"><?= array_sum($messageCounts) ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
