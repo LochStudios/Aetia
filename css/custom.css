@@ -33,3 +33,19 @@
     margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
+
+/* Login/Logout button styling */
+.navbar-end .buttons {
+    gap: 0.5rem;
+}
+
+.navbar-end .button.is-small {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+}
+
+/* Login form styling */
+.login-card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+}
