@@ -63,10 +63,10 @@ ob_start();
 }
 </style>
 
-<div class="columns is-fullheight" style="min-height: calc(100vh - 3.25rem);">
+<div class="columns">
     <!-- Sidebar -->
     <div class="column is-one-quarter">
-        <div class="box" style="height: 100%; position: sticky; top: 1rem;">
+        <div class="box" style="position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto;">
             <h3 class="title is-4 mb-4">
                 <span class="icon"><i class="fas fa-archive"></i></span>
                 Archived Messages
@@ -91,7 +91,7 @@ ob_start();
             <?php else: ?>
             
             <!-- Archived Messages List -->
-            <div class="panel">
+            <div class="panel" style="max-height: 300px; overflow-y: auto;">
                 <?php foreach ($archivedMessages as $msg): ?>
                 <a class="panel-block <?= $msg['id'] == $messageId ? 'is-active' : '' ?>" 
                    href="?id=<?= $msg['id'] ?><?= $sidebarPage > 1 ? '&sidebar_page=' . $sidebarPage : '' ?>">
