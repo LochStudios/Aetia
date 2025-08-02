@@ -23,6 +23,16 @@ ob_start();
         Profile Settings
     </h2>
     
+    <?php if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated'): ?>
+    <div class="notification is-warning is-light mb-4">
+        <div class="content">
+            <p><strong><i class="fas fa-shield-alt"></i> Admin Security Notice</strong></p>
+            <p>You are logged in with the auto-generated admin account. For security purposes, please change your password immediately.</p>
+            <p>Consider creating a personalized admin account and disabling this default account after setup is complete.</p>
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <div class="columns">
         <div class="column is-4">
             <div class="card">
