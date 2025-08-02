@@ -42,11 +42,25 @@ $archivedMessages = $messageModel->getArchivedMessages($userId, $sidebarLimit, $
 $hasNextPage = count($archivedMessages) === $sidebarLimit;
 $hasPrevPage = $sidebarPage > 1;
 
-$pageTitle = $currentMessage ? 'Archived: ' . htmlspecialchars($currentMessage['subject']) . ' | Messages' : 'Archived Messages';
+$pageTitle = $currentMessage ? 'Archived: ' . htmlspecialchars($currentMessage['subject']) . ' | Messages' : 'Archived Messages | Aetia';
 ob_start();
 ?>
 
 <div class="content">
+    <?php if (isset($_SESSION['message'])): ?>
+    <div class="notification is-success is-light">
+        <button class="delete"></button>
+        <?= htmlspecialchars($_SESSION['message']) ?>
+    </div>
+    <?php unset($_SESSION['message']); endif; ?>
+    
+    <?php if (isset($_SESSION['error'])): ?>
+    <div class="notification is-danger is-light">
+        <button class="delete"></button>
+        <?= htmlspecialchars($_SESSION['error']) ?>
+    </div>
+    <?php unset($_SESSION['error']); endif; ?>
+
     <div class="columns">
         <!-- Archived Messages List Sidebar -->
         <div class="column is-4">
@@ -223,7 +237,7 @@ ob_start();
                 <div class="content">
                     <h4 class="title is-5">
                         <span class="icon"><i class="fas fa-comments"></i></span>
-                        Discussion History
+                        Discussion
                     </h4>
                     
                     <?php foreach ($messageComments as $comment): ?>
@@ -233,31 +247,31 @@ ob_start();
                         <figure class="media-left">
                             <p class="image is-48x48">
                                 <?php if ($comment['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
-                                         alt="Profile Picture" 
-                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                                <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                     alt="Profile Picture" 
+                                     class="profile-image">
                                 <?php else: ?>
-                                    <span class="icon is-large has-text-white">
-                                        <i class="fas fa-user-circle fa-2x"></i>
-                                    </span>
+                                <span class="icon is-large has-text-grey">
+                                    <i class="fas fa-user-circle fa-2x"></i>
+                                </span>
                                 <?php endif; ?>
                             </p>
                         </figure>
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-info-light has-text-dark">
+                                <div class="box has-background-info-dark has-text-light">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong class="has-text-dark">
+                                            <strong class="has-text-light">
                                                 <?= $comment['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['display_name']) ?>
                                             </strong>
-                                            <span class="tag is-small is-primary">Talant Team</span>
+                                            <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
-                                        <small class="has-text-dark">
+                                        <small class="has-text-light">
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div class="has-text-dark">
+                                    <div class="has-text-light">
                                         <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     </div>
                                 </div>
@@ -267,18 +281,18 @@ ob_start();
                         <!-- User comment - icon on right -->
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-light has-text-dark">
+                                <div class="box has-background-grey-dark has-text-light">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong class="has-text-dark">
+                                            <strong class="has-text-light">
                                                 <?= htmlspecialchars($comment['display_name']) ?>
                                             </strong>
                                         </div>
-                                        <small class="has-text-dark">
+                                        <small class="has-text-light">
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div class="has-text-dark">
+                                    <div class="has-text-light">
                                         <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     </div>
                                 </div>
@@ -287,13 +301,13 @@ ob_start();
                         <figure class="media-right">
                             <p class="image is-48x48">
                                 <?php if ($comment['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
-                                         alt="Profile Picture" 
-                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                                <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                     alt="Profile Picture" 
+                                     class="profile-image">
                                 <?php else: ?>
-                                    <span class="icon is-large has-text-white">
-                                        <i class="fas fa-user-circle fa-2x"></i>
-                                    </span>
+                                <span class="icon is-large has-text-grey">
+                                    <i class="fas fa-user-circle fa-2x"></i>
+                                </span>
                                 <?php endif; ?>
                             </p>
                         </figure>
