@@ -467,7 +467,7 @@ ob_start();
                                     </div>
                                     <div class="field is-grouped">
                                         <div class="control">
-                                            <a href="../download-attachment.php?id=<?= $attachment['id'] ?>" 
+                                            <a href="/download-attachment.php?id=<?= $attachment['id'] ?>" 
                                                class="button is-small is-primary">
                                                 <span class="icon"><i class="fas fa-download"></i></span>
                                                 <span>Download</span>
@@ -955,7 +955,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="field is-grouped">
                             <div class="control">
-                                <a href="../download-attachment.php?id=${attachment.id}" 
+                                <a href="/download-attachment.php?id=${attachment.id}" 
                                    class="button is-small is-primary">
                                     <span class="icon"><i class="fas fa-download"></i></span>
                                     <span>Download</span>
@@ -1178,6 +1178,8 @@ function formatFileSize(bytes) {
 // Upload progress functionality
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('comment-form');
+    if (!form) return; // Exit if form doesn't exist
+    
     const uploadIdField = document.getElementById('upload-id');
     const uploadProgress = document.getElementById('upload-progress');
     const uploadProgressBar = document.getElementById('upload-progress-bar');
@@ -1187,17 +1189,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadEta = document.getElementById('upload-eta');
     const submitButton = document.getElementById('submit-button');
     
-    form.addEventListener('submit', function(e) {
-        const fileInput = form.querySelector('input[type="file"]');
-        const files = fileInput.files;
-        
-        // Only use AJAX upload if files are selected
-        if (files.length > 0) {
-            e.preventDefault();
-            submitWithProgress();
-        }
-        // Otherwise let the form submit normally
-    });
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const fileInput = form.querySelector('input[type="file"]');
+            const files = fileInput.files;
+            // Only use AJAX upload if files are selected
+            if (files.length > 0) {
+                e.preventDefault();
+                submitWithProgress();
+            }
+            // Otherwise let the form submit normally
+        });
+    }
     
     function submitWithProgress() {
         // Generate unique upload ID
