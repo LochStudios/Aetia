@@ -119,10 +119,20 @@ if ($messageId) {
     }
 }
 
-// Get user's messages
+// Sidebar pagination settings (5 messages per page)
+$sidebarLimit = 5;
+$sidebarPage = isset($_GET['sidebar_page']) ? max(1, intval($_GET['sidebar_page'])) : 1;
+$sidebarOffset = ($sidebarPage - 1) * $sidebarLimit;
+
+// Get user's messages for sidebar
 $tagFilter = $_GET['tag'] ?? null;
 $priorityFilter = $_GET['priority'] ?? null;
-$messages = $messageModel->getUserMessages($userId, 20, 0, $tagFilter, $priorityFilter);
+$messages = $messageModel->getUserMessages($userId, $sidebarLimit, $sidebarOffset, $tagFilter, $priorityFilter);
+
+// Check if there are more messages for pagination
+$hasNextPage = count($messages) === $sidebarLimit;
+$hasPrevPage = $sidebarPage > 1;
+
 $messageCounts = $messageModel->getUserMessageCounts($userId);
 $availableTags = $messageModel->getAvailableTags($userId);
 
@@ -250,7 +260,7 @@ ob_start();
                 <div class="panel">
                     <?php foreach ($messages as $msg): ?>
                     <a class="panel-block <?= $msg['id'] == $messageId ? 'is-active' : '' ?>" 
-                       href="?id=<?= $msg['id'] ?>">
+                       href="?id=<?= $msg['id'] ?><?= $sidebarPage > 1 ? '&sidebar_page=' . $sidebarPage : '' ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $priorityFilter ? '&priority=' . urlencode($priorityFilter) : '' ?>">
                         <span class="panel-icon">
                             <?php 
                             $iconClass = match($msg['status']) {
@@ -301,6 +311,35 @@ ob_start();
                     </a>
                     <?php endforeach; ?>
                 </div>
+                
+                <!-- Sidebar Pagination -->
+                <?php if ($hasPrevPage || $hasNextPage): ?>
+                <div class="field is-grouped is-grouped-centered mt-3">
+                    <?php if ($hasPrevPage): ?>
+                    <div class="control">
+                        <a href="?sidebar_page=<?= $sidebarPage - 1 ?><?= $messageId ? '&id=' . $messageId : '' ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $priorityFilter ? '&priority=' . urlencode($priorityFilter) : '' ?>" 
+                           class="button is-small">
+                            <span class="icon"><i class="fas fa-chevron-left"></i></span>
+                            <span>Prev</span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="control">
+                        <span class="button is-small is-static">Page <?= $sidebarPage ?></span>
+                    </div>
+                    
+                    <?php if ($hasNextPage): ?>
+                    <div class="control">
+                        <a href="?sidebar_page=<?= $sidebarPage + 1 ?><?= $messageId ? '&id=' . $messageId : '' ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $priorityFilter ? '&priority=' . urlencode($priorityFilter) : '' ?>" 
+                           class="button is-small">
+                            <span>Next</span>
+                            <span class="icon"><i class="fas fa-chevron-right"></i></span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -590,6 +629,9 @@ function updateUserFilters(filterType, value) {
     } else {
         url.searchParams.delete(filterType);
     }
+    
+    // Reset to page 1 when filters change
+    url.searchParams.delete('sidebar_page');
     
     // Preserve the current message ID if viewing one
     <?php if ($messageId): ?>
