@@ -145,12 +145,14 @@ class Database {
                 message TEXT NOT NULL,
                 priority ENUM('low', 'normal', 'high', 'urgent') DEFAULT 'normal',
                 status ENUM('unread', 'read', 'responded', 'closed') DEFAULT 'unread',
+                tags VARCHAR(255) DEFAULT NULL,
                 created_by INT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (created_by) REFERENCES users(id),
                 INDEX idx_user_status (user_id, status),
+                INDEX idx_tags (tags),
                 INDEX idx_created_at (created_at)
             )";
             
@@ -172,8 +174,9 @@ class Database {
             
             $this->mysqli->query($createCommentsTable);
 
-            // Add new columns to existing users table (for existing databases)
+            // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
+            $this->addMissingMessageColumns();
 
             // Create initial admin user if no users exist
             $this->createInitialAdmin();
@@ -260,6 +263,39 @@ class Database {
             }
         } catch (Exception $e) {
             error_log("Add missing columns error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Add missing columns to existing messages table
+    private function addMissingMessageColumns() {
+        try {
+            // Check if columns exist and add them if they don't
+            $columnsToAdd = [
+                'tags' => 'VARCHAR(255) DEFAULT NULL'
+            ];
+            
+            foreach ($columnsToAdd as $columnName => $columnDefinition) {
+                // Check if column exists
+                $checkColumn = "SHOW COLUMNS FROM messages LIKE '{$columnName}'";
+                $result = $this->mysqli->query($checkColumn);
+                
+                if ($result && $result->num_rows == 0) {
+                    // Column doesn't exist, add it
+                    $alterQuery = "ALTER TABLE messages ADD COLUMN {$columnName} {$columnDefinition}";
+                    if ($this->mysqli->query($alterQuery)) {
+                        error_log("Added column '{$columnName}' to messages table");
+                        
+                        // Add index for tags column
+                        if ($columnName === 'tags') {
+                            $indexQuery = "ALTER TABLE messages ADD INDEX idx_tags (tags)";
+                            $this->mysqli->query($indexQuery);
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Add missing message columns error: " . $e->getMessage());
             // Don't throw exception - continue normal operation
         }
     }

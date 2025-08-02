@@ -21,16 +21,16 @@ class Message {
     }
     
     // Create a new message
-    public function createMessage($userId, $subject, $message, $priority = 'normal', $createdBy) {
+    public function createMessage($userId, $subject, $message, $priority = 'normal', $createdBy, $tags = null) {
         try {
             $this->ensureConnection();
             
             $stmt = $this->mysqli->prepare("
-                INSERT INTO messages (user_id, subject, message, priority, created_by) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO messages (user_id, subject, message, priority, created_by, tags) 
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
             
-            $stmt->bind_param("isssi", $userId, $subject, $message, $priority, $createdBy);
+            $stmt->bind_param("isssiss", $userId, $subject, $message, $priority, $createdBy, $tags);
             $result = $stmt->execute();
             
             if ($result) {
@@ -48,22 +48,34 @@ class Message {
     }
     
     // Get messages for a specific user
-    public function getUserMessages($userId, $limit = 20, $offset = 0) {
+    public function getUserMessages($userId, $limit = 20, $offset = 0, $tagFilter = null) {
         try {
             $this->ensureConnection();
             
-            $stmt = $this->mysqli->prepare("
-                SELECT m.id, m.subject, m.message, m.priority, m.status, m.created_at, m.updated_at,
+            $baseQuery = "
+                SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as created_by_username,
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
-                WHERE m.user_id = ?
-                ORDER BY m.created_at DESC
-                LIMIT ? OFFSET ?
-            ");
+                WHERE m.user_id = ?";
             
-            $stmt->bind_param("iii", $userId, $limit, $offset);
+            $params = [$userId];
+            $types = "i";
+            
+            if ($tagFilter) {
+                $baseQuery .= " AND m.tags LIKE ?";
+                $params[] = "%{$tagFilter}%";
+                $types .= "s";
+            }
+            
+            $baseQuery .= " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= "ii";
+            
+            $stmt = $this->mysqli->prepare($baseQuery);
+            $stmt->bind_param($types, ...$params);
             $stmt->execute();
             $result = $stmt->get_result();
             
@@ -222,12 +234,12 @@ class Message {
     }
     
     // Get all messages for admin view
-    public function getAllMessages($limit = 50, $offset = 0, $status = null) {
+    public function getAllMessages($limit = 50, $offset = 0, $status = null, $tagFilter = null) {
         try {
             $this->ensureConnection();
             
             $query = "
-                SELECT m.id, m.subject, m.priority, m.status, m.created_at, m.updated_at,
+                SELECT m.id, m.subject, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as target_username, creator.username as created_by_username,
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
@@ -237,11 +249,22 @@ class Message {
             
             $params = [];
             $types = "";
+            $conditions = [];
             
             if ($status !== null) {
-                $query .= " WHERE m.status = ?";
+                $conditions[] = "m.status = ?";
                 $params[] = $status;
                 $types .= "s";
+            }
+            
+            if ($tagFilter !== null) {
+                $conditions[] = "m.tags LIKE ?";
+                $params[] = "%{$tagFilter}%";
+                $types .= "s";
+            }
+            
+            if (!empty($conditions)) {
+                $query .= " WHERE " . implode(" AND ", $conditions);
             }
             
             $query .= " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
@@ -332,6 +355,55 @@ class Message {
             return $users;
         } catch (Exception $e) {
             error_log("Search users error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Get all unique tags used in messages
+    public function getAvailableTags($userId = null) {
+        try {
+            $this->ensureConnection();
+            
+            $baseQuery = "SELECT DISTINCT tags FROM messages WHERE tags IS NOT NULL AND tags != ''";
+            $params = [];
+            $types = "";
+            
+            if ($userId) {
+                $baseQuery .= " AND user_id = ?";
+                $params[] = $userId;
+                $types = "i";
+            }
+            
+            $baseQuery .= " ORDER BY tags ASC";
+            
+            if ($types) {
+                $stmt = $this->mysqli->prepare($baseQuery);
+                $stmt->bind_param($types, ...$params);
+            } else {
+                $stmt = $this->mysqli->prepare($baseQuery);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $tags = [];
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['tags'])) {
+                    // Split comma-separated tags and add to array
+                    $splitTags = array_map('trim', explode(',', $row['tags']));
+                    foreach ($splitTags as $tag) {
+                        if (!empty($tag) && !in_array($tag, $tags)) {
+                            $tags[] = $tag;
+                        }
+                    }
+                }
+            }
+            
+            $stmt->close();
+            sort($tags); // Sort alphabetically
+            return $tags;
+        } catch (Exception $e) {
+            error_log("Get available tags error: " . $e->getMessage());
             return [];
         }
     }

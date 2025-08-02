@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Find the first admin user to send the message to
                     $adminUser = $userModel->getFirstAdmin();
                     if ($adminUser) {
-                        $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $priority, $userId);
+                        $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $priority, $userId, 'Internal');
                         if ($result['success']) {
                             $message = 'Message sent to Talant Team successfully!';
                             // Redirect to view the new message
@@ -92,8 +92,10 @@ if ($messageId) {
 }
 
 // Get user's messages
-$messages = $messageModel->getUserMessages($userId);
+$tagFilter = $_GET['tag'] ?? null;
+$messages = $messageModel->getUserMessages($userId, 20, 0, $tagFilter);
 $messageCounts = $messageModel->getUserMessageCounts($userId);
+$availableTags = $messageModel->getAvailableTags($userId);
 
 $pageTitle = $currentMessage ? htmlspecialchars($currentMessage['subject']) . ' | Messages' : 'Messages | Aetia';
 ob_start();
@@ -139,6 +141,31 @@ ob_start();
                     </div>
                 </div>
                 
+                <!-- Tag Filter -->
+                <?php if (!empty($availableTags)): ?>
+                <div class="field mb-4">
+                    <label class="label">Filter by Tag</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select onchange="window.location.href='messages.php?tag=' + this.value">
+                                <option value="">All Messages</option>
+                                <?php foreach ($availableTags as $tag): ?>
+                                <option value="<?= htmlspecialchars($tag) ?>" <?= $tagFilter === $tag ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($tag) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <?php if ($tagFilter): ?>
+                    <p class="help">
+                        Showing messages tagged with "<?= htmlspecialchars($tagFilter) ?>"
+                        <a href="messages.php" class="has-text-link">Clear filter</a>
+                    </p>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+                
                 <!-- New Talant Team Message Button -->
                 <div class="field mb-4">
                     <button class="button is-primary is-fullwidth" onclick="showNewMessageModal()">
@@ -178,14 +205,25 @@ ob_start();
                                 <strong class="<?= $msg['status'] === 'unread' ? 'has-text-weight-bold' : '' ?>">
                                     <?= htmlspecialchars($msg['subject']) ?>
                                 </strong>
-                                <span class="tag is-small is-<?= match($msg['priority']) {
-                                    'urgent' => 'danger',
-                                    'high' => 'warning',
-                                    'normal' => 'info',
-                                    'low' => 'light'
-                                } ?>">
-                                    <?= ucfirst($msg['priority']) ?>
-                                </span>
+                                <div class="tags">
+                                    <span class="tag is-small is-<?= match($msg['priority']) {
+                                        'urgent' => 'danger',
+                                        'high' => 'warning',
+                                        'normal' => 'info',
+                                        'low' => 'light'
+                                    } ?>">
+                                        <?= ucfirst($msg['priority']) ?>
+                                    </span>
+                                    <?php if (!empty($msg['tags'])): ?>
+                                        <?php foreach (array_map('trim', explode(',', $msg['tags'])) as $tag): ?>
+                                            <?php if (!empty($tag)): ?>
+                                            <span class="tag is-small is-<?= $tag === 'Internal' ? 'primary' : 'dark' ?>">
+                                                <?= htmlspecialchars($tag) ?>
+                                            </span>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <div class="is-size-7 has-text-grey">
                                 <?= date('M j, Y g:i A', strtotime($msg['created_at'])) ?>
@@ -237,6 +275,15 @@ ob_start();
                             } ?>">
                                 <?= ucfirst($currentMessage['status']) ?>
                             </span>
+                            <?php if (!empty($currentMessage['tags'])): ?>
+                                <?php foreach (array_map('trim', explode(',', $currentMessage['tags'])) as $tag): ?>
+                                    <?php if (!empty($tag)): ?>
+                                    <span class="tag is-<?= $tag === 'Internal' ? 'primary' : 'dark' ?>">
+                                        <?= htmlspecialchars($tag) ?>
+                                    </span>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

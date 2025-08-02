@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get filter parameters
 $statusFilter = $_GET['status'] ?? null;
+$tagFilter = $_GET['tag'] ?? null;
 $page = max(1, intval($_GET['page'] ?? 1));
 $limit = 20;
 $offset = ($page - 1) * $limit;
@@ -79,7 +80,8 @@ if ($messageId) {
 }
 
 // Get messages for admin view
-$messages = $messageModel->getAllMessages($limit, $offset, $statusFilter);
+$messages = $messageModel->getAllMessages($limit, $offset, $statusFilter, $tagFilter);
+$availableTags = $messageModel->getAvailableTags();
 
 $pageTitle = $currentMessage ? htmlspecialchars($currentMessage['subject']) . ' | Admin Messages' : 'Admin Messages | Aetia';
 ob_start();
@@ -138,7 +140,7 @@ ob_start();
                     <label class="label">Filter by Status</label>
                     <div class="control">
                         <div class="select is-fullwidth">
-                            <select onchange="location.href='?status=' + this.value + (<?= $messageId ? "'&id=$messageId'" : "''" ?>)">
+                            <select onchange="updateFilters('status', this.value)">
                                 <option value="">All Messages</option>
                                 <option value="unread" <?= $statusFilter === 'unread' ? 'selected' : '' ?>>Unread</option>
                                 <option value="read" <?= $statusFilter === 'read' ? 'selected' : '' ?>>Read</option>
@@ -148,6 +150,31 @@ ob_start();
                         </div>
                     </div>
                 </div>
+                
+                <!-- Tag Filter -->
+                <?php if (!empty($availableTags)): ?>
+                <div class="field">
+                    <label class="label">Filter by Tag</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select onchange="updateFilters('tag', this.value)">
+                                <option value="">All Tags</option>
+                                <?php foreach ($availableTags as $tag): ?>
+                                <option value="<?= htmlspecialchars($tag) ?>" <?= $tagFilter === $tag ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($tag) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <?php if ($tagFilter): ?>
+                    <p class="help">
+                        Showing messages tagged with "<?= htmlspecialchars($tagFilter) ?>"
+                        <a href="javascript:updateFilters('tag', '')" class="has-text-link">Clear</a>
+                    </p>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 
                 <?php if (empty($messages)): ?>
                 <div class="has-text-centered has-text-grey">
@@ -162,7 +189,7 @@ ob_start();
                 <div class="panel">
                     <?php foreach ($messages as $msg): ?>
                     <a class="panel-block <?= $msg['id'] == $messageId ? 'is-active' : '' ?>" 
-                       href="?id=<?= $msg['id'] ?><?= $statusFilter ? '&status=' . $statusFilter : '' ?>">
+                       href="?id=<?= $msg['id'] ?><?= $statusFilter ? '&status=' . $statusFilter : '' ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?>">
                         <span class="panel-icon">
                             <?php 
                             $iconClass = match($msg['status']) {
@@ -178,14 +205,25 @@ ob_start();
                         <div class="is-flex-grow-1">
                             <div class="is-flex is-justify-content-space-between is-align-items-center">
                                 <strong><?= htmlspecialchars($msg['subject']) ?></strong>
-                                <span class="tag is-small is-<?= match($msg['priority']) {
-                                    'urgent' => 'danger',
-                                    'high' => 'warning',
-                                    'normal' => 'info',
-                                    'low' => 'light'
-                                } ?>">
-                                    <?= ucfirst($msg['priority']) ?>
-                                </span>
+                                <div class="tags">
+                                    <span class="tag is-small is-<?= match($msg['priority']) {
+                                        'urgent' => 'danger',
+                                        'high' => 'warning',
+                                        'normal' => 'info',
+                                        'low' => 'light'
+                                    } ?>">
+                                        <?= ucfirst($msg['priority']) ?>
+                                    </span>
+                                    <?php if (!empty($msg['tags'])): ?>
+                                        <?php foreach (array_map('trim', explode(',', $msg['tags'])) as $tag): ?>
+                                            <?php if (!empty($tag)): ?>
+                                            <span class="tag is-small is-<?= $tag === 'Internal' ? 'primary' : 'dark' ?>">
+                                                <?= htmlspecialchars($tag) ?>
+                                            </span>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <div class="is-size-7 has-text-grey">
                                 To: <?= htmlspecialchars($msg['target_username']) ?>
@@ -261,6 +299,15 @@ ob_start();
                     } ?>">
                         <?= ucfirst($currentMessage['status']) ?>
                     </span>
+                    <?php if (!empty($currentMessage['tags'])): ?>
+                        <?php foreach (array_map('trim', explode(',', $currentMessage['tags'])) as $tag): ?>
+                            <?php if (!empty($tag)): ?>
+                            <span class="tag is-<?= $tag === 'Internal' ? 'primary' : 'dark' ?>">
+                                <?= htmlspecialchars($tag) ?>
+                            </span>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Original Message -->
@@ -383,6 +430,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // You could implement AJAX refresh here if needed
     }, 60000);
 });
+
+function updateFilters(filterType, value) {
+    const url = new URL(window.location);
+    
+    // Update the specified filter
+    if (value) {
+        url.searchParams.set(filterType, value);
+    } else {
+        url.searchParams.delete(filterType);
+    }
+    
+    // Preserve the current message ID if viewing one
+    <?php if ($messageId): ?>
+    url.searchParams.set('id', '<?= $messageId ?>');
+    <?php endif; ?>
+    
+    // Navigate to the updated URL
+    window.location.href = url.toString();
+}
 </script>
 <?php
 $scripts = ob_get_clean();

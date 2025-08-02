@@ -32,11 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $subject = trim($_POST['subject']);
     $messageText = trim($_POST['message']);
     $priority = $_POST['priority'];
+    $tags = trim($_POST['tags'] ?? '');
     
     if (empty($subject) || empty($messageText) || empty($userId)) {
         $error = 'All fields are required';
     } else {
-        $result = $messageModel->createMessage($userId, $subject, $messageText, $priority, $_SESSION['user_id']);
+        $result = $messageModel->createMessage($userId, $subject, $messageText, $priority, $_SESSION['user_id'], $tags);
         if ($result['success']) {
             $_SESSION['success_message'] = 'Message sent successfully!';
             header('Location: messages.php?id=' . $result['message_id']);
@@ -161,6 +162,19 @@ ob_start();
                             <span class="has-text-info">Normal:</span> Standard messages •
                             <span class="has-text-warning">High:</span> Important updates •
                             <span class="has-text-danger">Urgent:</span> Requires immediate attention
+                        </p>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="field">
+                        <label class="label">Tags</label>
+                        <div class="control">
+                            <input class="input" type="text" name="tags" 
+                                   value="<?= htmlspecialchars($_POST['tags'] ?? '') ?>"
+                                   placeholder="e.g., Internal, External Message, Support, Update">
+                        </div>
+                        <p class="help">
+                            <span class="has-text-grey">Optional:</span> Comma-separated tags for categorizing messages (e.g., "Internal, Support")
                         </p>
                     </div>
 
