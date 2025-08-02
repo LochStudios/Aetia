@@ -29,7 +29,7 @@ if (!isset($content)) $content = '';
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/custom.css">
+    <link rel="stylesheet" href="../css/custom.css?v=1.0">
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
     <!-- Navigation Bar -->

@@ -123,6 +123,24 @@
 /* Attachment filename styling */
 .attachment-filename {
     word-break: break-word;
+    color: white !important;
+}
+
+/* Image filename styling (in discussion threads) */
+.discussion-image + p,
+.discussion-image + .has-text-grey {
+    color: white !important;
+}
+
+/* Attachment card text styling */
+.attachment-card .title,
+.attachment-card .subtitle {
+    color: white !important;
+}
+
+/* Force white text for filename displays that have grey text class */
+p.is-size-7.has-text-grey.mt-2 {
+    color: white !important;
 }
 
 /* Inline form styling */
