@@ -272,6 +272,16 @@ class User {
         switch ($platform) {
             case 'twitch':
                 return $socialData['profile_image_url'] ?? null;
+            case 'discord':
+                // Discord avatar URL construction
+                if (isset($socialData['avatar']) && isset($socialData['id'])) {
+                    $avatarHash = $socialData['avatar'];
+                    $userId = $socialData['id'];
+                    // Check if it's a GIF avatar (animated)
+                    $extension = (strpos($avatarHash, 'a_') === 0) ? 'gif' : 'png';
+                    return "https://cdn.discordapp.com/avatars/{$userId}/{$avatarHash}.{$extension}";
+                }
+                return null;
             case 'youtube':
                 return $socialData['snippet']['thumbnails']['default']['url'] ?? null;
             case 'twitter':
