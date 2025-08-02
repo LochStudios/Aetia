@@ -242,18 +242,20 @@ ob_start();
                     </figure>
                     <div class="media-content">
                         <div class="content">
-                            <p>
-                                <strong><?= htmlspecialchars($comment['display_name']) ?></strong>
-                                <?php if ($comment['is_admin_comment']): ?>
-                                    <span class="tag is-small is-primary">Talant Team</span>
-                                <?php endif; ?>
-                                <br>
-                                <?= nl2br(htmlspecialchars($comment['comment'])) ?>
-                                <br>
-                                <small class="has-text-grey">
-                                    <?= formatDateForUser($comment['created_at']) ?>
-                                </small>
-                            </p>
+                            <div class="box has-background-<?= $comment['is_admin_comment'] ? 'info-light' : 'light' ?> <?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                <p>
+                                    <strong class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= htmlspecialchars($comment['display_name']) ?></strong>
+                                    <?php if ($comment['is_admin_comment']): ?>
+                                        <span class="tag is-small is-primary">Talant Team</span>
+                                    <?php endif; ?>
+                                    <br>
+                                    <span class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= nl2br(htmlspecialchars($comment['comment'])) ?></span>
+                                    <br>
+                                    <small class="has-text-grey">
+                                        <?= formatDateForUser($comment['created_at']) ?>
+                                    </small>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </article>
