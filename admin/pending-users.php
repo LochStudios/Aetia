@@ -140,47 +140,35 @@ ob_start();
             
             <div class="buttons">
                 <!-- Mark Contact Attempt -->
-                <form method="POST" style="display:inline;">
+                <form method="POST" style="display:inline;" id="contact-form-<?= $user['id'] ?>">
                     <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                     <input type="hidden" name="action" value="mark_contact">
-                    <div class="field has-addons" style="margin-bottom:0;">
-                        <div class="control">
-                            <input class="input is-small" type="text" name="contact_notes" placeholder="Contact notes..." style="min-width:200px;">
-                        </div>
-                        <div class="control">
-                            <button class="button is-warning is-small" type="submit">
-                                <span class="icon"><i class="fas fa-phone"></i></span>
-                                <span>Mark Contact</span>
-                            </button>
-                        </div>
-                    </div>
+                    <input type="hidden" name="contact_notes" id="contact-notes-<?= $user['id'] ?>">
+                    <button class="button is-warning is-small contact-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                        <span class="icon"><i class="fas fa-phone"></i></span>
+                        <span>Mark Contact</span>
+                    </button>
                 </form>
                 
                 <!-- Approve User -->
-                <form method="POST" style="display:inline;" onsubmit="return confirm('Approve this user? They will be able to access their account.')">
+                <form method="POST" style="display:inline;" id="approve-form-<?= $user['id'] ?>">
                     <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                     <input type="hidden" name="action" value="approve">
-                    <button class="button is-success is-small" type="submit">
+                    <button class="button is-success is-small approve-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
                         <span class="icon"><i class="fas fa-check"></i></span>
                         <span>Approve</span>
                     </button>
                 </form>
                 
                 <!-- Reject User -->
-                <form method="POST" style="display:inline;" onsubmit="return confirm('Reject this user? Please provide a reason.')">
+                <form method="POST" style="display:inline;" id="reject-form-<?= $user['id'] ?>">
                     <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                     <input type="hidden" name="action" value="reject">
-                    <div class="field has-addons" style="margin-bottom:0;">
-                        <div class="control">
-                            <input class="input is-small" type="text" name="rejection_reason" placeholder="Rejection reason..." required style="min-width:200px;">
-                        </div>
-                        <div class="control">
-                            <button class="button is-danger is-small" type="submit">
-                                <span class="icon"><i class="fas fa-times"></i></span>
-                                <span>Reject</span>
-                            </button>
-                        </div>
-                    </div>
+                    <input type="hidden" name="rejection_reason" id="rejection-reason-<?= $user['id'] ?>">
+                    <button class="button is-danger is-small reject-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                        <span class="icon"><i class="fas fa-times"></i></span>
+                        <span>Reject</span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -194,3 +182,99 @@ ob_start();
 $content = ob_get_clean();
 include '../layout.php';
 ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Mark Contact buttons
+    document.querySelectorAll('.contact-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            
+            Swal.fire({
+                title: 'Mark Contact Attempt',
+                html: `Record contact attempt for <strong>${username}</strong>:<br><br>`,
+                icon: 'info',
+                input: 'textarea',
+                inputPlaceholder: 'Enter contact notes (optional)...',
+                showCancelButton: true,
+                confirmButtonColor: '#ffdd57',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-phone"></i> Mark Contact',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-warning',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`contact-notes-${userId}`).value = result.value || '';
+                    document.getElementById(`contact-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    
+    // Handle Approve User buttons
+    document.querySelectorAll('.approve-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            
+            Swal.fire({
+                title: 'Approve User?',
+                html: `Are you sure you want to approve <strong>${username}</strong>?<br><br>They will be able to access their account immediately.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#48c78e',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-check"></i> Yes, Approve',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-success',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`approve-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    
+    // Handle Reject User buttons
+    document.querySelectorAll('.reject-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            
+            Swal.fire({
+                title: 'Reject User?',
+                html: `Are you sure you want to reject <strong>${username}</strong>?<br><br>Please provide a reason for rejection:`,
+                icon: 'warning',
+                input: 'textarea',
+                inputPlaceholder: 'Enter rejection reason...',
+                inputValidator: (value) => {
+                    if (!value || value.trim() === '') {
+                        return 'You must provide a rejection reason!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#f14668',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-times"></i> Yes, Reject',
+                cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-danger',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`rejection-reason-${userId}`).value = result.value;
+                    document.getElementById(`reject-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+});
+</script>
