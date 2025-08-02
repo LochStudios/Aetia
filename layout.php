@@ -29,7 +29,7 @@ if (!isset($content)) $content = '';
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/custom.css?v=1.0">
+    <link rel="stylesheet" href="../css/custom.css?v=<?= uniqid() ?>">
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
     <!-- Navigation Bar -->
