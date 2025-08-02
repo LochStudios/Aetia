@@ -113,9 +113,9 @@ class Message {
             ";
             
             if ($userId !== null) {
-                $query .= " AND m.user_id = ?";
+                $query .= " AND (m.user_id = ? OR m.created_by = ?)";
                 $stmt = $this->mysqli->prepare($query);
-                $stmt->bind_param("ii", $messageId, $userId);
+                $stmt->bind_param("iii", $messageId, $userId, $userId);
             } else {
                 $stmt = $this->mysqli->prepare($query);
                 $stmt->bind_param("i", $messageId);
