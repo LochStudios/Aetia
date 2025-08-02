@@ -4,6 +4,7 @@ session_start();
 
 // Include timezone utilities
 require_once __DIR__ . '/../includes/timezone.php';
+require_once __DIR__ . '/../includes/FileUploader.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -40,7 +41,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($comment)) {
                     $result = $messageModel->addComment($messageId, $_SESSION['user_id'], $comment, true);
                     if ($result['success']) {
-                        $message = 'Admin response added successfully!';
+                        // Handle file uploads if any
+                        if (!empty($_FILES['attachments']['name'][0])) {
+                            $fileUploader = new FileUploader();
+                            $uploadErrors = [];
+                            
+                            // Process multiple files
+                            $fileCount = count($_FILES['attachments']['name']);
+                            for ($i = 0; $i < $fileCount; $i++) {
+                                if ($_FILES['attachments']['error'][$i] === UPLOAD_ERR_OK) {
+                                    $file = [
+                                        'name' => $_FILES['attachments']['name'][$i],
+                                        'type' => $_FILES['attachments']['type'][$i],
+                                        'tmp_name' => $_FILES['attachments']['tmp_name'][$i],
+                                        'error' => $_FILES['attachments']['error'][$i],
+                                        'size' => $_FILES['attachments']['size'][$i]
+                                    ];
+                                    
+                                    $uploadResult = $fileUploader->uploadMessageAttachment($file, $_SESSION['user_id'], $messageId);
+                                    if ($uploadResult['success']) {
+                                        // Save attachment record to database
+                                        $attachResult = $messageModel->addAttachment(
+                                            $messageId,
+                                            $_SESSION['user_id'],
+                                            $uploadResult['filename'],
+                                            $uploadResult['original_filename'],
+                                            $uploadResult['file_size'],
+                                            $uploadResult['mime_type'],
+                                            $uploadResult['file_path']
+                                        );
+                                        
+                                        if (!$attachResult['success']) {
+                                            $uploadErrors[] = "Failed to save attachment: " . $uploadResult['original_filename'];
+                                        }
+                                    } else {
+                                        $uploadErrors[] = $uploadResult['original_filename'] . ": " . $uploadResult['message'];
+                                    }
+                                }
+                            }
+                            
+                            if (!empty($uploadErrors)) {
+                                $error = "Admin response added but some attachments failed: " . implode(', ', $uploadErrors);
+                            } else {
+                                $message = 'Admin response added successfully!';
+                            }
+                        } else {
+                            $message = 'Admin response added successfully!';
+                        }
                     } else {
                         $error = $result['message'] ?? 'Failed to add response';
                     }
@@ -74,6 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = $result['message'] ?? 'Failed to archive message';
                 }
                 break;
+                
+            case 'delete_attachment':
+                $attachmentId = intval($_POST['attachment_id']);
+                // Admin can delete any attachment
+                $result = $messageModel->deleteAttachment($attachmentId);
+                if ($result['success']) {
+                    $message = 'Attachment deleted successfully!';
+                } else {
+                    $error = $result['message'] ?? 'Failed to delete attachment';
+                }
+                break;
         }
     }
 }
@@ -88,12 +146,14 @@ $offset = ($page - 1) * $limit;
 // Get current message if viewing one
 $currentMessage = null;
 $messageComments = [];
+$messageAttachments = [];
 $messageId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 if ($messageId) {
     $currentMessage = $messageModel->getMessage($messageId);
     if ($currentMessage) {
         $messageComments = $messageModel->getMessageComments($messageId);
+        $messageAttachments = $messageModel->getMessageAttachments($messageId);
     }
 }
 
@@ -258,6 +318,11 @@ ob_start();
                                     <i class="fas fa-comments"></i> <?= $msg['comment_count'] ?>
                                 </span>
                                 <?php endif; ?>
+                                <?php if ($msg['attachment_count'] > 0): ?>
+                                <span class="ml-2">
+                                    <i class="fas fa-paperclip"></i> <?= $msg['attachment_count'] ?>
+                                </span>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </a>
@@ -340,6 +405,69 @@ ob_start();
                         <?= nl2br(htmlspecialchars($currentMessage['message'])) ?>
                     </div>
                 </div>
+                
+                <!-- Message Attachments -->
+                <?php if (!empty($messageAttachments)): ?>
+                <div class="content">
+                    <h5 class="title is-6">
+                        <span class="icon"><i class="fas fa-paperclip"></i></span>
+                        Attachments (<?= count($messageAttachments) ?>)
+                    </h5>
+                    <div class="field is-grouped is-grouped-multiline">
+                        <?php foreach ($messageAttachments as $attachment): ?>
+                        <div class="control">
+                            <div class="card" style="width: 300px;">
+                                <div class="card-content">
+                                    <div class="media">
+                                        <div class="media-left">
+                                            <span class="icon is-large">
+                                                <?php if (FileUploader::isImage($attachment['mime_type'])): ?>
+                                                    <i class="fas fa-image fa-2x has-text-info"></i>
+                                                <?php elseif (strpos($attachment['mime_type'], 'pdf') !== false): ?>
+                                                    <i class="fas fa-file-pdf fa-2x has-text-danger"></i>
+                                                <?php elseif (strpos($attachment['mime_type'], 'video') !== false): ?>
+                                                    <i class="fas fa-video fa-2x has-text-primary"></i>
+                                                <?php elseif (strpos($attachment['mime_type'], 'audio') !== false): ?>
+                                                    <i class="fas fa-volume-up fa-2x has-text-warning"></i>
+                                                <?php elseif (strpos($attachment['mime_type'], 'zip') !== false || strpos($attachment['mime_type'], 'archive') !== false): ?>
+                                                    <i class="fas fa-file-archive fa-2x has-text-grey"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-file fa-2x has-text-grey-dark"></i>
+                                                <?php endif; ?>
+                                            </span>
+                                        </div>
+                                        <div class="media-content">
+                                            <p class="title is-6" style="word-break: break-word;"><?= htmlspecialchars($attachment['original_filename']) ?></p>
+                                            <p class="subtitle is-7">
+                                                <?= FileUploader::formatFileSize($attachment['file_size']) ?><br>
+                                                <small>Uploaded by <?= htmlspecialchars($attachment['uploaded_by_display_name']) ?></small><br>
+                                                <small><?= formatDateForUser($attachment['uploaded_at']) ?></small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="field is-grouped">
+                                        <div class="control">
+                                            <a href="../download-attachment.php?id=<?= $attachment['id'] ?>" 
+                                               class="button is-small is-primary">
+                                                <span class="icon"><i class="fas fa-download"></i></span>
+                                                <span>Download</span>
+                                            </a>
+                                        </div>
+                                        <div class="control">
+                                            <button class="button is-small is-danger" 
+                                                    onclick="deleteAttachment(<?= $attachment['id'] ?>)">
+                                                <span class="icon"><i class="fas fa-trash"></i></span>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 
                 <!-- Comments -->
                 <?php if (!empty($messageComments)): ?>
@@ -430,7 +558,7 @@ ob_start();
                 <?php if ($currentMessage['status'] !== 'closed'): ?>
                 <div class="content">
                     <h5 class="title is-6">Add Admin Response</h5>
-                    <form method="POST">
+                    <form method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="add_comment">
                         <input type="hidden" name="message_id" value="<?= $currentMessage['id'] ?>">
                         
@@ -441,6 +569,29 @@ ob_start();
                                           placeholder="Type your admin response here..." 
                                           rows="4" 
                                           required></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <label class="label">Attachments</label>
+                            <div class="control">
+                                <div class="file is-boxed">
+                                    <label class="file-label">
+                                        <input class="file-input" type="file" name="attachments[]" multiple 
+                                               accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.mp4,.avi,.mov,.wmv,.mp3,.wav,.ogg"
+                                               onchange="updateFileList(this)">
+                                        <span class="file-cta">
+                                            <span class="file-icon">
+                                                <i class="fas fa-upload"></i>
+                                            </span>
+                                            <span class="file-label">
+                                                Choose files…
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="file-list" class="mt-2"></div>
+                                <p class="help">Maximum file size: 1GB per file. Supported formats: Images, PDFs, Documents, Videos, Audio files, and Archives.</p>
                             </div>
                         </div>
                         
@@ -586,6 +737,125 @@ function archiveMessage(messageId) {
                 Swal.fire({
                     title: 'Error!',
                     text: 'Failed to archive the message. Please try again.',
+                    icon: 'error',
+                    customClass: {
+                        popup: 'has-text-dark',
+                        title: 'has-text-dark',
+                        htmlContainer: 'has-text-dark'
+                    }
+                });
+            });
+        }
+    });
+}
+
+// File upload functions
+function updateFileList(input) {
+    const fileList = document.getElementById('file-list');
+    fileList.innerHTML = '';
+    
+    if (input.files.length > 0) {
+        const container = document.createElement('div');
+        container.className = 'field is-grouped is-grouped-multiline';
+        
+        Array.from(input.files).forEach((file, index) => {
+            const control = document.createElement('div');
+            control.className = 'control';
+            
+            const tag = document.createElement('span');
+            tag.className = 'tag is-info is-medium';
+            tag.innerHTML = `
+                <span class="icon">
+                    <i class="fas fa-file"></i>
+                </span>
+                <span>${file.name} (${formatFileSize(file.size)})</span>
+                <button class="delete is-small" type="button" onclick="removeFile(${index})"></button>
+            `;
+            
+            control.appendChild(tag);
+            container.appendChild(control);
+        });
+        
+        fileList.appendChild(container);
+    }
+}
+
+function removeFile(index) {
+    const input = document.querySelector('input[name="attachments[]"]');
+    const dt = new DataTransfer();
+    
+    Array.from(input.files).forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    input.files = dt.files;
+    updateFileList(input);
+}
+
+function formatFileSize(bytes) {
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unitIndex = 0;
+    
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+    }
+    
+    return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
+}
+
+// Delete attachment function
+function deleteAttachment(attachmentId) {
+    Swal.fire({
+        title: 'Delete Attachment',
+        text: 'Are you sure you want to delete this attachment? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3273dc',
+        customClass: {
+            popup: 'has-text-dark',
+            title: 'has-text-dark',
+            htmlContainer: 'has-text-dark'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('action', 'delete_attachment');
+            formData.append('attachment_id', attachmentId);
+            
+            // Submit form
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'The attachment has been deleted successfully.',
+                        icon: 'success',
+                        customClass: {
+                            popup: 'has-text-dark',
+                            title: 'has-text-dark',
+                            htmlContainer: 'has-text-dark'
+                        }
+                    }).then(() => {
+                        // Reload the page to update the UI
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error('Delete failed');
+                }
+            }).catch(error => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to delete the attachment. Please try again.',
                     icon: 'error',
                     customClass: {
                         popup: 'has-text-dark',

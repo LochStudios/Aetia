@@ -178,6 +178,26 @@ class Database {
             
             $this->mysqli->query($createCommentsTable);
 
+            // Create message_attachments table
+            $createAttachmentsTable = "
+            CREATE TABLE IF NOT EXISTS message_attachments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                message_id INT NOT NULL,
+                user_id INT NOT NULL,
+                filename VARCHAR(255) NOT NULL,
+                original_filename VARCHAR(255) NOT NULL,
+                file_size INT NOT NULL,
+                mime_type VARCHAR(100) NOT NULL,
+                file_path VARCHAR(500) NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                INDEX idx_message_attachments (message_id),
+                INDEX idx_user_attachments (user_id)
+            )";
+            
+            $this->mysqli->query($createAttachmentsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();

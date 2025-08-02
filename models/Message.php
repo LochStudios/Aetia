@@ -56,7 +56,8 @@ class Message {
                 SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as created_by_username,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
-                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
+                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
                 WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'archived'";
@@ -253,7 +254,8 @@ class Message {
                        u.username as target_username, creator.username as created_by_username,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as target_display_name,
                        COALESCE(NULLIF(creator.social_username, ''), creator.username) as created_by_display_name,
-                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
+                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u ON m.user_id = u.id
                 LEFT JOIN users creator ON m.created_by = creator.id
@@ -472,7 +474,9 @@ class Message {
                        u_creator.first_name as creator_first_name, u_creator.last_name as creator_last_name,
                        u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name,
                        COALESCE(NULLIF(u_creator.social_username, ''), u_creator.username) as creator_display_name,
-                       COALESCE(NULLIF(u_archiver.social_username, ''), u_archiver.username) as archiver_display_name
+                       COALESCE(NULLIF(u_archiver.social_username, ''), u_archiver.username) as archiver_display_name,
+                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
@@ -508,7 +512,9 @@ class Message {
                        m.archived_at, m.archive_reason,
                        u_owner.first_name as owner_first_name, u_owner.last_name as owner_last_name,
                        u_creator.first_name as creator_first_name, u_creator.last_name as creator_last_name,
-                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name
+                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name,
+                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u_owner ON m.user_id = u_owner.id
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
@@ -553,6 +559,147 @@ class Message {
         } catch (Exception $e) {
             error_log("Get all archived messages error: " . $e->getMessage());
             return [];
+        }
+    }
+    
+    // Add attachment to message
+    public function addAttachment($messageId, $userId, $filename, $originalFilename, $fileSize, $mimeType, $filePath) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO message_attachments (message_id, user_id, filename, original_filename, file_size, mime_type, file_path)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->bind_param("iississ", $messageId, $userId, $filename, $originalFilename, $fileSize, $mimeType, $filePath);
+            $result = $stmt->execute();
+            
+            if ($result) {
+                $attachmentId = $this->mysqli->insert_id;
+                $stmt->close();
+                return ['success' => true, 'attachment_id' => $attachmentId];
+            } else {
+                $stmt->close();
+                return ['success' => false, 'message' => 'Failed to save attachment record'];
+            }
+        } catch (Exception $e) {
+            error_log("Add attachment error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+    
+    // Get attachments for a message
+    public function getMessageAttachments($messageId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT a.*, COALESCE(NULLIF(u.social_username, ''), u.username) as uploaded_by_display_name
+                FROM message_attachments a
+                LEFT JOIN users u ON a.user_id = u.id
+                WHERE a.message_id = ?
+                ORDER BY a.uploaded_at ASC
+            ");
+            
+            $stmt->bind_param("i", $messageId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $attachments = [];
+            while ($row = $result->fetch_assoc()) {
+                $attachments[] = $row;
+            }
+            
+            $stmt->close();
+            return $attachments;
+        } catch (Exception $e) {
+            error_log("Get message attachments error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Delete attachment
+    public function deleteAttachment($attachmentId, $userId = null) {
+        try {
+            $this->ensureConnection();
+            
+            // Get attachment info first
+            $stmt = $this->mysqli->prepare("SELECT * FROM message_attachments WHERE id = ?");
+            $stmt->bind_param("i", $attachmentId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $attachment = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$attachment) {
+                return ['success' => false, 'message' => 'Attachment not found'];
+            }
+            
+            // Check permissions if userId provided
+            if ($userId !== null && $attachment['user_id'] != $userId) {
+                return ['success' => false, 'message' => 'Permission denied'];
+            }
+            
+            // Delete from database
+            $stmt = $this->mysqli->prepare("DELETE FROM message_attachments WHERE id = ?");
+            $stmt->bind_param("i", $attachmentId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                // Delete physical file
+                if (file_exists($attachment['file_path'])) {
+                    unlink($attachment['file_path']);
+                }
+                
+                return ['success' => true];
+            } else {
+                return ['success' => false, 'message' => 'Failed to delete attachment'];
+            }
+        } catch (Exception $e) {
+            error_log("Delete attachment error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+    
+    // Get attachment by ID (for download/viewing)
+    public function getAttachment($attachmentId, $userId = null) {
+        try {
+            $this->ensureConnection();
+            
+            $query = "
+                SELECT a.*, m.user_id as message_owner_id, m.created_by as message_creator_id
+                FROM message_attachments a
+                JOIN messages m ON a.message_id = m.id
+                WHERE a.id = ?
+            ";
+            
+            $stmt = $this->mysqli->prepare($query);
+            $stmt->bind_param("i", $attachmentId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $attachment = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$attachment) {
+                return null;
+            }
+            
+            // Check permissions if userId provided
+            if ($userId !== null) {
+                // User can access attachment if they own the message or uploaded the attachment
+                if ($attachment['message_owner_id'] != $userId && 
+                    $attachment['message_creator_id'] != $userId && 
+                    $attachment['user_id'] != $userId) {
+                    return null;
+                }
+            }
+            
+            return $attachment;
+        } catch (Exception $e) {
+            error_log("Get attachment error: " . $e->getMessage());
+            return null;
         }
     }
 }
