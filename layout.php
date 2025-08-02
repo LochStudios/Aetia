@@ -16,7 +16,7 @@ if (!isset($content)) $content = '';
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/custom.css">
+    <link rel="stylesheet" href="../css/custom.css">
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
     <!-- Navigation Bar -->
