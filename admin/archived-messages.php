@@ -59,19 +59,19 @@ ob_start();
 ?>
 
 <div class="content">
-    <?php if ($message): ?>
+    <?php if (isset($_SESSION['message'])): ?>
     <div class="notification is-success is-light">
         <button class="delete"></button>
-        <?= htmlspecialchars($message) ?>
+        <?= htmlspecialchars($_SESSION['message']) ?>
     </div>
-    <?php endif; ?>
+    <?php unset($_SESSION['message']); endif; ?>
     
-    <?php if ($error): ?>
+    <?php if (isset($_SESSION['error'])): ?>
     <div class="notification is-danger is-light">
         <button class="delete"></button>
-        <?= htmlspecialchars($error) ?>
+        <?= htmlspecialchars($_SESSION['error']) ?>
     </div>
-    <?php endif; ?>
+    <?php unset($_SESSION['error']); endif; ?>
 
     <div class="level mb-4">
         <div class="level-left">
