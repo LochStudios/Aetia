@@ -58,75 +58,6 @@ $pageTitle = $currentMessage ? 'Archived: ' . htmlspecialchars($currentMessage['
 ob_start();
 ?>
 
-<style>
-.archived-badge {
-    background-color: #ff8c00;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.archive-reason {
-    font-style: italic;
-    color: #444;
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.archived-message-header {
-    background: linear-gradient(45deg, #ff8c00, #ffa500);
-    color: white;
-    padding: 1rem;
-    border-radius: 0.375rem;
-    margin-bottom: 1rem;
-}
-
-.archive-info {
-    background-color: #fff8e1;
-    border: 1px solid #ffcc02;
-    border-radius: 0.375rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    color: #333;
-}
-
-.archive-info strong {
-    color: #1a1a1a;
-    font-weight: 600;
-}
-
-.archive-info .column {
-    color: #2c2c2c;
-}
-
-.admin-badge {
-    background-color: #3273dc;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.message-item {
-    cursor: pointer;
-    border-radius: 0.375rem;
-    transition: all 0.2s ease;
-}
-
-.message-item:hover {
-    background-color: #f5f5f5;
-}
-
-.message-item.is-active {
-    background-color: #fff3cd;
-    border-left: 4px solid #ff8c00;
-}
-</style>
-
 <div class="content">
     <!-- Header -->
     <div class="level mb-4">
@@ -187,12 +118,12 @@ ob_start();
                 <?php if (!empty($archivedMessages)): ?>
                 <div class="message-list" style="max-height: 60vh; overflow-y: auto;">
                     <?php foreach ($archivedMessages as $msg): ?>
-                    <div class="message-item p-3 mb-2 <?= $messageId === $msg['id'] ? 'is-active' : '' ?>" 
+                    <div class="message-item p-3 mb-2 is-clickable has-background-white-ter <?= $messageId === $msg['id'] ? 'archive-message-active' : '' ?>" 
                          onclick="window.location.href='?id=<?= $msg['id'] ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?>'">
                         <div class="level is-mobile">
                             <div class="level-left" style="min-width: 0; flex: 1;">
                                 <div style="min-width: 0; width: 100%;">
-                                    <p class="title is-6 mb-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <p class="title is-6 mb-1 has-text-overflow-ellipsis">
                                         <?= htmlspecialchars($msg['subject']) ?>
                                     </p>
                                     <p class="subtitle is-7 has-text-grey-dark mb-1">
@@ -279,7 +210,7 @@ ob_start();
         <div class="column is-8">
             <?php if ($currentMessage): ?>
             <!-- Archived Message Header -->
-            <div class="archived-message-header">
+            <div class="archived-message-header has-text-white p-4 mb-4">
                 <h1 class="title is-4 has-text-white mb-2">
                     <span class="icon"><i class="fas fa-archive"></i></span>
                     Archived Message - Admin View
@@ -290,7 +221,7 @@ ob_start();
             </div>
             
             <!-- Archive Information -->
-            <div class="archive-info">
+            <div class="archive-info p-4 mb-4">
                 <h4 class="title is-6 mb-2">
                     <span class="icon"><i class="fas fa-info-circle"></i></span>
                     Archive Information
@@ -394,7 +325,7 @@ ob_start();
                                 <p>
                                     <strong><?= htmlspecialchars($comment['display_name']) ?></strong>
                                     <?php if ($comment['is_admin_comment']): ?>
-                                        <span class="admin-badge">Talant Team</span>
+                                        <span class="tag is-small is-primary">Talant Team</span>
                                     <?php endif; ?>
                                     <br>
                                     <?= nl2br(htmlspecialchars($comment['comment'])) ?>
