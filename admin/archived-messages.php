@@ -210,7 +210,7 @@ ob_start();
         <div class="column is-8">
             <?php if ($currentMessage): ?>
             <!-- Archived Message Header -->
-            <div class="archived-message-header has-text-white p-4 mb-4">
+            <div class="notification is-dark p-4 mb-4" style="border: 2px solid #ff8c00;">
                 <h1 class="title is-4 has-text-white mb-2">
                     <span class="icon"><i class="fas fa-archive"></i></span>
                     Archived Message
@@ -221,28 +221,28 @@ ob_start();
             </div>
             
             <!-- Archive Information -->
-            <div class="archive-info p-4 mb-4">
-                <h4 class="title is-6 mb-2">
+            <div class="box has-background-dark has-text-white p-4 mb-4" style="border: 2px solid #ff8c00;">
+                <h4 class="title is-6 mb-2 has-text-white">
                     <span class="icon"><i class="fas fa-info-circle"></i></span>
                     Archive Information
                 </h4>
                 <div class="columns">
-                    <div class="column">
-                        <strong>Archived:</strong> <?= formatDateForUser($currentMessage['archived_at'] ?? $currentMessage['updated_at']) ?>
+                    <div class="column has-text-white">
+                        <strong class="has-text-white">Archived:</strong> <?= formatDateForUser($currentMessage['archived_at'] ?? $currentMessage['updated_at']) ?>
                     </div>
-                    <div class="column">
-                        <strong>Archived By:</strong> 
+                    <div class="column has-text-white">
+                        <strong class="has-text-white">Archived By:</strong> 
                         <?php
                         // Need to get archiver info - for now show generic message
                         echo "System";
                         ?>
                     </div>
-                    <div class="column">
-                        <strong>Message Owner:</strong> <?= htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
+                    <div class="column has-text-white">
+                        <strong class="has-text-white">Message Owner:</strong> <?= htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
                     </div>
                     <?php if (!empty($currentMessage['archive_reason'])): ?>
-                    <div class="column is-full">
-                        <strong>Archive Reason:</strong> <?= nl2br(htmlspecialchars($currentMessage['archive_reason'])) ?>
+                    <div class="column is-full has-text-white">
+                        <strong class="has-text-white">Archive Reason:</strong> <?= nl2br(htmlspecialchars($currentMessage['archive_reason'])) ?>
                     </div>
                     <?php endif; ?>
                 </div>
