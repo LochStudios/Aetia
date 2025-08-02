@@ -1,8 +1,28 @@
 <?php
 // index.php - Homepage for Aetia Talant Agency
+session_start();
+
 $pageTitle = 'Home | Aetia Talant Agency';
 ob_start();
+
+// Check for login success message
+$loginSuccessMessage = '';
+if (isset($_SESSION['login_success'])) {
+    $loginSuccessMessage = $_SESSION['login_success'];
+    unset($_SESSION['login_success']);
+}
 ?>
+
+<?php if ($loginSuccessMessage): ?>
+<div class="notification is-success is-light mb-4">
+    <button class="delete"></button>
+    <span class="icon-text">
+        <span class="icon"><i class="fas fa-check-circle"></i></span>
+        <span><?= htmlspecialchars($loginSuccessMessage) ?></span>
+    </span>
+</div>
+<?php endif; ?>
+
 <section class="hero is-dark" style="min-height:60vh;display:flex;align-items:center;">
     <div class="hero-body py-4">
         <div class="container has-text-centered">
@@ -27,3 +47,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 include 'layout.php';
+?>
