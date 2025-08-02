@@ -11,11 +11,12 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/models/User.php';
 
 $userModel = new User();
-$user = $userModel->getUserById($_SESSION['user_id']);
-$socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
-
 $error_message = '';
 $success_message = '';
+
+// Get initial user data
+$user = $userModel->getUserById($_SESSION['user_id']);
+$socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
 
 // Process password change for manual accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
@@ -45,7 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if ($changeResult) {
                     // If this is the auto-generated admin account, mark setup as complete
                     if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated') {
-                        $userModel->markAdminSetupComplete($_SESSION['user_id']);
+                        $setupResult = $userModel->markAdminSetupComplete($_SESSION['user_id']);
+                        // Also set a session flag to immediately hide the warning
+                        $_SESSION['admin_setup_complete'] = true;
                     }
                     
                     $success_message = 'Password changed successfully!';
@@ -69,7 +72,7 @@ ob_start();
         Profile Settings
     </h2>
     
-    <?php if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated'): ?>
+    <?php if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated' && !isset($_SESSION['admin_setup_complete'])): ?>
     <div class="notification is-warning is-light mb-4">
         <div class="content">
             <p><strong><i class="fas fa-shield-alt"></i> Admin Security Notice</strong></p>
