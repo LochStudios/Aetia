@@ -169,7 +169,7 @@ class User {
         
         $socialDataJson = json_encode($socialData);
         $isPrimaryInt = $isPrimary ? 1 : 0;
-        $stmt->bind_param("issssssi", $userId, $platform, $socialId, $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $isPrimaryInt);
+        $stmt->bind_param("isssssssi", $userId, $platform, $socialId, $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $isPrimaryInt);
         $result = $stmt->execute();
         $stmt->close();
         
