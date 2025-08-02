@@ -113,9 +113,7 @@ class FileUploader {
         }
         
         // Check MIME type
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $mimeType = $this->getMimeType($file['tmp_name'], $file['name']);
         
         if (!in_array($mimeType, $this->allowedTypes)) {
             return ['success' => false, 'message' => 'File type not allowed'];
@@ -171,6 +169,65 @@ class FileUploader {
         }
         
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+    
+    /**
+     * Get MIME type with fallback for servers without fileinfo extension
+     * @param string $filePath - Path to the file
+     * @param string $fileName - Original filename
+     * @return string - MIME type
+     */
+    private function getMimeType($filePath, $fileName) {
+        // Try using fileinfo extension first (preferred method)
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mimeType = finfo_file($finfo, $filePath);
+                finfo_close($finfo);
+                if ($mimeType) {
+                    return $mimeType;
+                }
+            }
+        }
+        
+        // Fallback: Use file extension mapping
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $extensionToMime = [
+            // Images
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            
+            // Documents
+            'pdf' => 'application/pdf',
+            'txt' => 'text/plain',
+            'csv' => 'text/csv',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            
+            // Archives
+            'zip' => 'application/zip',
+            
+            // Video
+            'mp4' => 'video/mp4',
+            'avi' => 'video/avi',
+            'mov' => 'video/mov',
+            'wmv' => 'video/wmv',
+            
+            // Audio
+            'mp3' => 'audio/mp3',
+            'wav' => 'audio/wav',
+            'ogg' => 'audio/ogg'
+        ];
+        
+        // Return mapped MIME type or default
+        return $extensionToMime[$extension] ?? 'application/octet-stream';
     }
     
     /**
