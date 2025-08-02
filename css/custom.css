@@ -165,6 +165,13 @@
     object-fit: contain !important;
 }
 
+/* Form submission protection styling */
+button[disabled], input[disabled] {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
 /* Keyframe animations */
 @keyframes fadeIn {
     from { 

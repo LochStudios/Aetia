@@ -5,6 +5,7 @@ session_start();
 // Include timezone utilities
 require_once __DIR__ . '/includes/timezone.php';
 require_once __DIR__ . '/includes/FileUploader.php';
+require_once __DIR__ . '/includes/FormTokenManager.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -25,7 +26,19 @@ $error = '';
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
+        // Validate form token to prevent duplicate submissions
+        $formName = $_POST['form_name'] ?? '';
+        $formToken = $_POST['form_token'] ?? '';
+        
+        if (empty($formName) || empty($formToken)) {
+            $error = 'Invalid form submission. Please try again.';
+        } elseif (!FormTokenManager::validateToken($formName, $formToken)) {
+            $error = 'This form has already been submitted or has expired. Please refresh the page and try again.';
+        } elseif (FormTokenManager::isRecentSubmission($formName)) {
+            $error = 'Please wait a moment before submitting again.';
+        } else {
+            // Process the form action
+            switch ($_POST['action']) {
             case 'add_comment':
                 $messageId = intval($_POST['message_id']);
                 $comment = trim($_POST['comment']);
@@ -145,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Message not found or access denied';
                 }
                 break;
+            }
         }
     }
 }
@@ -638,6 +652,7 @@ ob_start();
                         <input type="hidden" name="action" value="add_comment">
                         <input type="hidden" name="message_id" value="<?= $currentMessage['id'] ?>">
                         <input type="hidden" name="UPLOAD_IDENTIFIER" id="upload-id" value="">
+                        <?= FormTokenManager::getTokenField('add_comment_' . $currentMessage['id']) ?>
                         
                         <div class="field">
                             <div class="control">
@@ -749,6 +764,18 @@ $content = ob_get_clean();
 ob_start();
 ?>
 <script>
+// Form tokens for JavaScript submissions
+const formTokens = {
+    createTeamMessage: {
+        token: '<?= FormTokenManager::generateToken('create_team_message') ?>',
+        name: 'create_team_message'
+    },
+    archiveMessage: {
+        token: '<?= $messageId ? FormTokenManager::generateToken('archive_message_' . $messageId) : '' ?>',
+        name: '<?= $messageId ? 'archive_message_' . $messageId : '' ?>'
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh message counts every 30 seconds
     setInterval(function() {
@@ -1099,6 +1126,19 @@ async function showNewMessageModal() {
         messageInput.value = formValues.message;
         form.appendChild(messageInput);
         
+        // Add form token
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'form_token';
+        tokenInput.value = formTokens.createTeamMessage.token;
+        form.appendChild(tokenInput);
+        
+        const tokenNameInput = document.createElement('input');
+        tokenNameInput.type = 'hidden';
+        tokenNameInput.name = 'form_name';
+        tokenNameInput.value = formTokens.createTeamMessage.name;
+        form.appendChild(tokenNameInput);
+        
         document.body.appendChild(form);
         form.submit();
     }
@@ -1154,6 +1194,10 @@ function archiveMessage(messageId) {
             if (result.value) {
                 formData.append('archive_reason', result.value);
             }
+            
+            // Add form token
+            formData.append('form_token', formTokens.archiveMessage.token);
+            formData.append('form_name', formTokens.archiveMessage.name);
             
             // Submit form
             fetch(window.location.href, {
@@ -1398,6 +1442,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Progress check failed:', error);
             });
     }
+    
+    // Prevent double submissions by disabling submit buttons after click
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+            submitButtons.forEach(button => {
+                if (!button.disabled) {
+                    button.disabled = true;
+                    button.textContent = button.textContent.includes('...') ? button.textContent : button.textContent + '...';
+                    // Re-enable after 3 seconds as a safety measure
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = button.textContent.replace('...', '');
+                    }, 3000);
+                }
+            });
+        });
+    });
 });
 </script>
 

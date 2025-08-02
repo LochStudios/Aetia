@@ -5,6 +5,7 @@ session_start();
 // Include timezone utilities
 require_once __DIR__ . '/../includes/timezone.php';
 require_once __DIR__ . '/../includes/FileUploader.php';
+require_once __DIR__ . '/../includes/FormTokenManager.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -33,7 +34,19 @@ $error = '';
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
+        // Validate form token to prevent duplicate submissions
+        $formName = $_POST['form_name'] ?? '';
+        $formToken = $_POST['form_token'] ?? '';
+        
+        if (empty($formName) || empty($formToken)) {
+            $error = 'Invalid form submission. Please try again.';
+        } elseif (!FormTokenManager::validateToken($formName, $formToken)) {
+            $error = 'This form has already been submitted or has expired. Please refresh the page and try again.';
+        } elseif (FormTokenManager::isRecentSubmission($formName)) {
+            $error = 'Please wait a moment before submitting again.';
+        } else {
+            // Process the form action
+            switch ($_POST['action']) {
             case 'add_comment':
                 $messageId = intval($_POST['message_id']);
                 $comment = trim($_POST['comment']);
@@ -121,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = $result['message'] ?? 'Failed to archive message';
                 }
                 break;
+            }
         }
     }
 }
@@ -347,6 +361,7 @@ ob_start();
                                 <form method="POST" class="inline-form">
                                     <input type="hidden" name="action" value="update_status">
                                     <input type="hidden" name="message_id" value="<?= $currentMessage['id'] ?>">
+                                    <?= FormTokenManager::getTokenField('update_status_' . $currentMessage['id']) ?>
                                     <div class="select">
                                         <select name="status" onchange="this.form.submit()">
                                             <option value="unread" <?= $currentMessage['status'] === 'unread' ? 'selected' : '' ?>>Unread</option>
@@ -578,6 +593,7 @@ ob_start();
                         <input type="hidden" name="action" value="add_comment">
                         <input type="hidden" name="message_id" value="<?= $currentMessage['id'] ?>">
                         <input type="hidden" name="UPLOAD_IDENTIFIER" id="upload-id" value="">
+                        <?= FormTokenManager::getTokenField('add_comment_' . $currentMessage['id']) ?>
                         
                         <div class="field">
                             <div class="control">
@@ -693,6 +709,13 @@ $content = ob_get_clean();
 ob_start();
 ?>
 <script>
+// Form tokens for JavaScript submissions
+const formTokens = {
+    archiveMessage: {
+        token: '<?= $messageId ? FormTokenManager::generateToken('archive_message_' . $messageId) : '' ?>',
+        name: '<?= $messageId ? 'archive_message_' . $messageId : '' ?>'
+    }
+};
 document.addEventListener('DOMContentLoaded', function() {
     // Real-time message updates
     <?php if ($messageId): ?>
@@ -1010,6 +1033,10 @@ function archiveMessage(messageId) {
                 formData.append('archive_reason', result.value);
             }
             
+            // Add form token
+            formData.append('form_token', formTokens.archiveMessage.token);
+            formData.append('form_name', formTokens.archiveMessage.name);
+            
             // Submit form
             fetch(window.location.href, {
                 method: 'POST',
@@ -1253,6 +1280,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Progress check failed:', error);
             });
     }
+    
+    // Prevent double submissions by disabling submit buttons after click
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+            submitButtons.forEach(button => {
+                if (!button.disabled) {
+                    button.disabled = true;
+                    button.textContent = button.textContent.includes('...') ? button.textContent : button.textContent + '...';
+                    // Re-enable after 3 seconds as a safety measure
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = button.textContent.replace('...', '');
+                    }, 3000);
+                }
+            });
+        });
+    });
 });
 </script>
 
