@@ -747,9 +747,18 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`api/check-new-messages.php?message_id=<?= $messageId ?>&last_check=${encodeURIComponent(lastCheckTime)}`)
             .then(response => response.json())
             .then(data => {
-                if (data.success && data.has_new_items) {
-                    appendNewMessages(data.new_items);
-                    lastCheckTime = data.last_check;
+                if (data.success) {
+                    if (data.has_new_items) {
+                        appendNewMessages(data.new_items);
+                    }
+                    
+                    if (data.has_new_attachments) {
+                        appendNewAttachments(data.new_attachments);
+                    }
+                    
+                    if (data.has_new_items || data.has_new_attachments) {
+                        lastCheckTime = data.last_check;
+                    }
                     
                     // Update message status if changed
                     updateMessageStatus(data.message_status);
@@ -861,6 +870,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 newStatus === 'archived' ? 'is-warning' : 'is-info'
             );
         }
+    }
+    
+    function appendNewAttachments(newAttachments) {
+        // Find or create the attachments section
+        let attachmentsSection = document.querySelector('.content h5.title.is-6');
+        let attachmentsContainer;
+        
+        if (!attachmentsSection || !attachmentsSection.textContent.includes('Attachments')) {
+            // Create new attachments section if it doesn't exist
+            const messageContent = document.querySelector('.content');
+            if (messageContent) {
+                const attachmentsSectionHTML = `
+                    <div class="content">
+                        <h5 class="title is-6">
+                            <span class="icon"><i class="fas fa-paperclip"></i></span>
+                            Attachments (${newAttachments.length})
+                        </h5>
+                        <div class="field is-grouped is-grouped-multiline">
+                        </div>
+                    </div>
+                `;
+                
+                // Insert before the discussion section
+                const discussionSection = document.querySelector('.content h4.title.is-5');
+                if (discussionSection) {
+                    discussionSection.parentElement.insertAdjacentHTML('beforebegin', attachmentsSectionHTML);
+                } else {
+                    messageContent.insertAdjacentHTML('beforeend', attachmentsSectionHTML);
+                }
+                
+                attachmentsSection = document.querySelector('.content h5.title.is-6');
+                attachmentsContainer = attachmentsSection.parentElement.querySelector('.field.is-grouped.is-grouped-multiline');
+            }
+        } else {
+            // Update existing attachments section
+            attachmentsContainer = attachmentsSection.parentElement.querySelector('.field.is-grouped.is-grouped-multiline');
+            
+            // Update the count in the title
+            const currentCount = attachmentsContainer.children.length;
+            const newCount = currentCount + newAttachments.length;
+            attachmentsSection.innerHTML = `
+                <span class="icon"><i class="fas fa-paperclip"></i></span>
+                Attachments (${newCount})
+            `;
+        }
+        
+        // Add each new attachment
+        newAttachments.forEach(attachment => {
+            const attachmentHtml = createAttachmentHTML(attachment);
+            attachmentsContainer.insertAdjacentHTML('beforeend', attachmentHtml);
+        });
+    }
+    
+    function createAttachmentHTML(attachment) {
+        let iconClass = 'fas fa-file fa-2x has-text-grey-dark';
+        
+        if (attachment.is_image) {
+            iconClass = 'fas fa-image fa-2x has-text-info';
+        } else if (attachment.mime_type.includes('pdf')) {
+            iconClass = 'fas fa-file-pdf fa-2x has-text-danger';
+        } else if (attachment.mime_type.includes('video')) {
+            iconClass = 'fas fa-video fa-2x has-text-primary';
+        } else if (attachment.mime_type.includes('audio')) {
+            iconClass = 'fas fa-volume-up fa-2x has-text-warning';
+        } else if (attachment.mime_type.includes('zip') || attachment.mime_type.includes('archive')) {
+            iconClass = 'fas fa-file-archive fa-2x has-text-grey';
+        }
+        
+        return `
+            <div class="control" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
+                <div class="card" style="width: 300px;">
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <span class="icon is-large">
+                                    <i class="${iconClass}"></i>
+                                </span>
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-6" style="word-break: break-word;">${attachment.original_filename}</p>
+                                <p class="subtitle is-7">
+                                    ${attachment.formatted_file_size}<br>
+                                    <small>Uploaded by ${attachment.display_name}</small><br>
+                                    <small>${attachment.formatted_date}</small>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <a href="download-attachment.php?id=${attachment.id}" 
+                                   class="button is-small is-primary">
+                                    <span class="icon"><i class="fas fa-download"></i></span>
+                                    <span>Download</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
     
     // Start checking for new messages every 5 seconds

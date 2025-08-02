@@ -266,6 +266,39 @@ class Message {
         }
     }
     
+    // Get new message attachments (non-discussion files) since a specific timestamp
+    public function getNewMessageAttachments($messageId, $sinceDateTime) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT ma.id, ma.filename, ma.original_filename, ma.file_size, 
+                       ma.mime_type, ma.file_path, ma.uploaded_at,
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name
+                FROM message_attachments ma
+                LEFT JOIN users u ON ma.user_id = u.id
+                WHERE ma.message_id = ? AND ma.uploaded_at > ?
+                ORDER BY ma.uploaded_at ASC
+            ");
+            
+            $stmt->bind_param("is", $messageId, $sinceDateTime);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $attachments = [];
+            while ($row = $result->fetch_assoc()) {
+                $attachments[] = $row;
+            }
+            
+            $stmt->close();
+            return $attachments;
+        } catch (Exception $e) {
+            error_log("Get new message attachments error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
     // Get message status
     public function getMessageStatus($messageId) {
         try {

@@ -44,8 +44,11 @@ try {
     
     // Get new discussion items (comments and images) since last check
     $newItems = [];
+    $newAttachments = [];
     if ($lastCheckDateTime) {
         $newItems = $messageModel->getNewDiscussionItems($messageId, $lastCheckDateTime);
+        // Get new message attachments (non-image files uploaded to the main message)
+        $newAttachments = $messageModel->getNewMessageAttachments($messageId, $lastCheckDateTime);
     }
     
     // Get current message status in case it changed
@@ -57,7 +60,9 @@ try {
         'message_id' => $messageId,
         'message_status' => $messageStatus,
         'new_items' => [],
+        'new_attachments' => [],
         'has_new_items' => count($newItems) > 0,
+        'has_new_attachments' => count($newAttachments) > 0,
         'last_check' => date('c'), // ISO 8601 format
         'server_time' => date('Y-m-d H:i:s')
     ];
@@ -84,6 +89,22 @@ try {
         }
         
         $response['new_items'][] = $formattedItem;
+    }
+    
+    // Format new attachments for display
+    foreach ($newAttachments as $attachment) {
+        $formattedAttachment = [
+            'id' => $attachment['id'],
+            'original_filename' => $attachment['original_filename'],
+            'file_size' => $attachment['file_size'],
+            'mime_type' => $attachment['mime_type'],
+            'uploaded_at' => $attachment['uploaded_at'],
+            'formatted_file_size' => FileUploader::formatFileSize($attachment['file_size']),
+            'formatted_date' => formatDateForUser($attachment['uploaded_at']),
+            'is_image' => strpos($attachment['mime_type'], 'image/') === 0
+        ];
+        
+        $response['new_attachments'][] = $formattedAttachment;
     }
     
     echo json_encode($response);
