@@ -376,7 +376,7 @@ ob_start();
                                                 <span class="tag is-info is-small ml-1">Admin</span>
                                             <?php endif; ?>
                                         </div>
-                                        <small class="has-text-grey">
+                                        <small class="has-text-dark">
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
                                     </div>

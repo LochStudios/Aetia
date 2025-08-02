@@ -252,7 +252,7 @@ ob_start();
                                             <span class="tag is-small is-primary">Talant Team</span>
                                         <?php endif; ?>
                                     </div>
-                                    <small class="has-text-grey">
+                                    <small class="has-text-dark">
                                         <?= formatDateForUser($comment['created_at']) ?>
                                     </small>
                                 </div>
