@@ -504,15 +504,16 @@ ob_start();
                         
                         <div class="field">
                             <div class="control is-flex is-justify-content-space-between">
-                                <button class="button is-primary" type="submit">
-                                    <span class="icon"><i class="fas fa-reply"></i></span>
-                                    <span>Send Response</span>
-                                </button>
-                                
                                 <!-- Archive Message Button -->
                                 <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
                                     <span class="icon"><i class="fas fa-archive"></i></span>
                                     <span>Archive Message</span>
+                                </button>
+                                
+                                <!-- Send Response Button -->
+                                <button class="button is-primary" type="submit">
+                                    <span class="icon"><i class="fas fa-reply"></i></span>
+                                    <span>Send Response</span>
                                 </button>
                             </div>
                         </div>
