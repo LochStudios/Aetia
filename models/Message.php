@@ -2,14 +2,17 @@
 // models/Message.php - Message model for handling user messages and comments
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/User.php';
 
 class Message {
     private $database;
     private $mysqli;
+    private $userModel;
     
     public function __construct() {
         $this->database = new Database();
         $this->mysqli = $this->database->getConnection();
+        $this->userModel = new User();
     }
     
     // Ensure database connection is active
@@ -117,9 +120,18 @@ class Message {
             ";
             
             if ($userId !== null) {
-                $query .= " AND (m.user_id = ? OR m.created_by = ?)";
-                $stmt = $this->mysqli->prepare($query);
-                $stmt->bind_param("iii", $messageId, $userId, $userId);
+                // Check if user is admin first
+                $isAdmin = $this->userModel->isUserAdmin($userId);
+                // If not admin, restrict access to messages the user owns or created
+                if (!$isAdmin) {
+                    $query .= " AND (m.user_id = ? OR m.created_by = ?)";
+                    $stmt = $this->mysqli->prepare($query);
+                    $stmt->bind_param("iii", $messageId, $userId, $userId);
+                } else {
+                    // Admin can access any message
+                    $stmt = $this->mysqli->prepare($query);
+                    $stmt->bind_param("i", $messageId);
+                }
             } else {
                 $stmt = $this->mysqli->prepare($query);
                 $stmt->bind_param("i", $messageId);
@@ -790,8 +802,13 @@ class Message {
             }
             
             // Check permissions if userId provided
-            if ($userId !== null && $attachment['user_id'] != $userId) {
-                return ['success' => false, 'message' => 'Permission denied'];
+            if ($userId !== null) {
+                // Check if user is admin first
+                $isAdmin = $this->userModel->isUserAdmin($userId);
+                // If not admin, check if user owns the attachment
+                if (!$isAdmin && $attachment['user_id'] != $userId) {
+                    return ['success' => false, 'message' => 'Permission denied'];
+                }
             }
             
             // Delete from database
@@ -841,7 +858,14 @@ class Message {
             
             // Check permissions if userId provided
             if ($userId !== null) {
-                // User can access attachment if they own the message or uploaded the attachment
+                // Check if user is admin first
+                $isAdmin = $this->userModel->isUserAdmin($userId);
+                // Admin users can access all attachments
+                if ($isAdmin) {
+                    return $attachment;
+                }
+                
+                // Regular users can access attachment if they own the message, created the message, or uploaded the attachment
                 if ($attachment['message_owner_id'] != $userId && 
                     $attachment['message_creator_id'] != $userId && 
                     $attachment['user_id'] != $userId) {
