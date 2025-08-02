@@ -2,6 +2,9 @@
 // archived-message-view.php - View individual archived messages
 session_start();
 
+// Include timezone utilities
+require_once __DIR__ . '/includes/timezone.php';
+
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
     header('Location: login.php');
