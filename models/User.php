@@ -361,6 +361,8 @@ class User {
     // Change user password
     public function changePassword($userId, $newPassword) {
         try {
+            $this->ensureConnection();
+            
             $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
             
             $stmt = $this->mysqli->prepare("
@@ -377,6 +379,126 @@ class User {
         } catch (Exception $e) {
             error_log("Password change error: " . $e->getMessage());
             return false;
+        }
+    }
+    
+    // Generate password reset token
+    public function generatePasswordResetToken($email) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if user exists and is active
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username FROM users 
+                WHERE email = ? AND is_active = 1 AND account_type = 'manual'
+            ");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                $stmt->close();
+                return ['success' => false, 'message' => 'No account found with that email address.'];
+            }
+            
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            // Generate secure token
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            
+            // Store the token
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO password_reset_tokens (user_id, token, expires_at) 
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE 
+                token = VALUES(token), 
+                expires_at = VALUES(expires_at), 
+                created_at = NOW()
+            ");
+            $stmt->bind_param("iss", $user['id'], $token, $expiresAt);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                return [
+                    'success' => true, 
+                    'token' => $token,
+                    'username' => $user['username'],
+                    'user_id' => $user['id']
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Failed to generate reset token.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Password reset token generation error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred. Please try again.'];
+        }
+    }
+    
+    // Validate password reset token
+    public function validatePasswordResetToken($token) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT u.id, u.username, u.email, prt.expires_at
+                FROM password_reset_tokens prt
+                JOIN users u ON prt.user_id = u.id
+                WHERE prt.token = ? AND prt.expires_at > NOW() AND u.is_active = 1
+            ");
+            $stmt->bind_param("s", $token);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                $stmt->close();
+                return ['success' => true, 'user' => $user];
+            } else {
+                $stmt->close();
+                return ['success' => false, 'message' => 'Invalid or expired reset token.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Password reset token validation error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred. Please try again.'];
+        }
+    }
+    
+    // Reset password using token
+    public function resetPasswordWithToken($token, $newPassword) {
+        try {
+            $this->ensureConnection();
+            
+            // Validate token first
+            $tokenValidation = $this->validatePasswordResetToken($token);
+            if (!$tokenValidation['success']) {
+                return $tokenValidation;
+            }
+            
+            $userId = $tokenValidation['user']['id'];
+            
+            // Change password
+            $passwordChangeResult = $this->changePassword($userId, $newPassword);
+            
+            if ($passwordChangeResult) {
+                // Delete the used token
+                $stmt = $this->mysqli->prepare("DELETE FROM password_reset_tokens WHERE token = ?");
+                $stmt->bind_param("s", $token);
+                $stmt->execute();
+                $stmt->close();
+                
+                return ['success' => true, 'message' => 'Password reset successfully.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to reset password.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Password reset error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred. Please try again.'];
         }
     }
 }
