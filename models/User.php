@@ -515,9 +515,10 @@ class User {
             
             $stmt->bind_param("i", $userId);
             $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
             
-            return $result;
+            return $result && $affectedRows > 0;
         } catch (Exception $e) {
             error_log("Mark admin setup complete error: " . $e->getMessage());
             return false;
