@@ -42,6 +42,15 @@ if (!isset($content)) $content = '';
           <div class="navbar-item">
             <div class="buttons">
               <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+                <?php 
+                // Check if user is admin for navigation
+                $showAdminLink = false;
+                if (isset($_SESSION['user_id'])) {
+                    require_once __DIR__ . '/models/User.php';
+                    $userModel = new User();
+                    $showAdminLink = $userModel->isUserAdmin($_SESSION['user_id']);
+                }
+                ?>
                 <div class="dropdown is-hoverable">
                   <div class="dropdown-trigger">
                     <button class="button is-light is-small" aria-haspopup="true" aria-controls="dropdown-menu">
@@ -68,6 +77,12 @@ if (!isset($content)) $content = '';
                         <span class="icon"><i class="fas fa-user-cog"></i></span>
                         <span>Profile Settings</span>
                       </a>
+                      <?php if ($showAdminLink): ?>
+                      <a href="admin/pending-users.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-users-cog"></i></span>
+                        <span>Admin Panel</span>
+                      </a>
+                      <?php endif; ?>
                       <hr class="dropdown-divider">
                       <a href="logout.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
