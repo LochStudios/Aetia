@@ -320,6 +320,56 @@ class User {
         return $connections;
     }
     
+    // Link a social account to an existing user
+    public function linkSocialAccount($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if this social account is already linked to another user
+            $stmt = $this->mysqli->prepare("
+                SELECT user_id FROM social_connections 
+                WHERE platform = ? AND social_id = ?
+            ");
+            $stmt->bind_param("ss", $platform, $socialId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existingConnection = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($existingConnection && $existingConnection['user_id'] != $userId) {
+                return ['success' => false, 'message' => 'This ' . ucfirst($platform) . ' account is already linked to another user.'];
+            }
+            
+            // Check if user already has this platform linked
+            $stmt = $this->mysqli->prepare("
+                SELECT id FROM social_connections 
+                WHERE user_id = ? AND platform = ?
+            ");
+            $stmt->bind_param("is", $userId, $platform);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existingPlatform = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($existingPlatform) {
+                return ['success' => false, 'message' => 'You already have a ' . ucfirst($platform) . ' account linked.'];
+            }
+            
+            // Add the social connection
+            $connectionResult = $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, false);
+            
+            if ($connectionResult) {
+                return ['success' => true, 'message' => ucfirst($platform) . ' account linked successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to link ' . ucfirst($platform) . ' account.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Link social account error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while linking the account.'];
+        }
+    }
+    
     // Get all pending users for admin review
     public function getPendingUsers() {
         $stmt = $this->mysqli->prepare("
@@ -674,6 +724,185 @@ class User {
         } catch (Exception $e) {
             error_log("Mark admin setup complete error: " . $e->getMessage());
             return false;
+        }
+    }
+    
+    // Link a social account to an existing user
+    public function linkSocialAccount($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if this social account is already linked to another user
+            $stmt = $this->mysqli->prepare("
+                SELECT user_id FROM social_connections 
+                WHERE platform = ? AND social_id = ?
+            ");
+            $stmt->bind_param("ss", $platform, $socialId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existingConnection = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($existingConnection && $existingConnection['user_id'] != $userId) {
+                return ['success' => false, 'message' => 'This ' . ucfirst($platform) . ' account is already linked to another user.'];
+            }
+            
+            // Check if user already has this platform linked
+            $stmt = $this->mysqli->prepare("
+                SELECT id FROM social_connections 
+                WHERE user_id = ? AND platform = ?
+            ");
+            $stmt->bind_param("is", $userId, $platform);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existingPlatform = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($existingPlatform) {
+                return ['success' => false, 'message' => 'You already have a ' . ucfirst($platform) . ' account linked. Please unlink it first.'];
+            }
+            
+            // Add the social connection
+            $connectionResult = $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, false);
+            
+            if ($connectionResult) {
+                return ['success' => true, 'message' => ucfirst($platform) . ' account linked successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to link ' . ucfirst($platform) . ' account.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Link social account error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while linking the account.'];
+        }
+    }
+    
+    // Unlink a social account from a user
+    public function unlinkSocialAccount($userId, $platform) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if this is the only/primary social connection for a social-only account
+            $stmt = $this->mysqli->prepare("
+                SELECT account_type, password_hash FROM users WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($user['account_type'] !== 'manual' && empty($user['password_hash'])) {
+                // Check how many social connections they have
+                $stmt = $this->mysqli->prepare("
+                    SELECT COUNT(*) as count FROM social_connections WHERE user_id = ?
+                ");
+                $stmt->bind_param("i", $userId);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $count = $result->fetch_assoc()['count'];
+                $stmt->close();
+                
+                if ($count <= 1) {
+                    return ['success' => false, 'message' => 'Cannot unlink your only social account. Please link another account or set a password first.'];
+                }
+            }
+            
+            // Remove the social connection
+            $stmt = $this->mysqli->prepare("
+                DELETE FROM social_connections 
+                WHERE user_id = ? AND platform = ?
+            ");
+            $stmt->bind_param("is", $userId, $platform);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                return ['success' => true, 'message' => ucfirst($platform) . ' account unlinked successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to unlink ' . ucfirst($platform) . ' account.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Unlink social account error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while unlinking the account.'];
+        }
+    }
+    
+    // Get available platforms for linking (platforms not yet linked by user)
+    public function getAvailablePlatformsForLinking($userId) {
+        try {
+            $this->ensureConnection();
+            
+            $allPlatforms = ['twitch', 'discord', 'youtube', 'twitter', 'instagram'];
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT platform FROM social_connections WHERE user_id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $linkedPlatforms = [];
+            while ($row = $result->fetch_assoc()) {
+                $linkedPlatforms[] = $row['platform'];
+            }
+            $stmt->close();
+            
+            return array_diff($allPlatforms, $linkedPlatforms);
+            
+        } catch (Exception $e) {
+            error_log("Get available platforms error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Set a social connection as primary
+    public function setPrimarySocialConnection($userId, $platform) {
+        try {
+            $this->ensureConnection();
+            
+            // Start transaction
+            $this->mysqli->begin_transaction();
+            
+            // First, unset all primary flags for this user
+            $stmt = $this->mysqli->prepare("
+                UPDATE social_connections 
+                SET is_primary = 0 
+                WHERE user_id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result1 = $stmt->execute();
+            $stmt->close();
+            
+            if (!$result1) {
+                $this->mysqli->rollback();
+                return ['success' => false, 'message' => 'Failed to update primary status.'];
+            }
+            
+            // Set the specified platform as primary
+            $stmt = $this->mysqli->prepare("
+                UPDATE social_connections 
+                SET is_primary = 1 
+                WHERE user_id = ? AND platform = ?
+            ");
+            $stmt->bind_param("is", $userId, $platform);
+            $result2 = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+            
+            if ($result2 && $affectedRows > 0) {
+                $this->mysqli->commit();
+                return ['success' => true, 'message' => ucfirst($platform) . ' set as primary account successfully!'];
+            } else {
+                $this->mysqli->rollback();
+                return ['success' => false, 'message' => 'Failed to set primary account or account not found.'];
+            }
+            
+        } catch (Exception $e) {
+            $this->mysqli->rollback();
+            error_log("Set primary social connection error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while setting primary account.'];
         }
     }
 }

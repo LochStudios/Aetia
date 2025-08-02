@@ -106,7 +106,7 @@ class Database {
             CREATE TABLE IF NOT EXISTS social_connections (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
-                platform ENUM('twitch', 'youtube', 'twitter', 'instagram') NOT NULL,
+                platform ENUM('twitch', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL,
                 social_id VARCHAR(100) NOT NULL,
                 social_username VARCHAR(100),
                 access_token TEXT,

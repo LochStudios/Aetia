@@ -62,6 +62,32 @@ class DiscordOAuth {
         return $this->baseUrl . '/authorize?' . http_build_query($params);
     }
     
+    // Get authorization URL for linking accounts (different redirect URI)
+    public function getLinkAuthorizationUrl($state = null) {
+        // Generate a secure random state if not provided
+        if ($state === null) {
+            $state = bin2hex(random_bytes(32)); // 64 character hex string
+        }
+        
+        // Store state in session for later validation
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['discord_link_state'] = $state;
+        
+        $linkRedirectUri = str_replace('discord-callback.php', 'discord-link-callback.php', $this->redirectUri);
+        
+        $params = [
+            'client_id' => $this->clientId,
+            'redirect_uri' => $linkRedirectUri,
+            'response_type' => 'code',
+            'scope' => implode(' ', $this->scopes),
+            'state' => $state
+        ];
+        
+        return $this->baseUrl . '/authorize?' . http_build_query($params);
+    }
+    
     // Exchange authorization code for access token
     public function getAccessToken($code) {
         $data = [

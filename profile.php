@@ -12,14 +12,79 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 }
 
 require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/services/TwitchOAuth.php';
+require_once __DIR__ . '/services/DiscordOAuth.php';
 
 $userModel = new User();
 $error_message = '';
 $success_message = '';
 
+// Check for linking success/error messages
+if (isset($_SESSION['link_success'])) {
+    $success_message = $_SESSION['link_success'];
+    unset($_SESSION['link_success']);
+}
+
+if (isset($_SESSION['link_error'])) {
+    $error_message = $_SESSION['link_error'];
+    unset($_SESSION['link_error']);
+}
+
 // Get initial user data
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
+
+// Handle unlinking social accounts
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_social') {
+    $platform = $_POST['platform'] ?? '';
+    
+    if (!empty($platform)) {
+        $result = $userModel->unlinkSocialAccount($_SESSION['user_id'], $platform);
+        
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh data
+            $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
+            $availablePlatforms = $userModel->getAvailablePlatformsForLinking($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
+
+// Handle setting primary social account
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_primary_social') {
+    $platform = $_POST['platform'] ?? '';
+    
+    if (!empty($platform)) {
+        $result = $userModel->setPrimarySocialConnection($_SESSION['user_id'], $platform);
+        
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh data
+            $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
+
+// Handle setting primary social account
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_primary_social') {
+    $platform = $_POST['platform'] ?? '';
+    
+    if (!empty($platform)) {
+        $result = $userModel->setPrimarySocialConnection($_SESSION['user_id'], $platform);
+        
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh data
+            $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
 
 // Process password change for manual accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
@@ -233,14 +298,17 @@ ob_start();
             <?php if (!empty($socialConnections)): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">Connected Social Accounts</h4>
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
+                        Connected Social Accounts
+                    </h4>
                     
                     <?php foreach ($socialConnections as $connection): ?>
                     <div class="notification is-dark mb-3">
                         <div class="level">
                             <div class="level-left">
                                 <div class="level-item">
-                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'youtube' ? 'danger' : ($connection['platform'] === 'twitter' ? 'info' : 'warning')) ?>">
+                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : ($connection['platform'] === 'youtube' ? 'danger' : ($connection['platform'] === 'twitter' ? 'info' : 'warning'))) ?>">
                                         <i class="fab fa-<?= $connection['platform'] ?> fa-2x"></i>
                                     </span>
                                 </div>
@@ -248,15 +316,48 @@ ob_start();
                                     <div>
                                         <p class="title is-6 has-text-light"><?= ucfirst($connection['platform']) ?></p>
                                         <p class="subtitle is-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                                        <p class="is-size-7 has-text-grey-light">Connected <?= formatDateForUser($connection['created_at']) ?></p>
                                     </div>
                                 </div>
                             </div>
                             <div class="level-right">
                                 <div class="level-item">
-                                    <?php if ($connection['is_primary']): ?>
-                                        <span class="tag is-primary">Primary</span>
-                                    <?php endif; ?>
-                                    <span class="tag is-success">Connected</span>
+                                    <div class="field is-grouped">
+                                        <?php if ($connection['is_primary']): ?>
+                                            <div class="control">
+                                                <span class="tag is-primary">Primary</span>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="control">
+                                                <form method="post" style="display: inline;">
+                                                    <input type="hidden" name="action" value="set_primary_social">
+                                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                                    <button type="submit" class="button is-small is-warning">
+                                                        <span class="icon is-small">
+                                                            <i class="fas fa-star"></i>
+                                                        </span>
+                                                        <span>Set Primary</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="control">
+                                            <span class="tag is-success">Connected</span>
+                                        </div>
+                                        <div class="control">
+                                            <form method="post" style="display: inline;">
+                                                <input type="hidden" name="action" value="unlink_social">
+                                                <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                                <button type="submit" class="button is-small is-danger" 
+                                                        onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-unlink"></i>
+                                                    </span>
+                                                    <span>Unlink</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -265,6 +366,73 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
+            
+            <!-- Link Additional Social Accounts -->
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-success"><i class="fas fa-plus-circle"></i></span>
+                        Link Additional Social Accounts
+                    </h4>
+                    
+                    <div class="notification is-info is-light mb-4">
+                        <div class="content">
+                            <p><strong>Link Multiple Accounts:</strong> You can connect accounts from different platforms even if they use different email addresses.</p>
+                            <p>This allows you to access your account through any of your connected social platforms.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons">
+                        <?php
+                        // Check if user already has Twitch linked
+                        $hasTwitch = false;
+                        $hasDiscord = false;
+                        foreach ($socialConnections as $conn) {
+                            if ($conn['platform'] === 'twitch') $hasTwitch = true;
+                            if ($conn['platform'] === 'discord') $hasDiscord = true;
+                        }
+                        ?>
+                        
+                        <?php if (!$hasTwitch): ?>
+                            <?php
+                            try {
+                                $twitchOAuth = new TwitchOAuth();
+                                $twitchLinkUrl = $twitchOAuth->getLinkAuthorizationUrl();
+                            } catch (Exception $e) {
+                                $twitchLinkUrl = null;
+                            }
+                            ?>
+                            <?php if ($twitchLinkUrl): ?>
+                            <a href="<?= htmlspecialchars($twitchLinkUrl) ?>" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fab fa-twitch"></i>
+                                </span>
+                                <span>Link Twitch</span>
+                            </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        
+                        <?php if (!$hasDiscord): ?>
+                            <?php
+                            try {
+                                $discordOAuth = new DiscordOAuth();
+                                $discordLinkUrl = $discordOAuth->getLinkAuthorizationUrl();
+                            } catch (Exception $e) {
+                                $discordLinkUrl = null;
+                            }
+                            ?>
+                            <?php if ($discordLinkUrl): ?>
+                            <a href="<?= htmlspecialchars($discordLinkUrl) ?>" class="button is-info">
+                                <span class="icon">
+                                    <i class="fab fa-discord"></i>
+                                </span>
+                                <span>Link Discord</span>
+                            </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
