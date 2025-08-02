@@ -1186,6 +1186,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadPercentage.textContent = '100%';
                 
                 setTimeout(() => {
+                    // Hide progress bar before reload
+                    uploadProgress.classList.add('upload-progress-hidden');
                     // Reload page to show new content
                     window.location.reload();
                 }, 1000);
@@ -1199,6 +1201,11 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadProgress.querySelector('.notification').classList.remove('is-info');
             uploadProgress.querySelector('.notification').classList.add('is-danger');
             submitButton.disabled = false;
+            
+            // Hide progress bar after a delay to show error message
+            setTimeout(() => {
+                uploadProgress.classList.add('upload-progress-hidden');
+            }, 3000);
         });
     }
     
