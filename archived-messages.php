@@ -306,15 +306,15 @@ ob_start();
             
             <?php else: ?>
             <!-- No Message Selected -->
-            <div class="box has-text-centered">
-                <span class="icon is-large has-text-white">
+            <div class="panel-block is-flex-direction-column has-text-centered p-5">
+                <span class="icon is-large has-text-white mb-4">
                     <i class="fas fa-archive fa-4x"></i>
                 </span>
-                <h3 class="title is-4 has-text-white">Select an Archived Message</h3>
-                <p class="has-text-white">Choose a message from the sidebar to view its archived content.</p>
+                <h3 class="title is-4 has-text-white mb-4">Select an Archived Message</h3>
+                <p class="has-text-white mb-4">Choose a message from the sidebar to view its archived content.</p>
                 <?php if (empty($archivedMessages)): ?>
-                <p class="has-text-white mt-4">You don't have any archived messages yet.</p>
-                <a href="messages.php" class="button is-primary mt-4">
+                <p class="has-text-white mb-4">You don't have any archived messages yet.</p>
+                <a href="messages.php" class="button is-primary">
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>View Active Messages</span>
                 </a>

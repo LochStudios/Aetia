@@ -373,21 +373,20 @@ ob_start();
             
             <?php else: ?>
             <!-- No message selected -->
-            <div class="box has-text-centered">
+            <div class="archive-message-item p-5 has-text-centered">
                 <span class="icon is-large has-text-white">
                     <i class="fas fa-archive fa-3x"></i>
                 </span>
-                <h3 class="title is-4 has-text-white">Select an Archived Message</h3>
+                <h3 class="title is-4 has-text-white mb-4">Select an Archived Message</h3>
                 <?php if (!empty($archivedMessages)): ?>
-                <p class="has-text-white">Click on a message from the sidebar to view its details and discussion history.</p>
+                <p class="has-text-white mb-4">Click on a message from the sidebar to view its details and discussion history.</p>
                 <?php else: ?>
-                <p class="has-text-white">No archived messages found.</p>
+                <p class="has-text-white mb-2">No archived messages found.</p>
                 <?php if ($tagFilter): ?>
-                <p class="has-text-white">Try adjusting your filters or check different criteria.</p>
+                <p class="has-text-white mb-4">Try adjusting your filters or check different criteria.</p>
                 <?php else: ?>
-                <p class="has-text-white">When messages are archived, they will appear in the sidebar for viewing.</p>
+                <p class="has-text-white mb-4">When messages are archived, they will appear in the sidebar for viewing.</p>
                 <?php endif; ?>
-                <br>
                 <a href="messages.php" class="button is-primary">
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>View Active Messages</span>
