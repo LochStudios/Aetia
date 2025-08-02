@@ -136,6 +136,9 @@ class Database {
             
             $this->mysqli->query($createPasswordResetTable);
 
+            // Add new columns to existing users table (for existing databases)
+            $this->addMissingColumns();
+
             // Create initial admin user if no users exist
             $this->createInitialAdmin();
             
@@ -193,6 +196,36 @@ class Database {
         }
         
         return $password;
+    }
+    
+    // Add missing columns to existing users table
+    private function addMissingColumns() {
+        try {
+            // Check if columns exist and add them if they don't
+            $columnsToAdd = [
+                'verified_date' => 'TIMESTAMP NULL',
+                'verified_by' => 'VARCHAR(100)',
+                'deactivation_reason' => 'TEXT',
+                'deactivated_by' => 'VARCHAR(100)',
+                'deactivation_date' => 'TIMESTAMP NULL'
+            ];
+            
+            foreach ($columnsToAdd as $columnName => $columnDefinition) {
+                // Check if column exists
+                $checkColumn = "SHOW COLUMNS FROM users LIKE '{$columnName}'";
+                $result = $this->mysqli->query($checkColumn);
+                
+                if ($result->num_rows == 0) {
+                    // Column doesn't exist, add it
+                    $alterQuery = "ALTER TABLE users ADD COLUMN {$columnName} {$columnDefinition}";
+                    $this->mysqli->query($alterQuery);
+                    error_log("Added column '{$columnName}' to users table");
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Add missing columns error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
     }
 }
 ?>
