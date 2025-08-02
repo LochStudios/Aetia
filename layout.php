@@ -33,10 +33,10 @@ if (!isset($content)) $content = '';
       </div>
       <div id="navbarBasic" class="navbar-menu">
         <div class="navbar-start">
-          <a class="navbar-item" href="index.php">Home</a>
-          <a class="navbar-item" href="about.php">About</a>
-          <a class="navbar-item" href="services.php">Services</a>
-          <a class="navbar-item" href="contact.php">Contact</a>
+          <a class="navbar-item" href="../index.php">Home</a>
+          <a class="navbar-item" href="../about.php">About</a>
+          <a class="navbar-item" href="../services.php">Services</a>
+          <a class="navbar-item" href="../contact.php">Contact</a>
         </div>
         <div class="navbar-end">
           <div class="navbar-item">
@@ -73,7 +73,7 @@ if (!isset($content)) $content = '';
                         </p>
                       </div>
                       <hr class="dropdown-divider">
-                      <a href="profile.php" class="dropdown-item">
+                      <a href="../profile.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-user-cog"></i></span>
                         <span>Profile Settings</span>
                       </a>
@@ -84,7 +84,7 @@ if (!isset($content)) $content = '';
                       </a>
                       <?php endif; ?>
                       <hr class="dropdown-divider">
-                      <a href="logout.php" class="dropdown-item">
+                      <a href="../logout.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
                         <span>Logout</span>
                       </a>
@@ -92,7 +92,7 @@ if (!isset($content)) $content = '';
                   </div>
                 </div>
               <?php else: ?>
-                <a class="button is-primary is-small" href="login.php">
+                <a class="button is-primary is-small" href="../login.php">
                   <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
                   <span>Login</span>
                 </a>
