@@ -180,9 +180,10 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-include '../layout.php';
-?>
 
+// Start output buffering for scripts
+ob_start();
+?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Handle Mark Contact buttons
@@ -278,3 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<?php
+$scripts = ob_get_clean();
+include '../layout.php';
+?>

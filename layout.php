@@ -125,7 +125,7 @@ if (!isset($content)) $content = '';
         </p>
       </div>
     </footer>
-    <script src="js/navbar.js"></script>
+    <script src="../js/navbar.js"></script>
     <script>
         // Handle notification dismissal
         document.addEventListener('DOMContentLoaded', function() {
@@ -137,5 +137,8 @@ if (!isset($content)) $content = '';
             });
         });
     </script>
+    <?php if (isset($scripts) && !empty($scripts)): ?>
+    <?= $scripts ?>
+    <?php endif; ?>
 </body>
 </html>
