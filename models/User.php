@@ -48,7 +48,7 @@ class User {
     public function authenticateManualUser($username, $password) {
         try {
             $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, password_hash, first_name, last_name, profile_image, is_active 
+                SELECT id, username, email, password_hash, first_name, last_name, profile_image, approval_status, is_admin, is_active 
                 FROM users 
                 WHERE (username = ? OR email = ?) AND account_type = 'manual' AND is_active = 1
             ");
@@ -61,6 +61,14 @@ class User {
             
             if ($user && password_verify($password, $user['password_hash'])) {
                 unset($user['password_hash']); // Remove password hash from returned data
+                
+                // Check approval status
+                if ($user['approval_status'] === 'pending') {
+                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms.'];
+                } elseif ($user['approval_status'] === 'rejected') {
+                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talant@aetia.com.au for more information.'];
+                }
+                
                 return ['success' => true, 'user' => $user];
             } else {
                 return ['success' => false, 'message' => 'Invalid credentials'];
@@ -87,6 +95,13 @@ class User {
             $stmt->close();
             
             if ($existingUser) {
+                // Check approval status for existing user
+                if ($existingUser['approval_status'] === 'pending') {
+                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms.'];
+                } elseif ($existingUser['approval_status'] === 'rejected') {
+                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talant@aetia.com.au for more information.'];
+                }
+                
                 // Update existing social connection
                 $this->updateSocialConnection($existingUser['id'], $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt);
                 return ['success' => true, 'user' => $existingUser, 'action' => 'updated'];
@@ -241,6 +256,90 @@ class User {
         
         $stmt->close();
         return $connections;
+    }
+    
+    // Get all pending users for admin review
+    public function getPendingUsers() {
+        $stmt = $this->mysqli->prepare("
+            SELECT id, username, email, first_name, last_name, account_type, social_username, 
+                   created_at, contact_attempted, contact_date 
+            FROM users 
+            WHERE approval_status = 'pending' 
+            ORDER BY created_at ASC
+        ");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $pendingUsers = [];
+        while ($row = $result->fetch_assoc()) {
+            $pendingUsers[] = $row;
+        }
+        
+        $stmt->close();
+        return $pendingUsers;
+    }
+    
+    // Approve a user
+    public function approveUser($userId, $approvedBy) {
+        $stmt = $this->mysqli->prepare("
+            UPDATE users 
+            SET approval_status = 'approved', approval_date = CURRENT_TIMESTAMP, approved_by = ?
+            WHERE id = ?
+        ");
+        $stmt->bind_param("si", $approvedBy, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    // Reject a user
+    public function rejectUser($userId, $rejectionReason, $approvedBy) {
+        $stmt = $this->mysqli->prepare("
+            UPDATE users 
+            SET approval_status = 'rejected', approval_date = CURRENT_TIMESTAMP, 
+                rejection_reason = ?, approved_by = ?
+            WHERE id = ?
+        ");
+        $stmt->bind_param("ssi", $rejectionReason, $approvedBy, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    // Mark contact attempt
+    public function markContactAttempt($userId, $contactNotes = '') {
+        $stmt = $this->mysqli->prepare("
+            UPDATE users 
+            SET contact_attempted = TRUE, contact_date = CURRENT_TIMESTAMP, contact_notes = ?
+            WHERE id = ?
+        ");
+        $stmt->bind_param("si", $contactNotes, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    // Check if user is admin
+    public function isUserAdmin($userId) {
+        $stmt = $this->mysqli->prepare("SELECT is_admin FROM users WHERE id = ? AND is_active = 1");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        
+        return $user && $user['is_admin'] == 1;
+    }
+    
+    // Get user admin status along with other details
+    public function getUserWithAdminStatus($userId) {
+        $stmt = $this->mysqli->prepare("SELECT id, username, email, first_name, last_name, is_admin, approval_status FROM users WHERE id = ? AND is_active = 1");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        return $user;
     }
 }
 ?>
