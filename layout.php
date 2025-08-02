@@ -67,7 +67,7 @@ if (!isset($content)) $content = '';
                   </div>
                   <div class="dropdown-menu" id="dropdown-menu" role="menu">
                     <div class="dropdown-content">
-                      <div class="dropdown-item">
+                      <div class="dropdown-item is-static">
                         <p class="is-size-7 has-text-grey">
                           Logged in via <?= ucfirst($_SESSION['account_type'] ?? 'manual') ?>
                         </p>
