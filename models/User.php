@@ -95,6 +95,8 @@ class User {
     // Create or update social user
     public function createOrUpdateSocialUser($platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
         try {
+            $this->ensureConnection();
+            
             // Check if user exists with this social account
             $stmt = $this->mysqli->prepare("
                 SELECT u.* FROM users u 
@@ -116,7 +118,10 @@ class User {
                 }
                 
                 // Update existing social connection
-                $this->updateSocialConnection($existingUser['id'], $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt);
+                $updateResult = $this->updateSocialConnection($existingUser['id'], $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt);
+                if (!$updateResult) {
+                    return ['success' => false, 'message' => 'Failed to update social connection'];
+                }
                 return ['success' => true, 'user' => $existingUser, 'action' => 'updated'];
             } else {
                 // Create new user
@@ -138,7 +143,10 @@ class User {
                     $stmt->close();
                     
                     // Add social connection
-                    $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, true);
+                    $connectionResult = $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, true);
+                    if (!$connectionResult) {
+                        return ['success' => false, 'message' => 'Failed to create social connection'];
+                    }
                     
                     // Get the created user
                     $stmt = $this->mysqli->prepare("SELECT * FROM users WHERE id = ?");
@@ -150,46 +158,76 @@ class User {
                     
                     return ['success' => true, 'user' => $user, 'action' => 'created'];
                 } else {
+                    $error = $this->mysqli->error;
                     $stmt->close();
-                    return ['success' => false, 'message' => 'Failed to create social account'];
+                    error_log("Failed to create social user - MySQL error: " . $error);
+                    return ['success' => false, 'message' => 'Failed to create social account: ' . $error];
                 }
             }
         } catch (Exception $e) {
-            error_log("Social user error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Social authentication failed'];
+            error_log("Social user error: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine());
+            return ['success' => false, 'message' => 'Social authentication failed: ' . $e->getMessage()];
         }
     }
     
     // Add social connection to existing user
     private function addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, $isPrimary = false) {
-        $stmt = $this->mysqli->prepare("
-            INSERT INTO social_connections (user_id, platform, social_id, social_username, access_token, refresh_token, expires_at, social_data, is_primary) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $socialDataJson = json_encode($socialData);
-        $isPrimaryInt = $isPrimary ? 1 : 0;
-        $stmt->bind_param("isssssssi", $userId, $platform, $socialId, $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $isPrimaryInt);
-        $result = $stmt->execute();
-        $stmt->close();
-        
-        return $result;
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO social_connections (user_id, platform, social_id, social_username, access_token, refresh_token, expires_at, social_data, is_primary) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $socialDataJson = json_encode($socialData);
+            $isPrimaryInt = $isPrimary ? 1 : 0;
+            $stmt->bind_param("isssssssi", $userId, $platform, $socialId, $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $isPrimaryInt);
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                $error = $this->mysqli->error;
+                error_log("Failed to add social connection - MySQL error: " . $error);
+                $stmt->close();
+                return false;
+            }
+            
+            $stmt->close();
+            return true;
+        } catch (Exception $e) {
+            error_log("Add social connection error: " . $e->getMessage());
+            return false;
+        }
     }
     
     // Update existing social connection
     private function updateSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt) {
-        $stmt = $this->mysqli->prepare("
-            UPDATE social_connections 
-            SET social_username = ?, access_token = ?, refresh_token = ?, expires_at = ?, social_data = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = ? AND platform = ? AND social_id = ?
-        ");
-        
-        $socialDataJson = json_encode($socialData);
-        $stmt->bind_param("sssssiss", $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $userId, $platform, $socialId);
-        $result = $stmt->execute();
-        $stmt->close();
-        
-        return $result;
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE social_connections 
+                SET social_username = ?, access_token = ?, refresh_token = ?, expires_at = ?, social_data = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND platform = ? AND social_id = ?
+            ");
+            
+            $socialDataJson = json_encode($socialData);
+            $stmt->bind_param("sssssiss", $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $userId, $platform, $socialId);
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                $error = $this->mysqli->error;
+                error_log("Failed to update social connection - MySQL error: " . $error);
+                $stmt->close();
+                return false;
+            }
+            
+            $stmt->close();
+            return true;
+        } catch (Exception $e) {
+            error_log("Update social connection error: " . $e->getMessage());
+            return false;
+        }
     }
     
     // Check if user exists
