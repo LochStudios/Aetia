@@ -396,6 +396,28 @@ class User {
         return $user;
     }
     
+    // Mark user as admin (also approves them if pending)
+    public function markUserAsAdmin($userId, $approvedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_admin = 1, 
+                    approval_status = 'approved', 
+                    approval_date = CURRENT_TIMESTAMP, 
+                    approved_by = ?
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $approvedBy, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Mark user as admin error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
     // Change user password
     public function changePassword($userId, $newPassword) {
         try {

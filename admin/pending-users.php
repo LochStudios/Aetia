@@ -50,6 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             $message = 'Error marking contact attempt.';
         }
+    } elseif ($_POST['action'] === 'mark_admin') {
+        if ($userModel->markUserAsAdmin($userId, $adminName)) {
+            $message = 'User marked as admin and approved successfully!';
+        } else {
+            $message = 'Error marking user as admin.';
+        }
     }
 }
 
@@ -160,6 +166,16 @@ ob_start();
                     </button>
                 </form>
                 
+                <!-- Mark as Admin -->
+                <form method="POST" style="display:inline;" id="admin-form-<?= $user['id'] ?>">
+                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                    <input type="hidden" name="action" value="mark_admin">
+                    <button class="button is-info is-small admin-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                        <span class="icon"><i class="fas fa-crown"></i></span>
+                        <span>Mark as Admin</span>
+                    </button>
+                </form>
+                
                 <!-- Reject User -->
                 <form method="POST" style="display:inline;" id="reject-form-<?= $user['id'] ?>">
                     <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
@@ -238,6 +254,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById(`approve-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    
+    // Handle Mark as Admin buttons
+    document.querySelectorAll('.admin-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            
+            Swal.fire({
+                title: 'Mark as Admin?',
+                html: `Are you sure you want to mark <strong>${username}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3e8ed0',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-crown"></i> Yes, Make Admin',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-info',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`admin-form-${userId}`).submit();
                 }
             });
         });
