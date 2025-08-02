@@ -44,6 +44,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Message marked as read';
                 }
                 break;
+                
+            case 'create_team_message':
+                $subject = trim($_POST['subject']);
+                $messageText = trim($_POST['message']);
+                $priority = $_POST['priority'] ?? 'normal';
+                
+                if (!empty($subject) && !empty($messageText)) {
+                    // Find the first admin user to send the message to
+                    $adminUser = $userModel->getFirstAdmin();
+                    if ($adminUser) {
+                        $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $priority, $userId);
+                        if ($result['success']) {
+                            $message = 'Message sent to Talant Team successfully!';
+                            // Redirect to view the new message
+                            header('Location: messages.php?id=' . $result['message_id']);
+                            exit;
+                        } else {
+                            $error = $result['message'] ?? 'Failed to send message';
+                        }
+                    } else {
+                        $error = 'No admin users available to receive messages';
+                    }
+                } else {
+                    $error = 'Subject and message are required';
+                }
+                break;
         }
     }
 }
@@ -111,6 +137,14 @@ ob_start();
                             <span class="tag is-info"><?= array_sum($messageCounts) ?></span>
                         </div>
                     </div>
+                </div>
+                
+                <!-- New Talant Team Message Button -->
+                <div class="field mb-4">
+                    <button class="button is-primary is-fullwidth" onclick="showNewMessageModal()">
+                        <span class="icon"><i class="fas fa-plus"></i></span>
+                        <span>New Talant Team Message</span>
+                    </button>
                 </div>
                 
                 <?php if (empty($messages)): ?>
@@ -331,6 +365,92 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+async function showNewMessageModal() {
+    const { value: formValues } = await Swal.fire({
+        title: 'New Talant Team Message',
+        html: `
+            <div class="field">
+                <label class="label has-text-left">Subject</label>
+                <div class="control">
+                    <input id="swal-subject" class="input" type="text" placeholder="Enter message subject">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label has-text-left">Message</label>
+                <div class="control">
+                    <textarea id="swal-message" class="textarea" rows="5" placeholder="Enter your message to the Talant Team"></textarea>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Send Message',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#3273dc',
+        preConfirm: () => {
+            const subject = document.getElementById('swal-subject').value;
+            const message = document.getElementById('swal-message').value;
+            
+            if (!subject || !message) {
+                Swal.showValidationMessage('Please fill in both subject and message');
+                return false;
+            }
+            
+            if (subject.trim().length < 3) {
+                Swal.showValidationMessage('Subject must be at least 3 characters long');
+                return false;
+            }
+            
+            if (message.trim().length < 10) {
+                Swal.showValidationMessage('Message must be at least 10 characters long');
+                return false;
+            }
+            
+            return {
+                subject: subject.trim(),
+                message: message.trim()
+            };
+        }
+    });
+
+    if (formValues) {
+        // Show loading
+        Swal.fire({
+            title: 'Sending...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Submit the form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'create_team_message';
+        form.appendChild(actionInput);
+        
+        const subjectInput = document.createElement('input');
+        subjectInput.type = 'hidden';
+        subjectInput.name = 'subject';
+        subjectInput.value = formValues.subject;
+        form.appendChild(subjectInput);
+        
+        const messageInput = document.createElement('input');
+        messageInput.type = 'hidden';
+        messageInput.name = 'message';
+        messageInput.value = formValues.message;
+        form.appendChild(messageInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 <?php
 $scripts = ob_get_clean();

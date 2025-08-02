@@ -478,6 +478,28 @@ class User {
         }
     }
     
+    // Get first admin user for receiving team messages
+    public function getFirstAdmin() {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name 
+                FROM users 
+                WHERE is_admin = 1 AND is_active = 1 
+                ORDER BY id ASC 
+                LIMIT 1
+            ");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $admin = $result->fetch_assoc();
+            $stmt->close();
+            return $admin;
+        } catch (Exception $e) {
+            error_log("Get first admin error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
     // Change user password
     public function changePassword($userId, $newPassword) {
         try {
