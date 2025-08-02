@@ -119,10 +119,63 @@ class Database {
             
             $this->mysqli->query($createSocialTable);
             
+            // Create initial admin user if no users exist
+            $this->createInitialAdmin();
+            
         } catch (Exception $e) {
             error_log("Auto table initialization error: " . $e->getMessage());
             // Don't throw exception - let the app continue even if tables exist
         }
+    }
+    
+    // Create initial admin user on first setup
+    private function createInitialAdmin() {
+        try {
+            // Check if any users exist
+            $result = $this->mysqli->query("SELECT COUNT(*) as count FROM users");
+            $count = $result->fetch_assoc()['count'];
+            
+            if ($count == 0) {
+                // Generate random 16 character password
+                $adminPassword = $this->generateRandomPassword(16);
+                $passwordHash = password_hash($adminPassword, PASSWORD_DEFAULT);
+                
+                // Create admin user
+                $stmt = $this->mysqli->prepare("
+                    INSERT INTO users (username, email, password_hash, account_type, approval_status, is_admin, is_verified, is_active, first_name, last_name, approved_by) 
+                    VALUES ('admin', 'admin@aetia.com.au', ?, 'manual', 'approved', 1, 1, 1, 'System', 'Administrator', 'Auto-Generated')
+                ");
+                
+                $stmt->bind_param("s", $passwordHash);
+                $result = $stmt->execute();
+                $stmt->close();
+                
+                if ($result) {
+                    // Store the password in a temporary file for display on login page
+                    $tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
+                    file_put_contents($tempPasswordFile, $adminPassword);
+                    chmod($tempPasswordFile, 0600); // Secure permissions
+                    
+                    error_log("Initial admin user created - Username: admin, Password stored in temp file");
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Initial admin creation error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Generate random password
+    private function generateRandomPassword($length = 16) {
+        $characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        $password = '';
+        $charactersLength = strlen($characters);
+        
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $characters[random_int(0, $charactersLength - 1)];
+        }
+        
+        return $password;
     }
 }
 ?>
