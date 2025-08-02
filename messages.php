@@ -145,16 +145,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Message not found or access denied';
                 }
                 break;
-                
-            case 'delete_attachment':
-                $attachmentId = intval($_POST['attachment_id']);
-                $result = $messageModel->deleteAttachment($attachmentId, $userId);
-                if ($result['success']) {
-                    $message = 'Attachment deleted successfully!';
-                } else {
-                    $error = $result['message'] ?? 'Failed to delete attachment';
-                }
-                break;
         }
     }
 }
@@ -512,15 +502,6 @@ ob_start();
                                                 <span>Download</span>
                                             </a>
                                         </div>
-                                        <?php if ($attachment['user_id'] == $userId): ?>
-                                        <div class="control">
-                                            <button class="button is-small is-danger" 
-                                                    onclick="deleteAttachment(<?= $attachment['id'] ?>)">
-                                                <span class="icon"><i class="fas fa-trash"></i></span>
-                                                <span>Delete</span>
-                                            </button>
-                                        </div>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -1012,67 +993,6 @@ function formatFileSize(bytes) {
     }
     
     return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
-}
-
-// Delete attachment function
-function deleteAttachment(attachmentId) {
-    Swal.fire({
-        title: 'Delete Attachment',
-        text: 'Are you sure you want to delete this attachment? This action cannot be undone.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3273dc',
-        customClass: {
-            popup: 'has-text-dark',
-            title: 'has-text-dark',
-            htmlContainer: 'has-text-dark'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Create form data
-            const formData = new FormData();
-            formData.append('action', 'delete_attachment');
-            formData.append('attachment_id', attachmentId);
-            
-            // Submit form
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: 'The attachment has been deleted successfully.',
-                        icon: 'success',
-                        customClass: {
-                            popup: 'has-text-dark',
-                            title: 'has-text-dark',
-                            htmlContainer: 'has-text-dark'
-                        }
-                    }).then(() => {
-                        // Reload the page to update the UI
-                        window.location.reload();
-                    });
-                } else {
-                    throw new Error('Delete failed');
-                }
-            }).catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to delete the attachment. Please try again.',
-                    icon: 'error',
-                    customClass: {
-                        popup: 'has-text-dark',
-                        title: 'has-text-dark',
-                        htmlContainer: 'has-text-dark'
-                    }
-                });
-            });
-        }
-    });
 }
 </script>
 
