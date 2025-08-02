@@ -341,5 +341,27 @@ class User {
         $stmt->close();
         return $user;
     }
+    
+    // Change user password
+    public function changePassword($userId, $newPassword) {
+        try {
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET password_hash = ?
+                WHERE id = ? AND is_active = 1
+            ");
+            
+            $stmt->bind_param("si", $passwordHash, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Password change error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>
