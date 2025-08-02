@@ -65,7 +65,7 @@ ob_start();
 
 <div class="columns">
     <!-- Sidebar -->
-    <div class="column is-one-quarter">
+    <div class="column is-4">
         <div class="box" style="position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto;">
             <h3 class="title is-4 mb-4">
                 <span class="icon"><i class="fas fa-archive"></i></span>
@@ -163,7 +163,7 @@ ob_start();
     </div>
     
     <!-- Main Content -->
-    <div class="column">
+    <div class="column is-8">
         <?php if ($currentMessage): ?>
         <!-- Individual Archived Message View -->
         <div class="box">

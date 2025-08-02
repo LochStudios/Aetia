@@ -158,7 +158,7 @@ ob_start();
     <div class="columns">
         <!-- Messages List Sidebar -->
         <div class="column is-4">
-            <div class="box">
+            <div class="box" style="position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto;">
                 <div class="level mb-4">
                     <div class="level-left">
                         <h3 class="title is-4 has-text-info mb-0">
@@ -257,7 +257,7 @@ ob_start();
                 <?php else: ?>
                 
                 <!-- Messages List -->
-                <div class="panel">
+                <div class="panel" style="max-height: 300px; overflow-y: auto;">
                     <?php foreach ($messages as $msg): ?>
                     <a class="panel-block <?= $msg['id'] == $messageId ? 'is-active' : '' ?>" 
                        href="?id=<?= $msg['id'] ?><?= $sidebarPage > 1 ? '&sidebar_page=' . $sidebarPage : '' ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $priorityFilter ? '&priority=' . urlencode($priorityFilter) : '' ?>">
