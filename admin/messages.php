@@ -366,14 +366,14 @@ ob_start();
                         </figure>
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-<?= $comment['is_admin_comment'] ? 'info-light' : 'light' ?>">
+                                <div class="box has-background-<?= $comment['is_admin_comment'] ? 'info-light' : 'light' ?> <?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
                                     <p>
-                                        <strong><?= htmlspecialchars($comment['username']) ?></strong>
+                                        <strong class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= htmlspecialchars($comment['username']) ?></strong>
                                         <?php if ($comment['is_admin_comment']): ?>
                                             <span class="tag is-info is-small ml-1">Admin</span>
                                         <?php endif; ?>
                                         <br>
-                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                        <span class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= nl2br(htmlspecialchars($comment['comment'])) ?></span>
                                         <br>
                                         <small class="has-text-grey">
                                             <?= formatDateForUser($comment['created_at']) ?>
