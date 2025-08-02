@@ -14,6 +14,44 @@ $userModel = new User();
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
 
+$error_message = '';
+$success_message = '';
+
+// Process password change for manual accounts
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
+    if ($user['account_type'] !== 'manual') {
+        $error_message = 'Password change is only available for manual accounts.';
+    } else {
+        $currentPassword = trim($_POST['current_password'] ?? '');
+        $newPassword = trim($_POST['new_password'] ?? '');
+        $confirmPassword = trim($_POST['confirm_password'] ?? '');
+        
+        if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+            $error_message = 'Please fill in all password fields.';
+        } elseif ($newPassword !== $confirmPassword) {
+            $error_message = 'New passwords do not match.';
+        } elseif (strlen($newPassword) < 8) {
+            $error_message = 'New password must be at least 8 characters long.';
+        } else {
+            // Verify current password
+            $authResult = $userModel->authenticateManualUser($user['username'], $currentPassword);
+            
+            if (!$authResult['success']) {
+                $error_message = 'Current password is incorrect.';
+            } else {
+                // Change password
+                $changeResult = $userModel->changePassword($_SESSION['user_id'], $newPassword);
+                
+                if ($changeResult) {
+                    $success_message = 'Password changed successfully!';
+                } else {
+                    $error_message = 'Failed to change password. Please try again.';
+                }
+            }
+        }
+    }
+}
+
 $pageTitle = 'Profile | Aetia Talant Agency';
 ob_start();
 ?>
@@ -30,6 +68,20 @@ ob_start();
             <p>You are logged in with the auto-generated admin account. For security purposes, please change your password immediately.</p>
             <p>Consider creating a personalized admin account and disabling this default account after setup is complete.</p>
         </div>
+    </div>
+    <?php endif; ?>
+    
+    <?php if ($error_message): ?>
+    <div class="notification is-danger is-light mb-4">
+        <button class="delete"></button>
+        <?= htmlspecialchars($error_message) ?>
+    </div>
+    <?php endif; ?>
+    
+    <?php if ($success_message): ?>
+    <div class="notification is-success is-light mb-4">
+        <button class="delete"></button>
+        <?= htmlspecialchars($success_message) ?>
     </div>
     <?php endif; ?>
     
@@ -102,6 +154,67 @@ ob_start();
                     </div>
                 </div>
             </div>
+            
+            <?php if ($user['account_type'] === 'manual'): ?>
+            <div class="card mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 mb-4">
+                        <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
+                        Change Password
+                    </h4>
+                    
+                    <div class="notification is-info is-light mb-4">
+                        <div class="content">
+                            <p>For security, please enter your current password to confirm changes.</p>
+                            <p>Your new password must be at least 8 characters long.</p>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="change_password">
+                        
+                        <div class="field">
+                            <label class="label">Current Password</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="password" name="current_password" placeholder="Enter current password" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <label class="label">New Password</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <label class="label">Confirm New Password</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-warning" type="submit">
+                                    <span class="icon"><i class="fas fa-check"></i></span>
+                                    <span>Change Password</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <?php if (!empty($socialConnections)): ?>
             <div class="card mt-4">
