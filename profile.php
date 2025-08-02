@@ -43,7 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $changeResult = $userModel->changePassword($_SESSION['user_id'], $newPassword);
                 
                 if ($changeResult) {
+                    // If this is the auto-generated admin account, mark setup as complete
+                    if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated') {
+                        $userModel->markAdminSetupComplete($_SESSION['user_id']);
+                    }
+                    
                     $success_message = 'Password changed successfully!';
+                    
+                    // Refresh user data to reflect changes in the UI
+                    $user = $userModel->getUserById($_SESSION['user_id']);
                 } else {
                     $error_message = 'Failed to change password. Please try again.';
                 }
