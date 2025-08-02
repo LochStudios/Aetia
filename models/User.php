@@ -727,56 +727,6 @@ class User {
         }
     }
     
-    // Link a social account to an existing user
-    public function linkSocialAccount($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
-        try {
-            $this->ensureConnection();
-            
-            // Check if this social account is already linked to another user
-            $stmt = $this->mysqli->prepare("
-                SELECT user_id FROM social_connections 
-                WHERE platform = ? AND social_id = ?
-            ");
-            $stmt->bind_param("ss", $platform, $socialId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $existingConnection = $result->fetch_assoc();
-            $stmt->close();
-            
-            if ($existingConnection && $existingConnection['user_id'] != $userId) {
-                return ['success' => false, 'message' => 'This ' . ucfirst($platform) . ' account is already linked to another user.'];
-            }
-            
-            // Check if user already has this platform linked
-            $stmt = $this->mysqli->prepare("
-                SELECT id FROM social_connections 
-                WHERE user_id = ? AND platform = ?
-            ");
-            $stmt->bind_param("is", $userId, $platform);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $existingPlatform = $result->fetch_assoc();
-            $stmt->close();
-            
-            if ($existingPlatform) {
-                return ['success' => false, 'message' => 'You already have a ' . ucfirst($platform) . ' account linked. Please unlink it first.'];
-            }
-            
-            // Add the social connection
-            $connectionResult = $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, false);
-            
-            if ($connectionResult) {
-                return ['success' => true, 'message' => ucfirst($platform) . ' account linked successfully!'];
-            } else {
-                return ['success' => false, 'message' => 'Failed to link ' . ucfirst($platform) . ' account.'];
-            }
-            
-        } catch (Exception $e) {
-            error_log("Link social account error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'An error occurred while linking the account.'];
-        }
-    }
-    
     // Unlink a social account from a user
     public function unlinkSocialAccount($userId, $platform) {
         try {
