@@ -19,21 +19,34 @@ document.addEventListener('DOMContentLoaded', () => {
   dropdowns.forEach(dropdown => {
     const trigger = dropdown.querySelector('.dropdown-trigger button');
     const menu = dropdown.querySelector('.dropdown-menu');
+    let closeTimeout;
     
-    // Ensure dropdown shows on hover
+    // Clear any existing timeout
+    const clearCloseTimeout = () => {
+      if (closeTimeout) {
+        clearTimeout(closeTimeout);
+        closeTimeout = null;
+      }
+    };
+    
+    // Show dropdown immediately on hover
     dropdown.addEventListener('mouseenter', () => {
+      clearCloseTimeout();
       dropdown.classList.add('is-active');
     });
     
-    // Hide dropdown when mouse leaves
+    // Hide dropdown with delay when mouse leaves
     dropdown.addEventListener('mouseleave', () => {
-      dropdown.classList.remove('is-active');
+      closeTimeout = setTimeout(() => {
+        dropdown.classList.remove('is-active');
+      }, 500); // 500ms delay
     });
     
     // Toggle dropdown on click for mobile/touch devices
     if (trigger) {
       trigger.addEventListener('click', (e) => {
         e.preventDefault();
+        clearCloseTimeout();
         dropdown.classList.toggle('is-active');
       });
     }
@@ -41,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       if (!dropdown.contains(e.target)) {
+        clearCloseTimeout();
         dropdown.classList.remove('is-active');
       }
     });
