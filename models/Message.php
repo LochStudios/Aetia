@@ -21,7 +21,7 @@ class Message {
     }
     
     // Create a new message
-    public function createMessage($userId, $subject, $message, $priority = 'normal', $createdBy, $tags = null) {
+    public function createMessage($userId, $subject, $message, $createdBy, $priority = 'normal', $tags = null) {
         try {
             $this->ensureConnection();
             
@@ -30,7 +30,7 @@ class Message {
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
             
-            $stmt->bind_param("isssiss", $userId, $subject, $message, $priority, $createdBy, $tags);
+            $stmt->bind_param("isssis", $userId, $subject, $message, $priority, $createdBy, $tags);
             $result = $stmt->execute();
             
             if ($result) {

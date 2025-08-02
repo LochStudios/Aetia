@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($subject) || empty($messageText) || empty($userId)) {
         $error = 'All fields are required';
     } else {
-        $result = $messageModel->createMessage($userId, $subject, $messageText, $priority, $_SESSION['user_id'], $tags);
+        $result = $messageModel->createMessage($userId, $subject, $messageText, $_SESSION['user_id'], $priority, $tags);
         if ($result['success']) {
             $_SESSION['success_message'] = 'Message sent successfully!';
             header('Location: messages.php?id=' . $result['message_id']);

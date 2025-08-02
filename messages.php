@@ -48,13 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'create_team_message':
                 $subject = trim($_POST['subject']);
                 $messageText = trim($_POST['message']);
-                $priority = $_POST['priority'] ?? 'normal';
+                // Internal messages to Talant Team are always urgent priority
                 
                 if (!empty($subject) && !empty($messageText)) {
                     // Find the first admin user to send the message to
                     $adminUser = $userModel->getFirstAdmin();
                     if ($adminUser) {
-                        $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $priority, $userId, 'Internal');
+                        // Internal messages to Talant Team are always urgent priority
+                        $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $userId, 'urgent', 'Internal');
                         if ($result['success']) {
                             $message = 'Message sent to Talant Team successfully!';
                             // Redirect to view the new message
