@@ -58,10 +58,10 @@ class Message {
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
-                WHERE m.user_id = ?";
+                WHERE (m.user_id = ? OR m.created_by = ?)";
             
-            $params = [$userId];
-            $types = "i";
+            $params = [$userId, $userId];
+            $types = "ii";
             
             if ($tagFilter) {
                 $baseQuery .= " AND m.tags LIKE ?";
@@ -306,11 +306,11 @@ class Message {
             $stmt = $this->mysqli->prepare("
                 SELECT status, COUNT(*) as count
                 FROM messages 
-                WHERE user_id = ?
+                WHERE user_id = ? OR created_by = ?
                 GROUP BY status
             ");
             
-            $stmt->bind_param("i", $userId);
+            $stmt->bind_param("ii", $userId, $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             

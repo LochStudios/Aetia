@@ -57,6 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Internal messages to Talant Team are always urgent priority
                         $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $userId, 'urgent', 'Internal');
                         if ($result['success']) {
+                            // Mark the new message as read by the sender (user who created it)
+                            $messageModel->updateMessageStatus($result['message_id'], 'read');
+                            
                             $message = 'Message sent to Talant Team successfully!';
                             // Redirect to view the new message
                             header('Location: messages.php?id=' . $result['message_id']);
