@@ -44,6 +44,56 @@
     padding: 0.25rem 0.75rem;
 }
 
+/* Navigation dropdown fixes */
+.navbar {
+    overflow: visible !important;
+    position: relative;
+}
+
+.navbar-menu {
+    overflow: visible !important;
+}
+
+.navbar-end {
+    overflow: visible !important;
+}
+
+.navbar .dropdown {
+    position: relative;
+    z-index: 1000;
+}
+
+.navbar .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    z-index: 1001;
+    min-width: 200px;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    margin-top: 0.25rem;
+}
+
+.navbar .dropdown-content {
+    border-radius: 0.5rem;
+    overflow: visible;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Ensure dropdown shows properly on mobile */
+@media screen and (max-width: 1023px) {
+    .navbar .dropdown-menu {
+        position: relative;
+        box-shadow: none;
+        border: 1px solid #dbdbdb;
+        margin-top: 0;
+    }
+}
+
 /* Login form styling */
 .login-card {
     border-radius: 1rem;
