@@ -1,7 +1,7 @@
 <?php
 // services/TwitchOAuth.php - Twitch OAuth integration for Aetia Talant Agency
 
-require_once __DIR__ . '/../web-config/config.php';
+require_once '/home/aetiacom/web-config/config.php';
 
 class TwitchOAuth {
     private $clientId;
