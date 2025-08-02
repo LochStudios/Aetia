@@ -103,11 +103,15 @@ ob_start();
             <div class="media">
                 <div class="media-left">
                     <figure class="image is-64x64">
-                        <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
-                            <span class="icon is-large has-text-grey">
-                                <i class="fas fa-user fa-2x"></i>
-                            </span>
-                        </div>
+                        <?php if ($user['profile_image']): ?>
+                            <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+                        <?php else: ?>
+                            <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
+                                <span class="icon is-large has-text-grey">
+                                    <i class="fas fa-user fa-2x"></i>
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </figure>
                 </div>
                 <div class="media-content">

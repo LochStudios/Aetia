@@ -314,7 +314,7 @@ class User {
     public function getPendingUsers() {
         $stmt = $this->mysqli->prepare("
             SELECT id, username, email, first_name, last_name, account_type, social_username, 
-                   created_at, contact_attempted, contact_date 
+                   profile_image, created_at, contact_attempted, contact_date 
             FROM users 
             WHERE approval_status = 'pending' 
             ORDER BY created_at ASC
