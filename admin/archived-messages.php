@@ -213,7 +213,7 @@ ob_start();
             <div class="archived-message-header has-text-white p-4 mb-4">
                 <h1 class="title is-4 has-text-white mb-2">
                     <span class="icon"><i class="fas fa-archive"></i></span>
-                    Archived Message - Admin View
+                    Archived Message
                 </h1>
                 <p class="subtitle is-6 has-text-white">
                     This message has been archived and is read-only
@@ -254,11 +254,11 @@ ob_start();
                 <div class="level">
                     <div class="level-left">
                         <div>
-                            <h2 class="title is-4 mb-1"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
+                            <h2 class="title is-4 mb-1 has-text-white"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
                             <p class="subtitle is-6 has-text-white">
                                 From: <?= htmlspecialchars($currentMessage['created_by_username'] ?? 'Unknown') ?>
-                                <span class="ml-2 has-text-dark"><?= formatDateForUser($currentMessage['created_at']) ?></span>
-                                <span class="ml-2 has-text-dark">
+                                <span class="ml-2 has-text-white"><?= formatDateForUser($currentMessage['created_at']) ?></span>
+                                <span class="ml-2 has-text-white">
                                     To: <?= ($currentMessage['target_username'] ?? 'Unknown') === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
                                 </span>
                             </p>
@@ -292,7 +292,7 @@ ob_start();
                 
                 <!-- Original Message -->
                 <div class="content">
-                    <div class="box has-background-light has-text-dark">
+                    <div class="box has-background-dark has-text-white">
                         <?= nl2br(htmlspecialchars($currentMessage['message'])) ?>
                     </div>
                 </div>
