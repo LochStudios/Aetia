@@ -134,10 +134,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $result = $messageModel->archiveMessage($messageId, $_SESSION['user_id'], $archiveReason);
                 if ($result['success']) {
-                    $message = 'Message archived successfully!';
-                    // Redirect to messages list after successful archive
-                    header('Location: messages.php');
-                    exit;
+                    // Check if this is an AJAX request
+                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                        // For AJAX requests, return JSON response
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'Message archived successfully!']);
+                        exit;
+                    } else {
+                        // For regular form submissions, redirect
+                        $message = 'Message archived successfully!';
+                        header('Location: messages.php');
+                        exit;
+                    }
                 } else {
                     $error = $result['message'] ?? 'Failed to archive message';
                 }
@@ -1048,25 +1056,35 @@ function archiveMessage(messageId) {
             // Submit form
             fetch(window.location.href, {
                 method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
             }).then(response => {
                 if (response.ok) {
-                    Swal.fire({
-                        title: 'Archived!',
-                        text: 'The message has been archived successfully.',
-                        icon: 'success',
-                        customClass: {
-                            popup: 'has-text-dark',
-                            title: 'has-text-dark',
-                            htmlContainer: 'has-text-dark'
-                        }
-                    }).then(() => {
-                        // Redirect to messages list
-                        window.location.href = 'messages.php';
-                    });
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // Handle redirect or HTML response
+                        return { success: true };
+                    }
                 } else {
                     throw new Error('Archive failed');
                 }
+            }).then(data => {
+                Swal.fire({
+                    title: 'Archived!',
+                    text: 'The message has been archived successfully.',
+                    icon: 'success',
+                    customClass: {
+                        popup: 'has-text-dark',
+                        title: 'has-text-dark',
+                        htmlContainer: 'has-text-dark'
+                    }
+                }).then(() => {
+                    // Redirect to messages list
+                    window.location.href = 'messages.php';
+                });
             }).catch(error => {
                 Swal.fire({
                     title: 'Error!',
