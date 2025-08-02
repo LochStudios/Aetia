@@ -135,7 +135,7 @@ ob_start();
                         From: <?= htmlspecialchars($currentMessage['created_by_username'] ?? 'Unknown') ?>
                         <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
                         <span class="ml-2">
-                            To: <?= htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
+                            To: <?= ($currentMessage['target_username'] ?? 'Unknown') === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($currentMessage['target_username'] ?? 'Unknown') ?>
                         </span>
                     </p>
                 </div>

@@ -413,6 +413,8 @@ ob_start();
                                 From: <strong><?= htmlspecialchars($currentMessage['created_by_display_name']) ?></strong>
                                 <span class="ml-2">•</span>
                                 <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
+                                <br>
+                                To: <strong><?= $currentMessage['target_display_name'] === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($currentMessage['target_display_name']) ?></strong>
                             </p>
                         </div>
                     </div>
