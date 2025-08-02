@@ -35,12 +35,16 @@ $offset = ($page - 1) * $limit;
 // Get current message if viewing one
 $currentMessage = null;
 $messageComments = [];
+$messageDiscussion = [];
+$messageAttachments = [];
 $messageId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 if ($messageId) {
     $currentMessage = $messageModel->getMessage($messageId);
     if ($currentMessage && $currentMessage['status'] === 'closed') {
         $messageComments = $messageModel->getMessageComments($messageId);
+        $messageDiscussion = $messageModel->getMessageDiscussion($messageId);
+        $messageAttachments = $messageModel->getMessageAttachments($messageId);
     } else {
         // Message not found or not archived, redirect to list
         header('Location: archived-messages.php');
@@ -274,22 +278,81 @@ ob_start();
                     </div>
                 </div>
                 
-                <!-- Comments -->
-                <?php if (!empty($messageComments)): ?>
+                <!-- Attachments -->
+                <?php if (!empty($messageAttachments)): ?>
+                <div class="content">
+                    <h5 class="title is-6">
+                        <span class="icon"><i class="fas fa-paperclip"></i></span>
+                        Attachments
+                    </h5>
+                    
+                    <div class="columns is-multiline">
+                        <?php foreach ($messageAttachments as $attachment): ?>
+                        <div class="column is-half">
+                            <div class="box attachment-card has-background-grey-dark has-text-white p-3">
+                                <div class="media">
+                                    <div class="media-left">
+                                        <figure class="image is-48x48">
+                                            <?php
+                                            $iconClass = 'fas fa-file fa-2x has-text-grey-dark';
+                                            if ($attachment['is_image']) {
+                                                $iconClass = 'fas fa-image fa-2x has-text-info';
+                                            } elseif (strpos($attachment['mime_type'], 'pdf') !== false) {
+                                                $iconClass = 'fas fa-file-pdf fa-2x has-text-danger';
+                                            } elseif (strpos($attachment['mime_type'], 'video') !== false) {
+                                                $iconClass = 'fas fa-video fa-2x has-text-primary';
+                                            } elseif (strpos($attachment['mime_type'], 'audio') !== false) {
+                                                $iconClass = 'fas fa-volume-up fa-2x has-text-warning';
+                                            } elseif (strpos($attachment['mime_type'], 'zip') !== false || strpos($attachment['mime_type'], 'archive') !== false) {
+                                                $iconClass = 'fas fa-file-archive fa-2x has-text-warning';
+                                            }
+                                            ?>
+                                            <span class="icon is-large">
+                                                <i class="<?= $iconClass ?>"></i>
+                                            </span>
+                                        </figure>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="title is-6 attachment-filename"><?= htmlspecialchars($attachment['original_filename']) ?></p>
+                                        <p class="subtitle is-7 has-text-grey"><?= FileUploader::formatFileSize($attachment['file_size']) ?></p>
+                                        <div class="buttons are-small">
+                                            <a href="../download-attachment.php?id=<?= $attachment['id'] ?>" class="button is-small is-info">
+                                                <span class="icon"><i class="fas fa-download"></i></span>
+                                                <span>Download</span>
+                                            </a>
+                                            <?php if ($attachment['is_image']): ?>
+                                            <button class="button is-small is-primary" 
+                                                    onclick="showImageModal('<?= htmlspecialchars($attachment['original_filename']) ?>', '../view-image.php?id=<?= $attachment['id'] ?>')">
+                                                <span class="icon"><i class="fas fa-eye"></i></span>
+                                                <span>View</span>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Discussion (Comments & Images) -->
+                <?php if (!empty($messageDiscussion)): ?>
                 <div class="content">
                     <h4 class="title is-5">
                         <span class="icon"><i class="fas fa-comments"></i></span>
                         Discussion
                     </h4>
                     
-                    <?php foreach ($messageComments as $comment): ?>
+                    <?php foreach ($messageDiscussion as $item): ?>
                     <article class="media">
-                        <?php if ($comment['is_admin_comment']): ?>
-                        <!-- Admin comment - icon on left -->
+                        <?php if ($item['is_admin_comment']): ?>
+                        <!-- Admin item - icon on left -->
                         <figure class="media-left">
                             <p class="image is-48x48">
-                                <?php if ($comment['profile_image']): ?>
-                                <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                <?php if ($item['profile_image']): ?>
+                                <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                      alt="Profile Picture" 
                                      class="profile-image">
                                 <?php else: ?>
@@ -305,45 +368,77 @@ ob_start();
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-light">
-                                                <?= $comment['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['display_name']) ?>
+                                                <?= $item['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                             <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
                                         <small class="has-text-light">
-                                            <?= formatDateForUser($comment['created_at']) ?>
+                                            <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
                                     <div class="has-text-light">
-                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                        <?php if ($item['type'] === 'comment'): ?>
+                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                        <?php elseif ($item['type'] === 'image'): ?>
+                                            <div class="has-text-centered">
+                                                <p class="mb-2"><strong>Shared an image:</strong></p>
+                                                <figure class="image discussion-image">
+                                                    <img src="../view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                         alt="<?= htmlspecialchars($item['original_filename']) ?>"
+                                                         class="discussion-image img"
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                </figure>
+                                                <p class="is-size-7 has-text-grey mt-2">
+                                                    <?= htmlspecialchars($item['original_filename']) ?> 
+                                                    (<?= FileUploader::formatFileSize($item['file_size']) ?>)
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <?php else: ?>
-                        <!-- User comment - icon on right -->
+                        <!-- User item - icon on right -->
                         <div class="media-content">
                             <div class="content">
                                 <div class="box has-background-grey-dark has-text-light">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-light">
-                                                <?= htmlspecialchars($comment['display_name']) ?>
+                                                <?= htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                         </div>
                                         <small class="has-text-light">
-                                            <?= formatDateForUser($comment['created_at']) ?>
+                                            <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
                                     <div class="has-text-light">
-                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                        <?php if ($item['type'] === 'comment'): ?>
+                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                        <?php elseif ($item['type'] === 'image'): ?>
+                                            <div class="has-text-centered">
+                                                <p class="mb-2"><strong>Shared an image:</strong></p>
+                                                <figure class="image discussion-image">
+                                                    <img src="../view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                         alt="<?= htmlspecialchars($item['original_filename']) ?>"
+                                                         class="discussion-image img"
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                </figure>
+                                                <p class="is-size-7 has-text-grey mt-2">
+                                                    <?= htmlspecialchars($item['original_filename']) ?> 
+                                                    (<?= FileUploader::formatFileSize($item['file_size']) ?>)
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <figure class="media-right">
                             <p class="image is-48x48">
-                                <?php if ($comment['profile_image']): ?>
-                                <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                <?php if ($item['profile_image']): ?>
+                                <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
                                      alt="Profile Picture" 
                                      class="profile-image">
                                 <?php else: ?>
