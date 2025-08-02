@@ -46,24 +46,6 @@ $pageTitle = $currentMessage ? 'Archived: ' . htmlspecialchars($currentMessage['
 ob_start();
 ?>
 
-<style>
-.archived-badge {
-    background-color: #ff8c00;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-}
-
-.archive-reason {
-    font-style: italic;
-    color: #444;
-    margin-top: 0.5rem;
-    font-weight: 500;
-}
-</style>
-
 <div class="content">
     <div class="columns">
         <!-- Archived Messages List Sidebar -->
@@ -117,7 +99,7 @@ ob_start();
                         </span>
                         <div class="is-flex-grow-1">
                             <div class="is-flex is-justify-content-space-between is-align-items-center">
-                                <strong style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 0.5rem;">
+                                <strong class="has-text-overflow-ellipsis" style="flex: 1; margin-right: 0.5rem;">
                                     <?= htmlspecialchars($msg['subject']) ?>
                                 </strong>
                                 <div class="tags">

@@ -201,3 +201,43 @@ button[disabled], input[disabled] {
         transform: translateY(0); 
     }
 }
+
+/* Archived Messages Styling */
+.archived-message-header {
+    background: linear-gradient(45deg, #ff8c00, #ffa500);
+    border-radius: 0.375rem;
+}
+
+.archive-info {
+    background-color: #fff8e1;
+    border: 1px solid #ffcc02;
+    border-radius: 0.375rem;
+    color: #333;
+}
+
+.archive-info strong {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.archive-info .column {
+    color: #2c2c2c;
+}
+
+.archive-reason {
+    font-style: italic;
+    color: #444;
+    font-weight: 500;
+}
+
+.archive-message-active {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ff8c00;
+}
+
+/* Text overflow ellipsis helper */
+.has-text-overflow-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
