@@ -60,7 +60,7 @@ class Message {
                        (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
-                WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'closed'";
+                WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'closed' AND m.status != 'archived'";
             
             $params = [$userId, $userId];
             $types = "ii";
@@ -418,9 +418,9 @@ class Message {
             $types = "";
             $conditions = [];
             
-            // Exclude closed messages unless specifically requested
-            if ($status !== 'closed') {
-                $conditions[] = "m.status != 'closed'";
+            // Exclude archived messages unless specifically requested
+            if ($status !== 'closed' && $status !== 'archived') {
+                $conditions[] = "m.status != 'closed' AND m.status != 'archived'";
             }
             
             if ($status !== null) {
@@ -633,7 +633,7 @@ class Message {
                 FROM messages m
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
-                WHERE m.user_id = ? AND m.status = 'closed'
+                WHERE m.user_id = ? AND (m.status = 'closed' OR m.status = 'archived')
                 ORDER BY m.archived_at DESC
                 LIMIT ? OFFSET ?
             ");
@@ -672,7 +672,7 @@ class Message {
                 LEFT JOIN users u_owner ON m.user_id = u_owner.id
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
-                WHERE m.status = 'closed'
+                WHERE (m.status = 'closed' OR m.status = 'archived')
             ";
             
             $conditions = [];
