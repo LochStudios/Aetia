@@ -558,10 +558,10 @@ ob_start();
                                         <?php elseif ($item['type'] === 'image'): ?>
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>
-                                                <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                                                <figure class="image discussion-image">
                                                     <img src="view-image.php?id=<?= $item['attachment_id'] ?>" 
                                                          alt="<?= htmlspecialchars($item['original_filename']) ?>"
-                                                         style="border-radius: 8px; cursor: pointer;"
+                                                         class="discussion-image img"
                                                          onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', 'view-image.php?id=<?= $item['attachment_id'] ?>')">
                                                 </figure>
                                                 <p class="is-size-7 has-text-grey mt-2">
@@ -595,10 +595,10 @@ ob_start();
                                         <?php elseif ($item['type'] === 'image'): ?>
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>
-                                                <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                                                <figure class="image discussion-image">
                                                     <img src="view-image.php?id=<?= $item['attachment_id'] ?>" 
                                                          alt="<?= htmlspecialchars($item['original_filename']) ?>"
-                                                         style="border-radius: 8px; cursor: pointer;"
+                                                         class="discussion-image img"
                                                          onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', 'view-image.php?id=<?= $item['attachment_id'] ?>')">
                                                 </figure>
                                                 <p class="is-size-7 has-text-grey mt-2">
@@ -1031,7 +1031,7 @@ async function showNewMessageModal() {
             <div class="field">
                 <label class="label has-text-left has-text-dark">Message</label>
                 <div class="control">
-                    <textarea id="swal-message" class="textarea" rows="5" placeholder="Enter your message to the Talant Team" style="color: #363636; background-color: #ffffff;"></textarea>
+                    <textarea id="swal-message" class="textarea swal-light-input" rows="5" placeholder="Enter your message to the Talant Team"></textarea>
                 </div>
             </div>
         `,
@@ -1300,7 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadIdField.value = uploadId;
         
         // Show progress bar
-        uploadProgress.style.display = 'block';
+        uploadProgress.classList.remove('upload-progress-hidden');
         submitButton.disabled = true;
         
         // Create FormData
@@ -1393,19 +1393,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
-<style>
-.swal-image-responsive {
-    max-width: 100% !important;
-    max-height: 80vh !important;
-    object-fit: contain !important;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-</style>
 
 <?php
 $scripts = ob_get_clean();

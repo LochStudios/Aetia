@@ -143,7 +143,7 @@
 
 /* Upload progress styling */
 .upload-progress-hidden {
-    display: none;
+    display: none !important;
 }
 
 /* SweetAlert modal input styling */
