@@ -54,7 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['login_time'] = time();
                     $_SESSION['account_type'] = 'manual';
                     
-                    $success_message = 'Login successful! Redirecting...';
+                    // If this is the admin user logging in for the first time, remove the temp password file
+                    if ($username === 'admin' && file_exists('/tmp/aetia_admin_initial_password.txt')) {
+                        unlink('/tmp/aetia_admin_initial_password.txt');
+                        $success_message = 'Admin login successful! Initial setup complete. Please change your password. Redirecting...';
+                    } else {
+                        $success_message = 'Login successful! Redirecting...';
+                    }
+                    
                     header('refresh:2;url=index.php');
                 } else {
                     $error_message = $result['message'];
@@ -95,6 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $twitchOAuth = new TwitchOAuth();
 $twitchAuthUrl = $twitchOAuth->getAuthorizationUrl();
 
+// Check for initial admin password
+$initialAdminPassword = '';
+$tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
+if (file_exists($tempPasswordFile)) {
+    $initialAdminPassword = trim(file_get_contents($tempPasswordFile));
+}
+
 $pageTitle = ($isSignupMode ? 'Sign Up' : 'Login') . ' | Aetia Talant Agency';
 ob_start();
 ?>
@@ -118,6 +132,24 @@ ob_start();
                             <li>Business partnership agreements</li>
                         </ul>
                         <p>You will be able to access your account once approved.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($initialAdminPassword && !$isSignupMode): ?>
+                <div class="notification is-warning is-light mb-4">
+                    <div class="content">
+                        <p><strong><i class="fas fa-shield-alt"></i> Initial Admin Setup</strong></p>
+                        <p>A system administrator account has been created for first-time setup:</p>
+                        <div class="box has-background-dark has-text-light">
+                            <p><strong>Username:</strong> <code style="background:#333;color:#fff;padding:2px 6px;">admin</code></p>
+                            <p><strong>Password:</strong> <code style="background:#333;color:#fff;padding:2px 6px;"><?= htmlspecialchars($initialAdminPassword) ?></code></p>
+                        </div>
+                        <p class="is-size-7 has-text-grey">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Please login with these credentials and change the password immediately. 
+                            This notice will disappear after first login.
+                        </p>
                     </div>
                 </div>
                 <?php endif; ?>
