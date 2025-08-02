@@ -312,7 +312,7 @@ ob_start();
                 
                 <!-- Original Message -->
                 <div class="content">
-                    <div class="box has-background-light">
+                    <div class="box has-background-light has-text-dark">
                         <?= nl2br(htmlspecialchars($currentMessage['message'])) ?>
                     </div>
                 </div>
