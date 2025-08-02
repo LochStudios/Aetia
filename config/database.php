@@ -61,9 +61,7 @@ class Database {
         }
     }
     
-    public function __destruct() {
-        $this->close();
-    }
+    public function __destruct() {}
     
     // Auto-initialize tables if they don't exist
     private function initializeTables() {
