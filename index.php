@@ -11,6 +11,13 @@ if (isset($_SESSION['login_success'])) {
     $loginSuccessMessage = $_SESSION['login_success'];
     unset($_SESSION['login_success']);
 }
+
+// Check for error message
+$errorMessage = '';
+if (isset($_SESSION['error_message'])) {
+    $errorMessage = $_SESSION['error_message'];
+    unset($_SESSION['error_message']);
+}
 ?>
 
 <?php if ($loginSuccessMessage): ?>
@@ -19,6 +26,16 @@ if (isset($_SESSION['login_success'])) {
     <span class="icon-text">
         <span class="icon"><i class="fas fa-check-circle"></i></span>
         <span><?= htmlspecialchars($loginSuccessMessage) ?></span>
+    </span>
+</div>
+<?php endif; ?>
+
+<?php if ($errorMessage): ?>
+<div class="notification is-danger is-light mb-4">
+    <button class="delete"></button>
+    <span class="icon-text">
+        <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+        <span><?= htmlspecialchars($errorMessage) ?></span>
     </span>
 </div>
 <?php endif; ?>
