@@ -409,6 +409,8 @@ ob_start();
                     
                     <?php foreach ($messageComments as $comment): ?>
                     <article class="media">
+                        <?php if ($comment['is_admin_comment']): ?>
+                        <!-- Admin comment - icon on left -->
                         <figure class="media-left">
                             <p class="image is-48x48">
                                 <?php if ($comment['profile_image']): ?>
@@ -424,26 +426,59 @@ ob_start();
                         </figure>
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-<?= $comment['is_admin_comment'] ? 'info-light' : 'light' ?> <?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                <div class="box has-background-info-light has-text-dark">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                            <strong class="has-text-dark">
                                                 <?= $comment['username'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['username']) ?>
                                             </strong>
-                                            <?php if ($comment['is_admin_comment']): ?>
-                                                <span class="tag is-info is-small ml-1">Admin</span>
-                                            <?php endif; ?>
+                                            <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
                                         <small class="has-text-dark">
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                    <div class="has-text-dark">
                                         <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <?php else: ?>
+                        <!-- User comment - icon on right -->
+                        <div class="media-content">
+                            <div class="content">
+                                <div class="box has-background-light">
+                                    <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                                        <div>
+                                            <strong>
+                                                <?= htmlspecialchars($comment['username']) ?>
+                                            </strong>
+                                        </div>
+                                        <small class="has-text-dark">
+                                            <?= formatDateForUser($comment['created_at']) ?>
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <figure class="media-right">
+                            <p class="image is-48x48">
+                                <?php if ($comment['profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($comment['profile_image']) ?>" 
+                                         alt="Profile Picture" 
+                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                                <?php else: ?>
+                                    <span class="icon is-large has-text-grey">
+                                        <i class="fas fa-user-circle fa-2x"></i>
+                                    </span>
+                                <?php endif; ?>
+                            </p>
+                        </figure>
+                        <?php endif; ?>
                     </article>
                     <?php endforeach; ?>
                 </div>
