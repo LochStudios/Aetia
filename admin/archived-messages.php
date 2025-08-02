@@ -212,13 +212,6 @@ ob_start();
                 </nav>
                 <?php endif; ?>
                 
-                <?php else: ?>
-                <div class="has-text-centered has-text-grey">
-                    <span class="icon is-large">
-                        <i class="fas fa-archive fa-3x"></i>
-                    </span>
-                    <p class="mt-2">No archived messages found</p>
-                </div>
                 <?php endif; ?>
             </div>
         </div>
