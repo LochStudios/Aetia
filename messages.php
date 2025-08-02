@@ -448,10 +448,10 @@ ob_start();
                         <!-- User comment - icon on right -->
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-light">
+                                <div class="box has-background-light has-text-dark">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong>
+                                            <strong class="has-text-dark">
                                                 <?= htmlspecialchars($comment['username']) ?>
                                             </strong>
                                         </div>
@@ -459,7 +459,7 @@ ob_start();
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div>
+                                    <div class="has-text-dark">
                                         <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     </div>
                                 </div>
