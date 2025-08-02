@@ -213,33 +213,12 @@ ob_start();
                 <?php endif; ?>
                 
                 <?php else: ?>
-                <div class="has-text-centered has-text-white">
+                <div class="has-text-centered has-text-grey">
                     <span class="icon is-large">
                         <i class="fas fa-archive fa-3x"></i>
                     </span>
-                    <p class="mt-2">No archived messages</p>
-                    <?php if ($tagFilter): ?>
-                    <p class="is-size-7">No archived messages found with the selected filter.</p>
-                    <?php else: ?>
-                    <p class="is-size-7">Archived messages will appear here.</p>
-                    <?php endif; ?>
+                    <p class="mt-2">No archived messages found</p>
                 </div>
-                
-                <!-- Pagination -->
-                <?php if (count($archivedMessages) === $limit || $page > 1): ?>
-                <nav class="pagination is-small mt-4" role="navigation" aria-label="pagination">
-                    <?php if ($page > 1): ?>
-                    <a class="pagination-previous" href="?page=<?= $page - 1 ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $messageId ? '&id=' . $messageId : '' ?>">Previous</a>
-                    <?php endif; ?>
-                    
-                    <?php if (count($archivedMessages) === $limit): ?>
-                    <a class="pagination-next" href="?page=<?= $page + 1 ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?><?= $messageId ? '&id=' . $messageId : '' ?>">Next</a>
-                    <?php endif; ?>
-                    
-                    <ul class="pagination-list">
-                        <li><span class="pagination-link is-current is-small">Page <?= $page ?></span></li>
-                    </ul>
-                </nav>
                 <?php endif; ?>
             </div>
         </div>
