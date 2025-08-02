@@ -118,22 +118,22 @@ ob_start();
                 <?php if (!empty($archivedMessages)): ?>
                 <div class="message-list" style="max-height: 60vh; overflow-y: auto;">
                     <?php foreach ($archivedMessages as $msg): ?>
-                    <div class="message-item p-3 mb-2 is-clickable has-background-white-ter <?= $messageId === $msg['id'] ? 'archive-message-active' : '' ?>" 
+                    <div class="archive-message-item p-3 mb-2 is-clickable <?= $messageId === $msg['id'] ? 'archive-message-active' : '' ?>" 
                          onclick="window.location.href='?id=<?= $msg['id'] ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?>'">
                         <div class="level is-mobile">
                             <div class="level-left" style="min-width: 0; flex: 1;">
                                 <div style="min-width: 0; width: 100%;">
-                                    <p class="title is-6 mb-1 has-text-overflow-ellipsis">
+                                    <p class="title is-6 mb-1 has-text-overflow-ellipsis has-text-white">
                                         <?= htmlspecialchars($msg['subject']) ?>
                                     </p>
-                                    <p class="subtitle is-7 has-text-grey-dark mb-1">
+                                    <p class="subtitle is-7 has-text-white mb-1">
                                         <?php if ($msg['owner_first_name']): ?>
                                         <?= htmlspecialchars($msg['owner_first_name'] . ' ' . $msg['owner_last_name']) ?>
                                         <?php else: ?>
                                         Unknown User
                                         <?php endif; ?>
                                     </p>
-                                    <p class="is-size-7 has-text-grey-dark">
+                                    <p class="is-size-7 has-text-white">
                                         Archived: <?= formatDateForUser($msg['archived_at'], 'M j, g:i A') ?>
                                     </p>
                                 </div>
@@ -191,7 +191,7 @@ ob_start();
                 <?php endif; ?>
                 
                 <?php else: ?>
-                <div class="has-text-centered has-text-grey">
+                <div class="has-text-centered has-text-white">
                     <span class="icon is-large">
                         <i class="fas fa-archive fa-3x"></i>
                     </span>
@@ -255,7 +255,7 @@ ob_start();
                     <div class="level-left">
                         <div>
                             <h2 class="title is-4 mb-1"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
-                            <p class="subtitle is-6 has-text-grey-dark">
+                            <p class="subtitle is-6 has-text-white">
                                 From: <?= htmlspecialchars($currentMessage['created_by_username'] ?? 'Unknown') ?>
                                 <span class="ml-2 has-text-dark"><?= formatDateForUser($currentMessage['created_at']) ?></span>
                                 <span class="ml-2 has-text-dark">
@@ -314,7 +314,7 @@ ob_start();
                                          alt="Profile Picture" 
                                          style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                                 <?php else: ?>
-                                    <span class="icon is-large has-text-grey">
+                                    <span class="icon is-large has-text-white">
                                         <i class="fas fa-user-circle fa-2x"></i>
                                     </span>
                                 <?php endif; ?>
@@ -330,7 +330,7 @@ ob_start();
                                     <br>
                                     <?= nl2br(htmlspecialchars($comment['comment'])) ?>
                                     <br>
-                                    <small class="has-text-grey-dark">
+                                    <small class="has-text-white">
                                         <?= formatDateForUser($comment['created_at']) ?>
                                     </small>
                                 </p>
@@ -374,18 +374,18 @@ ob_start();
             <?php else: ?>
             <!-- No message selected -->
             <div class="box has-text-centered">
-                <span class="icon is-large has-text-grey">
+                <span class="icon is-large has-text-white">
                     <i class="fas fa-archive fa-3x"></i>
                 </span>
-                <h3 class="title is-4 has-text-grey">Select an Archived Message</h3>
+                <h3 class="title is-4 has-text-white">Select an Archived Message</h3>
                 <?php if (!empty($archivedMessages)): ?>
-                <p class="has-text-grey">Click on a message from the sidebar to view its details and discussion history.</p>
+                <p class="has-text-white">Click on a message from the sidebar to view its details and discussion history.</p>
                 <?php else: ?>
-                <p class="has-text-grey">No archived messages found.</p>
+                <p class="has-text-white">No archived messages found.</p>
                 <?php if ($tagFilter): ?>
-                <p class="has-text-grey">Try adjusting your filters or check different criteria.</p>
+                <p class="has-text-white">Try adjusting your filters or check different criteria.</p>
                 <?php else: ?>
-                <p class="has-text-grey">When messages are archived, they will appear in the sidebar for viewing.</p>
+                <p class="has-text-white">When messages are archived, they will appear in the sidebar for viewing.</p>
                 <?php endif; ?>
                 <br>
                 <a href="messages.php" class="button is-primary">

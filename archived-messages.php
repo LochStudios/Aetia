@@ -79,7 +79,7 @@ ob_start();
                 </div>
                 
                 <?php if (empty($archivedMessages)): ?>
-                <div class="has-text-centered has-text-grey">
+                <div class="has-text-centered has-text-white">
                     <span class="icon is-large">
                         <i class="fas fa-archive fa-3x"></i>
                     </span>
@@ -122,7 +122,7 @@ ob_start();
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="is-size-7 has-text-grey-dark">
+                            <div class="is-size-7 has-text-white">
                                 Archived: <?= formatDateForUser($msg['archived_at']) ?>
                             </div>
                         </div>
@@ -179,7 +179,7 @@ ob_start();
                     <div class="level-left">
                         <div>
                             <h2 class="title is-4 mb-1"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
-                            <p class="subtitle is-6 has-text-grey-dark">
+                            <p class="subtitle is-6 has-text-white">
                                 Created: <?= formatDateForUser($currentMessage['created_at']) ?>
                                 <span class="ml-2">Archived: <?= formatDateForUser($currentMessage['archived_at'] ?? $currentMessage['updated_at']) ?></span>
                             </p>
@@ -237,7 +237,7 @@ ob_start();
                                          alt="Profile Picture" 
                                          style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                                 <?php else: ?>
-                                    <span class="icon is-large has-text-grey">
+                                    <span class="icon is-large has-text-white">
                                         <i class="fas fa-user-circle fa-2x"></i>
                                     </span>
                                 <?php endif; ?>
@@ -291,7 +291,7 @@ ob_start();
                                          alt="Profile Picture" 
                                          style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                                 <?php else: ?>
-                                    <span class="icon is-large has-text-grey">
+                                    <span class="icon is-large has-text-white">
                                         <i class="fas fa-user-circle fa-2x"></i>
                                     </span>
                                 <?php endif; ?>
@@ -307,13 +307,13 @@ ob_start();
             <?php else: ?>
             <!-- No Message Selected -->
             <div class="box has-text-centered">
-                <span class="icon is-large has-text-grey">
+                <span class="icon is-large has-text-white">
                     <i class="fas fa-archive fa-4x"></i>
                 </span>
-                <h3 class="title is-4 has-text-grey">Select an Archived Message</h3>
-                <p class="has-text-grey">Choose a message from the sidebar to view its archived content.</p>
+                <h3 class="title is-4 has-text-white">Select an Archived Message</h3>
+                <p class="has-text-white">Choose a message from the sidebar to view its archived content.</p>
                 <?php if (empty($archivedMessages)): ?>
-                <p class="has-text-grey mt-4">You don't have any archived messages yet.</p>
+                <p class="has-text-white mt-4">You don't have any archived messages yet.</p>
                 <a href="messages.php" class="button is-primary mt-4">
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>View Active Messages</span>
