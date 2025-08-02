@@ -12,7 +12,15 @@ class Message {
     public function __construct() {
         $this->database = new Database();
         $this->mysqli = $this->database->getConnection();
-        $this->userModel = new User();
+        $this->userModel = null; // Lazy load
+    }
+    
+    // Get User model instance (lazy loading)
+    private function getUserModel() {
+        if ($this->userModel === null) {
+            $this->userModel = new User();
+        }
+        return $this->userModel;
     }
     
     // Ensure database connection is active
@@ -121,7 +129,7 @@ class Message {
             
             if ($userId !== null) {
                 // Check if user is admin first
-                $isAdmin = $this->userModel->isUserAdmin($userId);
+                $isAdmin = $this->getUserModel()->isUserAdmin($userId);
                 // If not admin, restrict access to messages the user owns or created
                 if (!$isAdmin) {
                     $query .= " AND (m.user_id = ? OR m.created_by = ?)";
@@ -804,7 +812,7 @@ class Message {
             // Check permissions if userId provided
             if ($userId !== null) {
                 // Check if user is admin first
-                $isAdmin = $this->userModel->isUserAdmin($userId);
+                $isAdmin = $this->getUserModel()->isUserAdmin($userId);
                 // If not admin, check if user owns the attachment
                 if (!$isAdmin && $attachment['user_id'] != $userId) {
                     return ['success' => false, 'message' => 'Permission denied'];
@@ -859,7 +867,7 @@ class Message {
             // Check permissions if userId provided
             if ($userId !== null) {
                 // Check if user is admin first
-                $isAdmin = $this->userModel->isUserAdmin($userId);
+                $isAdmin = $this->getUserModel()->isUserAdmin($userId);
                 // Admin users can access all attachments
                 if ($isAdmin) {
                     return $attachment;
