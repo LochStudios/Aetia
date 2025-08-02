@@ -208,9 +208,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
             
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username;
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
+            
             Swal.fire({
                 title: 'Mark Contact Attempt',
-                html: `Record contact attempt for <strong>${username}</strong>:<br><br>`,
+                html: `Record contact attempt for <strong>${decodedUsername}</strong>:<br><br>`,
                 icon: 'info',
                 input: 'textarea',
                 inputPlaceholder: 'Enter contact notes (optional)...',
@@ -238,9 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
             
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username;
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
+            
             Swal.fire({
                 title: 'Approve User?',
-                html: `Are you sure you want to approve <strong>${username}</strong>?<br><br>They will be able to access their account immediately.`,
+                html: `Are you sure you want to approve <strong>${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#48c78e',
@@ -265,9 +275,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
             
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username;
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
+            
             Swal.fire({
                 title: 'Mark as Admin?',
-                html: `Are you sure you want to mark <strong>${username}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
+                html: `Are you sure you want to mark <strong>${decodedUsername}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3e8ed0',
@@ -292,9 +307,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
             
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username;
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
+            
             Swal.fire({
                 title: 'Reject User?',
-                html: `Are you sure you want to reject <strong>${username}</strong>?<br><br>Please provide a reason for rejection:`,
+                html: `Are you sure you want to reject <strong>${decodedUsername}</strong>?<br><br>Please provide a reason for rejection:`,
                 icon: 'warning',
                 input: 'textarea',
                 inputPlaceholder: 'Enter rejection reason...',
