@@ -4,16 +4,27 @@
 require_once __DIR__ . '/../config/database.php';
 
 class User {
+    private $database;
     private $mysqli;
     
     public function __construct() {
-        $database = new Database();
-        $this->mysqli = $database->getConnection();
+        $this->database = new Database();
+        $this->mysqli = $this->database->getConnection();
+    }
+    
+    // Ensure database connection is active
+    private function ensureConnection() {
+        if (!$this->mysqli || $this->mysqli->ping() === false) {
+            $this->database = new Database();
+            $this->mysqli = $this->database->getConnection();
+        }
     }
     
     // Create a new manual user account
     public function createManualUser($username, $email, $password, $firstName = '', $lastName = '') {
         try {
+            $this->ensureConnection();
+            
             // Check if username or email already exists
             if ($this->userExists($username, $email)) {
                 return ['success' => false, 'message' => 'Username or email already exists'];
@@ -47,6 +58,8 @@ class User {
     // Authenticate manual user
     public function authenticateManualUser($username, $password) {
         try {
+            $this->ensureConnection();
+            
             $stmt = $this->mysqli->prepare("
                 SELECT id, username, email, password_hash, first_name, last_name, profile_image, approval_status, is_admin, is_active 
                 FROM users 
@@ -181,6 +194,7 @@ class User {
     
     // Check if user exists
     private function userExists($username, $email) {
+        $this->ensureConnection();
         $stmt = $this->mysqli->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
         $stmt->bind_param("ss", $username, $email);
         $stmt->execute();
@@ -321,6 +335,7 @@ class User {
     
     // Check if user is admin
     public function isUserAdmin($userId) {
+        $this->ensureConnection();
         $stmt = $this->mysqli->prepare("SELECT is_admin FROM users WHERE id = ? AND is_active = 1");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
@@ -333,6 +348,7 @@ class User {
     
     // Get user admin status along with other details
     public function getUserWithAdminStatus($userId) {
+        $this->ensureConnection();
         $stmt = $this->mysqli->prepare("SELECT id, username, email, first_name, last_name, is_admin, approval_status FROM users WHERE id = ? AND is_active = 1");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
