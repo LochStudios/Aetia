@@ -201,6 +201,7 @@ class Database {
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
+            $this->updateSocialConnectionsPlatforms();
 
             // Create initial admin user if no users exist
             $this->createInitialAdmin();
@@ -329,6 +330,37 @@ class Database {
             }
         } catch (Exception $e) {
             error_log("Add missing message columns error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Update social_connections platform ENUM to include Discord
+    private function updateSocialConnectionsPlatforms() {
+        try {
+            // Check if the social_connections table exists first
+            $checkTable = "SHOW TABLES LIKE 'social_connections'";
+            $result = $this->mysqli->query($checkTable);
+            if ($result && $result->num_rows > 0) {
+                // Check current ENUM values
+                $checkEnumQuery = "SHOW COLUMNS FROM social_connections WHERE Field = 'platform'";
+                $result = $this->mysqli->query($checkEnumQuery);
+                if ($result && $result->num_rows > 0) {
+                    $column = $result->fetch_assoc();
+                    $type = $column['Type'];
+                    // Check if 'discord' is already in the ENUM
+                    if (strpos($type, "'discord'") === false) {
+                        // Add discord to the ENUM
+                        $alterQuery = "ALTER TABLE social_connections MODIFY COLUMN platform ENUM('twitch', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL";
+                        if ($this->mysqli->query($alterQuery)) {
+                            error_log("Successfully added 'discord' to social_connections platform ENUM");
+                        } else {
+                            error_log("Failed to add 'discord' to platform ENUM: " . $this->mysqli->error);
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Update social connections platforms error: " . $e->getMessage());
             // Don't throw exception - continue normal operation
         }
     }
