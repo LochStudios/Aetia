@@ -4,6 +4,7 @@ session_start();
 
 // Include timezone utilities
 require_once __DIR__ . '/../includes/timezone.php';
+require_once __DIR__ . '/../includes/FileUploader.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -295,15 +296,17 @@ ob_start();
                                         <figure class="image is-48x48">
                                             <?php
                                             $iconClass = 'fas fa-file fa-2x has-text-grey-dark';
-                                            if ($attachment['is_image']) {
+                                            $isImage = isset($attachment['is_image']) ? $attachment['is_image'] : (strpos($attachment['mime_type'] ?? '', 'image/') === 0);
+                                            
+                                            if ($isImage) {
                                                 $iconClass = 'fas fa-image fa-2x has-text-info';
-                                            } elseif (strpos($attachment['mime_type'], 'pdf') !== false) {
+                                            } elseif (strpos($attachment['mime_type'] ?? '', 'pdf') !== false) {
                                                 $iconClass = 'fas fa-file-pdf fa-2x has-text-danger';
-                                            } elseif (strpos($attachment['mime_type'], 'video') !== false) {
+                                            } elseif (strpos($attachment['mime_type'] ?? '', 'video') !== false) {
                                                 $iconClass = 'fas fa-video fa-2x has-text-primary';
-                                            } elseif (strpos($attachment['mime_type'], 'audio') !== false) {
+                                            } elseif (strpos($attachment['mime_type'] ?? '', 'audio') !== false) {
                                                 $iconClass = 'fas fa-volume-up fa-2x has-text-warning';
-                                            } elseif (strpos($attachment['mime_type'], 'zip') !== false || strpos($attachment['mime_type'], 'archive') !== false) {
+                                            } elseif (strpos($attachment['mime_type'] ?? '', 'zip') !== false || strpos($attachment['mime_type'] ?? '', 'archive') !== false) {
                                                 $iconClass = 'fas fa-file-archive fa-2x has-text-warning';
                                             }
                                             ?>
@@ -320,7 +323,7 @@ ob_start();
                                                 <span class="icon"><i class="fas fa-download"></i></span>
                                                 <span>Download</span>
                                             </a>
-                                            <?php if ($attachment['is_image']): ?>
+                                            <?php if ($isImage): ?>
                                             <button class="button is-small is-primary" 
                                                     onclick="showImageModal('<?= htmlspecialchars($attachment['original_filename']) ?>', '../view-image.php?id=<?= $attachment['id'] ?>')">
                                                 <span class="icon"><i class="fas fa-eye"></i></span>
@@ -532,6 +535,23 @@ function updateFilters(filterType, value) {
     
     // Navigate to the updated URL
     window.location.href = url.toString();
+}
+
+// Image modal function
+function showImageModal(filename, imageUrl) {
+    Swal.fire({
+        title: filename,
+        imageUrl: imageUrl,
+        imageAlt: filename,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: '90%',
+        padding: '1rem',
+        background: '#fff',
+        customClass: {
+            image: 'swal-image-responsive'
+        }
+    });
 }
 </script>
 

@@ -434,6 +434,26 @@ ob_start();
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Image modal function
+function showImageModal(filename, imageUrl) {
+    Swal.fire({
+        title: filename,
+        imageUrl: imageUrl,
+        imageAlt: filename,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: '90%',
+        padding: '1rem',
+        background: '#fff',
+        customClass: {
+            image: 'swal-image-responsive'
+        }
+    });
+}
+</script>
+
 <?php
 $content = ob_get_clean();
 include 'layout.php';
