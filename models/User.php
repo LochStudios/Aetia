@@ -501,5 +501,27 @@ class User {
             return ['success' => false, 'message' => 'An error occurred. Please try again.'];
         }
     }
+    
+    // Mark admin setup as complete
+    public function markAdminSetupComplete($userId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET approved_by = 'Setup Complete'
+                WHERE id = ? AND username = 'admin' AND approved_by = 'Auto-Generated'
+            ");
+            
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Mark admin setup complete error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>
