@@ -250,7 +250,7 @@ ob_start();
                                 </div>
                             </div>
                             <div class="is-size-7 has-text-grey">
-                                To: <?= htmlspecialchars($msg['target_username']) ?>
+                                To: <?= htmlspecialchars($msg['target_display_name']) ?>
                                 <span class="ml-2">•</span>
                                 <span class="ml-1"><?= formatDateForUser($msg['created_at'], 'M j, Y') ?></span>
                                 <?php if ($msg['comment_count'] > 0): ?>
@@ -277,11 +277,11 @@ ob_start();
                         <div>
                             <h2 class="title is-3"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
                             <p class="subtitle is-6">
-                                To: <strong><?= htmlspecialchars($currentMessage['target_username']) ?></strong>
+                                To: <strong><?= htmlspecialchars($currentMessage['target_display_name']) ?></strong>
                                 <span class="ml-2">•</span>
                                 <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
                                 <span class="ml-2">•</span>
-                                <span class="ml-2">By: <?= htmlspecialchars($currentMessage['created_by_username']) ?></span>
+                                <span class="ml-2">By: <?= htmlspecialchars($currentMessage['created_by_display_name']) ?></span>
                             </p>
                         </div>
                     </div>
@@ -372,7 +372,7 @@ ob_start();
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-dark">
-                                                <?= $comment['username'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['username']) ?>
+                                                <?= $comment['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['display_name']) ?>
                                             </strong>
                                             <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
@@ -394,7 +394,7 @@ ob_start();
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
                                             <strong class="has-text-dark">
-                                                <?= htmlspecialchars($comment['username']) ?>
+                                                <?= htmlspecialchars($comment['display_name']) ?>
                                             </strong>
                                         </div>
                                         <small class="has-text-dark">

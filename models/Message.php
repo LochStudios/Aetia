@@ -55,6 +55,7 @@ class Message {
             $baseQuery = "
                 SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as created_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
@@ -105,7 +106,9 @@ class Message {
             
             $query = "
                 SELECT m.id, m.user_id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
-                       u.username as created_by_username, target.username as target_username
+                       u.username as created_by_username, target.username as target_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
+                       COALESCE(NULLIF(target.social_username, ''), target.username) as target_display_name
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
                 LEFT JOIN users target ON m.user_id = target.id
@@ -140,7 +143,8 @@ class Message {
             
             $stmt = $this->mysqli->prepare("
                 SELECT mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
-                       u.username, u.profile_image
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name
                 FROM message_comments mc
                 LEFT JOIN users u ON mc.user_id = u.id
                 WHERE mc.message_id = ?
@@ -247,6 +251,8 @@ class Message {
             $query = "
                 SELECT m.id, m.subject, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as target_username, creator.username as created_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as target_display_name,
+                       COALESCE(NULLIF(creator.social_username, ''), creator.username) as created_by_display_name,
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
                 LEFT JOIN users u ON m.user_id = u.id
@@ -464,7 +470,9 @@ class Message {
                 SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        m.archived_at, m.archive_reason,
                        u_creator.first_name as creator_first_name, u_creator.last_name as creator_last_name,
-                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name
+                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name,
+                       COALESCE(NULLIF(u_creator.social_username, ''), u_creator.username) as creator_display_name,
+                       COALESCE(NULLIF(u_archiver.social_username, ''), u_archiver.username) as archiver_display_name
                 FROM messages m
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
