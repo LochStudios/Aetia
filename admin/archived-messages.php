@@ -118,7 +118,7 @@ ob_start();
                 <?php if (!empty($archivedMessages)): ?>
                 <div class="message-list" style="max-height: 60vh; overflow-y: auto;">
                     <?php foreach ($archivedMessages as $msg): ?>
-                    <div class="archive-message-item p-3 mb-2 is-clickable <?= $messageId === $msg['id'] ? 'archive-message-active' : '' ?>" 
+                    <div class="box has-background-dark has-text-white p-3 mb-2 is-clickable <?= $messageId === $msg['id'] ? 'archive-message-active' : '' ?>" 
                          onclick="window.location.href='?id=<?= $msg['id'] ?><?= $tagFilter ? '&tag=' . urlencode($tagFilter) : '' ?>'">
                         <div class="level is-mobile">
                             <div class="level-left" style="min-width: 0; flex: 1;">
