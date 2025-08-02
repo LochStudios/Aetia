@@ -62,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $fileUploader = new FileUploader();
                             $uploadErrors = [];
                             
+                            // Get the message details to use the message owner's ID for file organization
+                            $messageDetails = $messageModel->getMessage($messageId);
+                            $messageOwnerId = $messageDetails ? $messageDetails['from_user_id'] : $_SESSION['user_id'];
+                            
                             // Process multiple files
                             $fileCount = count($_FILES['attachments']['name']);
                             for ($i = 0; $i < $fileCount; $i++) {
@@ -74,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         'size' => $_FILES['attachments']['size'][$i]
                                     ];
                                     
-                                    $uploadResult = $fileUploader->uploadMessageAttachment($file, $_SESSION['user_id'], $messageId);
+                                    // Use message owner's ID for file organization consistency
+                                    $uploadResult = $fileUploader->uploadMessageAttachment($file, $messageOwnerId, $messageId);
                                     if ($uploadResult['success']) {
                                         // Save attachment record to database
                                         $attachResult = $messageModel->addAttachment(
