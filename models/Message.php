@@ -48,7 +48,7 @@ class Message {
     }
     
     // Get messages for a specific user
-    public function getUserMessages($userId, $limit = 20, $offset = 0, $tagFilter = null) {
+    public function getUserMessages($userId, $limit = 20, $offset = 0, $tagFilter = null, $priorityFilter = null) {
         try {
             $this->ensureConnection();
             
@@ -66,6 +66,12 @@ class Message {
             if ($tagFilter) {
                 $baseQuery .= " AND m.tags LIKE ?";
                 $params[] = "%{$tagFilter}%";
+                $types .= "s";
+            }
+            
+            if ($priorityFilter) {
+                $baseQuery .= " AND m.priority = ?";
+                $params[] = $priorityFilter;
                 $types .= "s";
             }
             
@@ -98,7 +104,7 @@ class Message {
             $this->ensureConnection();
             
             $query = "
-                SELECT m.id, m.user_id, m.subject, m.message, m.priority, m.status, m.created_at, m.updated_at,
+                SELECT m.id, m.user_id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
                        u.username as created_by_username, target.username as target_username
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id

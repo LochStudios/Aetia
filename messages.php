@@ -93,7 +93,8 @@ if ($messageId) {
 
 // Get user's messages
 $tagFilter = $_GET['tag'] ?? null;
-$messages = $messageModel->getUserMessages($userId, 20, 0, $tagFilter);
+$priorityFilter = $_GET['priority'] ?? null;
+$messages = $messageModel->getUserMessages($userId, 20, 0, $tagFilter, $priorityFilter);
 $messageCounts = $messageModel->getUserMessageCounts($userId);
 $availableTags = $messageModel->getAvailableTags($userId);
 
@@ -147,7 +148,7 @@ ob_start();
                     <label class="label">Filter by Tag</label>
                     <div class="control">
                         <div class="select is-fullwidth">
-                            <select onchange="window.location.href='messages.php?tag=' + this.value">
+                            <select onchange="updateUserFilters('tag', this.value)">
                                 <option value="">All Messages</option>
                                 <?php foreach ($availableTags as $tag): ?>
                                 <option value="<?= htmlspecialchars($tag) ?>" <?= $tagFilter === $tag ? 'selected' : '' ?>>
@@ -160,11 +161,33 @@ ob_start();
                     <?php if ($tagFilter): ?>
                     <p class="help">
                         Showing messages tagged with "<?= htmlspecialchars($tagFilter) ?>"
-                        <a href="messages.php" class="has-text-link">Clear filter</a>
+                        <a href="javascript:updateUserFilters('tag', '')" class="has-text-link">Clear filter</a>
                     </p>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
+                
+                <!-- Priority Filter -->
+                <div class="field mb-4">
+                    <label class="label">Filter by Priority</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select onchange="updateUserFilters('priority', this.value)">
+                                <option value="">All Priorities</option>
+                                <option value="urgent" <?= $priorityFilter === 'urgent' ? 'selected' : '' ?>>Urgent</option>
+                                <option value="high" <?= $priorityFilter === 'high' ? 'selected' : '' ?>>High</option>
+                                <option value="normal" <?= $priorityFilter === 'normal' ? 'selected' : '' ?>>Normal</option>
+                                <option value="low" <?= $priorityFilter === 'low' ? 'selected' : '' ?>>Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <?php if ($priorityFilter): ?>
+                    <p class="help">
+                        Showing <?= ucfirst($priorityFilter) ?> priority messages
+                        <a href="javascript:updateUserFilters('priority', '')" class="has-text-link">Clear filter</a>
+                    </p>
+                    <?php endif; ?>
+                </div>
                 
                 <!-- New Talant Team Message Button -->
                 <div class="field mb-4">
@@ -415,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function showNewMessageModal() {
     const { value: formValues } = await Swal.fire({
-        title: 'New Talant Team Message',
+        title: 'Message Our Talant Team Directly',
         html: `
             <div class="field">
                 <label class="label has-text-left has-text-dark">Subject</label>
@@ -497,6 +520,25 @@ async function showNewMessageModal() {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+function updateUserFilters(filterType, value) {
+    const url = new URL(window.location);
+    
+    // Update the specified filter
+    if (value) {
+        url.searchParams.set(filterType, value);
+    } else {
+        url.searchParams.delete(filterType);
+    }
+    
+    // Preserve the current message ID if viewing one
+    <?php if ($messageId): ?>
+    url.searchParams.set('id', '<?= $messageId ?>');
+    <?php endif; ?>
+    
+    // Navigate to the updated URL
+    window.location.href = url.toString();
 }
 </script>
 <?php
