@@ -55,6 +55,9 @@ class Database {
             // Set charset
             $this->mysqli->set_charset($this->charset);
             
+            // Auto-initialize tables on first connection
+            $this->initializeTables();
+            
         } catch (Exception $e) {
             error_log('Database configuration error: ' . $e->getMessage());
             throw new Exception('Database connection failed. Please check your configuration.');
@@ -74,65 +77,57 @@ class Database {
     public function __destruct() {
         $this->close();
     }
-}
-
-// Initialize database tables
-function initializeDatabase() {
-    try {
-        $db = new Database();
-        $mysqli = $db->getConnection();
-        
-        // Create users table
-        $createUsersTable = "
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) UNIQUE NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password_hash VARCHAR(255),
-            first_name VARCHAR(50),
-            last_name VARCHAR(50),
-            profile_image VARCHAR(255),
-            account_type ENUM('manual', 'twitch', 'youtube', 'twitter', 'instagram') DEFAULT 'manual',
-            social_id VARCHAR(100),
-            social_username VARCHAR(100),
-            social_data JSON,
-            is_verified BOOLEAN DEFAULT FALSE,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        )";
-        
-        if (!$mysqli->query($createUsersTable)) {
-            throw new Exception("Error creating users table: " . $mysqli->error);
+    
+    // Auto-initialize tables if they don't exist
+    private function initializeTables() {
+        try {
+            // Create users table
+            $createUsersTable = "
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                email VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255),
+                first_name VARCHAR(50),
+                last_name VARCHAR(50),
+                profile_image VARCHAR(255),
+                account_type ENUM('manual', 'twitch', 'youtube', 'twitter', 'instagram') DEFAULT 'manual',
+                social_id VARCHAR(100),
+                social_username VARCHAR(100),
+                social_data JSON,
+                is_verified BOOLEAN DEFAULT FALSE,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )";
+            
+            $this->mysqli->query($createUsersTable);
+            
+            // Create social_connections table
+            $createSocialTable = "
+            CREATE TABLE IF NOT EXISTS social_connections (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                platform ENUM('twitch', 'youtube', 'twitter', 'instagram') NOT NULL,
+                social_id VARCHAR(100) NOT NULL,
+                social_username VARCHAR(100),
+                access_token TEXT,
+                refresh_token TEXT,
+                expires_at TIMESTAMP NULL,
+                social_data JSON,
+                is_primary BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_platform_social (platform, social_id)
+            )";
+            
+            $this->mysqli->query($createSocialTable);
+            
+        } catch (Exception $e) {
+            error_log("Auto table initialization error: " . $e->getMessage());
+            // Don't throw exception - let the app continue even if tables exist
         }
-        
-        // Create social_connections table for multiple social accounts
-        $createSocialTable = "
-        CREATE TABLE IF NOT EXISTS social_connections (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            platform ENUM('twitch', 'youtube', 'twitter', 'instagram') NOT NULL,
-            social_id VARCHAR(100) NOT NULL,
-            social_username VARCHAR(100),
-            access_token TEXT,
-            refresh_token TEXT,
-            expires_at TIMESTAMP NULL,
-            social_data JSON,
-            is_primary BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            UNIQUE KEY unique_platform_social (platform, social_id)
-        )";
-        
-        if (!$mysqli->query($createSocialTable)) {
-            throw new Exception("Error creating social_connections table: " . $mysqli->error);
-        }
-        
-        return true;
-    } catch (Exception $e) {
-        error_log("Database initialization error: " . $e->getMessage());
-        return false;
     }
 }
 ?>
