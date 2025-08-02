@@ -634,9 +634,10 @@ ob_start();
                 <?php if ($currentMessage['status'] !== 'closed'): ?>
                 <div class="content">
                     <h5 class="title is-6">Add Your Response</h5>
-                    <form method="POST" enctype="multipart/form-data">
+                    <form id="comment-form" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="add_comment">
                         <input type="hidden" name="message_id" value="<?= $currentMessage['id'] ?>">
+                        <input type="hidden" name="UPLOAD_IDENTIFIER" id="upload-id" value="">
                         
                         <div class="field">
                             <div class="control">
@@ -667,6 +668,26 @@ ob_start();
                                     </label>
                                 </div>
                                 <div id="file-list" class="mt-2"></div>
+                                <div id="upload-progress" class="mt-3" style="display: none;">
+                                    <div class="notification is-info">
+                                        <div class="is-flex is-align-items-center">
+                                            <span class="icon mr-3">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                            <div class="is-flex-grow-1">
+                                                <div class="is-flex is-justify-content-space-between mb-2">
+                                                    <span id="upload-status">Uploading files...</span>
+                                                    <span id="upload-percentage">0%</span>
+                                                </div>
+                                                <progress id="upload-progress-bar" class="progress is-primary" value="0" max="100">0%</progress>
+                                                <div class="is-size-7 has-text-grey-dark mt-1">
+                                                    <span id="upload-speed"></span> • 
+                                                    <span id="upload-eta"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <p class="help">Maximum file size: 1GB per file. Supported formats: Images, PDFs, Documents, Videos, Audio files, and Archives.</p>
                             </div>
                         </div>
@@ -680,7 +701,7 @@ ob_start();
                                 </button>
                                 
                                 <!-- Send Response Button -->
-                                <button class="button is-primary" type="submit">
+                                <button id="submit-button" class="button is-primary" type="submit">
                                     <span class="icon"><i class="fas fa-reply"></i></span>
                                     <span>Send Response</span>
                                 </button>
@@ -1248,6 +1269,129 @@ function formatFileSize(bytes) {
     
     return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
 }
+
+// Upload progress functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('comment-form');
+    const uploadIdField = document.getElementById('upload-id');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadPercentage = document.getElementById('upload-percentage');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadSpeed = document.getElementById('upload-speed');
+    const uploadEta = document.getElementById('upload-eta');
+    const submitButton = document.getElementById('submit-button');
+    
+    form.addEventListener('submit', function(e) {
+        const fileInput = form.querySelector('input[type="file"]');
+        const files = fileInput.files;
+        
+        // Only use AJAX upload if files are selected
+        if (files.length > 0) {
+            e.preventDefault();
+            submitWithProgress();
+        }
+        // Otherwise let the form submit normally
+    });
+    
+    function submitWithProgress() {
+        // Generate unique upload ID
+        const uploadId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        uploadIdField.value = uploadId;
+        
+        // Show progress bar
+        uploadProgress.style.display = 'block';
+        submitButton.disabled = true;
+        
+        // Create FormData
+        const formData = new FormData(form);
+        
+        // Start progress tracking
+        const progressInterval = setInterval(() => {
+            checkUploadProgress(uploadId, progressInterval);
+        }, 500);
+        
+        // Submit form
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            clearInterval(progressInterval);
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Upload failed');
+        })
+        .then(data => {
+            // Check if upload was successful
+            if (data.includes('success') || data.includes('comment added') || !data.includes('error')) {
+                uploadStatus.textContent = 'Upload completed successfully!';
+                uploadProgressBar.value = 100;
+                uploadPercentage.textContent = '100%';
+                
+                setTimeout(() => {
+                    // Reload page to show new content
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error('Server error occurred');
+            }
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            uploadStatus.textContent = 'Upload failed: ' + error.message;
+            uploadProgress.querySelector('.notification').classList.remove('is-info');
+            uploadProgress.querySelector('.notification').classList.add('is-danger');
+            submitButton.disabled = false;
+        });
+    }
+    
+    function checkUploadProgress(uploadId, progressInterval) {
+        fetch(`api/upload-progress.php?upload_id=${uploadId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    return;
+                }
+                
+                const percentage = data.percentage || 0;
+                uploadProgressBar.value = percentage;
+                uploadPercentage.textContent = percentage + '%';
+                
+                // Format upload speed
+                if (data.speed_last > 0) {
+                    uploadSpeed.textContent = formatFileSize(data.speed_last) + '/s';
+                } else {
+                    uploadSpeed.textContent = '';
+                }
+                
+                // Format ETA
+                if (data.est_sec > 0) {
+                    const minutes = Math.floor(data.est_sec / 60);
+                    const seconds = data.est_sec % 60;
+                    if (minutes > 0) {
+                        uploadEta.textContent = `${minutes}m ${seconds}s remaining`;
+                    } else {
+                        uploadEta.textContent = `${seconds}s remaining`;
+                    }
+                } else {
+                    uploadEta.textContent = '';
+                }
+                
+                // Update status based on progress
+                if (percentage > 0 && percentage < 100) {
+                    uploadStatus.textContent = `Uploading ${formatFileSize(data.bytes_uploaded)} of ${formatFileSize(data.bytes_total)}`;
+                } else if (percentage >= 100) {
+                    uploadStatus.textContent = 'Processing upload...';
+                    clearInterval(progressInterval);
+                }
+            })
+            .catch(error => {
+                console.log('Progress check failed:', error);
+            });
+    }
+});
 </script>
 
 <style>
