@@ -86,6 +86,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle setting password for social users
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_password') {
+    $newPassword = trim($_POST['new_password'] ?? '');
+    $confirmPassword = trim($_POST['confirm_password'] ?? '');
+    
+    if (empty($newPassword) || empty($confirmPassword)) {
+        $error_message = 'Please fill in all password fields.';
+    } elseif ($newPassword !== $confirmPassword) {
+        $error_message = 'Passwords do not match.';
+    } elseif (strlen($newPassword) < 8) {
+        $error_message = 'Password must be at least 8 characters long.';
+    } else {
+        $result = $userModel->setPasswordForSocialUser($_SESSION['user_id'], $newPassword);
+        
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh user data to reflect password is now set
+            $user = $userModel->getUserById($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
+
 // Process password change for manual accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
     if ($user['account_type'] !== 'manual') {
@@ -287,6 +311,58 @@ ob_start();
                                 <button class="button is-warning" type="submit">
                                     <span class="icon"><i class="fas fa-check"></i></span>
                                     <span>Change Password</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if ($user['account_type'] !== 'manual' && empty($user['password_hash'])): ?>
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-info"><i class="fas fa-key"></i></span>
+                        Set Manual Login Password
+                    </h4>
+                    
+                    <div class="notification is-info is-light mb-4">
+                        <div class="content">
+                            <p><strong>Enable Manual Login:</strong> Set a password to login with your username and password in addition to your social accounts.</p>
+                            <p>This gives you an alternative way to access your account and is recommended for security.</p>
+                            <p>Your password must be at least 8 characters long.</p>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="set_password">
+                        
+                        <div class="field">
+                            <label class="label has-text-light">New Password</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <label class="label has-text-light">Confirm New Password</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-key"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-info" type="submit">
+                                    <span class="icon"><i class="fas fa-plus"></i></span>
+                                    <span>Set Password</span>
                                 </button>
                             </div>
                         </div>

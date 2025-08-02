@@ -370,6 +370,44 @@ class User {
         }
     }
     
+    // Set password for social users (allows manual login)
+    public function setPasswordForSocialUser($userId, $newPassword) {
+        try {
+            $this->ensureConnection();
+            
+            // Get user details
+            $stmt = $this->mysqli->prepare("SELECT account_type, password_hash FROM users WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$user) {
+                return ['success' => false, 'message' => 'User not found.'];
+            }
+            
+            // Hash the new password
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            // Update the user's password
+            $stmt = $this->mysqli->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $stmt->bind_param("si", $passwordHash, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'Password set successfully! You can now login with your username and password.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to set password.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Set password for social user error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while setting password.'];
+        }
+    }
+    
     // Get all pending users for admin review
     public function getPendingUsers() {
         $stmt = $this->mysqli->prepare("
