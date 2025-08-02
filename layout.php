@@ -39,6 +39,13 @@ if (!isset($content)) $content = '';
           <a class="navbar-item" href="../about.php">About</a>
           <a class="navbar-item" href="../services.php">Services</a>
           <a class="navbar-item" href="../contact.php">Contact</a>
+          <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+          <hr class="navbar-divider">
+          <a class="navbar-item" href="../messages.php">
+            <span class="icon"><i class="fas fa-envelope"></i></span>
+            <span>Messages</span>
+          </a>
+          <?php endif; ?>
         </div>
         <div class="navbar-end">
           <div class="navbar-item">
