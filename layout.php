@@ -80,7 +80,7 @@ if (!isset($content)) $content = '';
                         <span>Profile Settings</span>
                       </a>
                       <?php if ($showAdminLink): ?>
-                      <a href="admin/pending-users.php" class="dropdown-item">
+                      <a href="../admin/pending-users.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-users-cog"></i></span>
                         <span>Admin Panel</span>
                       </a>
