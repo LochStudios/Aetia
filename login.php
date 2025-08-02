@@ -54,10 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['login_time'] = time();
                     $_SESSION['account_type'] = 'manual';
                     
-                    // If this is the admin user logging in for the first time, remove the temp password file
-                    if ($username === 'admin' && file_exists('/tmp/aetia_admin_initial_password.txt')) {
-                        unlink('/tmp/aetia_admin_initial_password.txt');
-                        $success_message = 'Admin login successful! Initial setup complete. Please change your password. Redirecting...';
+                    // Check if this is the admin user with auto-generated credentials
+                    $tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
+                    $isInitialAdminLogin = false;
+                    
+                    if ($username === 'admin' && file_exists($tempPasswordFile)) {
+                        // Verify this is actually the initial admin by checking approved_by field
+                        $user = $userModel->getUserById($result['user']['id']);
+                        if ($user && $user['approved_by'] === 'Auto-Generated') {
+                            $isInitialAdminLogin = true;
+                            // Remove the temp password file
+                            unlink($tempPasswordFile);
+                        }
+                    }
+                    
+                    if ($isInitialAdminLogin) {
+                        $success_message = 'Admin login successful! Initial setup complete. Please change your password immediately for security. Redirecting...';
                     } else {
                         $success_message = 'Login successful! Redirecting...';
                     }
@@ -257,6 +269,14 @@ ob_start();
                                 <i class="fas fa-lock"></i>
                             </span>
                         </div>
+                        <?php if (!$isSignupMode): ?>
+                        <p class="help">
+                            <a href="forgot-password.php" class="has-text-primary is-size-7">
+                                <span class="icon is-small"><i class="fas fa-key"></i></span>
+                                Forgot your password?
+                            </a>
+                        </p>
+                        <?php endif; ?>
                     </div>
                     
                     <?php if ($isSignupMode): ?>
