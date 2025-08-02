@@ -54,7 +54,7 @@ if (!isset($content)) $content = '';
           <hr class="navbar-divider">
           <a class="navbar-item" href="../messages.php">
             <span class="icon"><i class="fas fa-envelope"></i></span>
-            <span>Messages</span>
+            <span>Your Messages</span>
           </a>
           <?php endif; ?>
         </div>

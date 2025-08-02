@@ -366,8 +366,7 @@ ob_start();
                                 'unread' => 'fas fa-envelope text-danger',
                                 'read' => 'fas fa-envelope-open text-info',
                                 'responded' => 'fas fa-reply text-success',
-                                'closed' => 'fas fa-archive text-grey',
-                                'archived' => 'fas fa-box-archive text-orange',
+                                'closed' => 'fas fa-archive text-orange',
                                 default => 'fas fa-envelope'
                             };
                             ?>
@@ -480,8 +479,7 @@ ob_start();
                                 'unread' => 'danger',
                                 'read' => 'info',
                                 'responded' => 'success',
-                                'closed' => 'dark',
-                                'archived' => 'warning'
+                                'closed' => 'warning'
                             } ?>">
                                 <?= ucfirst($currentMessage['status']) ?>
                             </span>
@@ -742,9 +740,9 @@ ob_start();
                         </div>
                         
                         <div class="field">
-                            <div class="control is-flex is-justify-content-space-between">
+                            <div class="control is-flex is-justify-content-flex-end">
                                 <!-- Archive Message Button -->
-                                <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
+                                <button class="button is-warning mr-3" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
                                     <span class="icon"><i class="fas fa-archive"></i></span>
                                     <span>Archive Message</span>
                                 </button>
@@ -762,17 +760,6 @@ ob_start();
                 <div class="notification is-warning is-light">
                     <span class="icon"><i class="fas fa-lock"></i></span>
                     This message has been closed and no longer accepts responses.
-                </div>
-                <!-- Archive button for closed messages -->
-                <div class="content">
-                    <div class="field">
-                        <div class="control">
-                            <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
-                                <span class="icon"><i class="fas fa-archive"></i></span>
-                                <span>Archive Message</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -948,8 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newStatus === 'unread' ? 'is-danger' :
                 newStatus === 'read' ? 'is-info' :
                 newStatus === 'responded' ? 'is-success' :
-                newStatus === 'closed' ? 'is-dark' :
-                newStatus === 'archived' ? 'is-warning' : 'is-info'
+                newStatus === 'closed' ? 'is-warning' : 'is-info'
             );
         }
     }

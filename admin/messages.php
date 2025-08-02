@@ -249,7 +249,6 @@ ob_start();
                                 <option value="read" <?= $statusFilter === 'read' ? 'selected' : '' ?>>Read</option>
                                 <option value="responded" <?= $statusFilter === 'responded' ? 'selected' : '' ?>>Responded</option>
                                 <option value="closed" <?= $statusFilter === 'closed' ? 'selected' : '' ?>>Closed</option>
-                                <option value="archived" <?= $statusFilter === 'archived' ? 'selected' : '' ?>>Archived</option>
                             </select>
                         </div>
                     </div>
@@ -300,8 +299,7 @@ ob_start();
                                 'unread' => 'fas fa-envelope text-danger',
                                 'read' => 'fas fa-envelope-open text-info',
                                 'responded' => 'fas fa-reply text-success',
-                                'closed' => 'fas fa-archive text-grey',
-                                'archived' => 'fas fa-box-archive text-orange',
+                                'closed' => 'fas fa-archive text-orange',
                                 default => 'fas fa-envelope'
                             };
                             ?>
@@ -865,8 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newStatus === 'unread' ? 'is-danger' :
                 newStatus === 'read' ? 'is-info' :
                 newStatus === 'responded' ? 'is-success' :
-                newStatus === 'closed' ? 'is-dark' :
-                newStatus === 'archived' ? 'is-warning' : 'is-info'
+                newStatus === 'closed' ? 'is-warning' : 'is-info'
             );
         }
     }
@@ -1073,8 +1070,8 @@ function archiveMessage(messageId) {
                 }
             }).then(data => {
                 Swal.fire({
-                    title: 'Archived!',
-                    text: 'The message has been archived successfully.',
+                    title: 'Message Closed!',
+                    text: 'The message has been closed and archived successfully.',
                     icon: 'success',
                     customClass: {
                         popup: 'has-text-dark',
