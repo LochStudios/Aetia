@@ -117,6 +117,20 @@ class Database {
             
             $this->mysqli->query($createSocialTable);
             
+            // Create password_reset_tokens table
+            $createPasswordResetTable = "
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                token VARCHAR(64) UNIQUE NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_user_token (user_id)
+            )";
+            
+            $this->mysqli->query($createPasswordResetTable);
+
             // Create initial admin user if no users exist
             $this->createInitialAdmin();
             
