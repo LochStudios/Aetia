@@ -4,6 +4,7 @@ session_start();
 
 // Include timezone utilities
 require_once __DIR__ . '/includes/timezone.php';
+require_once __DIR__ . '/includes/FileUploader.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -253,7 +254,8 @@ ob_start();
                                         <figure class="image is-48x48">
                                             <?php
                                             $iconClass = 'fas fa-file fa-2x has-text-grey-dark';
-                                            if ($attachment['is_image']) {
+                                            $isImage = isset($attachment['is_image']) ? $attachment['is_image'] : (strpos($attachment['mime_type'] ?? '', 'image/') === 0);
+                                            if ($isImage) {
                                                 $iconClass = 'fas fa-image fa-2x has-text-info';
                                             } elseif (strpos($attachment['mime_type'], 'pdf') !== false) {
                                                 $iconClass = 'fas fa-file-pdf fa-2x has-text-danger';
@@ -278,7 +280,7 @@ ob_start();
                                                 <span class="icon"><i class="fas fa-download"></i></span>
                                                 <span>Download</span>
                                             </a>
-                                            <?php if ($attachment['is_image']): ?>
+                                            <?php if ($isImage): ?>
                                             <button class="button is-small is-primary" 
                                                     onclick="showImageModal('<?= htmlspecialchars($attachment['original_filename']) ?>', 'view-image.php?id=<?= $attachment['id'] ?>')">
                                                 <span class="icon"><i class="fas fa-eye"></i></span>
