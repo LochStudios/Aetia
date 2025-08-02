@@ -218,6 +218,77 @@ class Message {
         }
     }
     
+    // Get new discussion items since a specific timestamp
+    public function getNewDiscussionItems($messageId, $sinceDateTime) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT 'comment' as type, mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
+                       NULL as attachment_id, NULL as filename, NULL as original_filename, 
+                       NULL as file_size, NULL as mime_type, NULL as file_path
+                FROM message_comments mc
+                LEFT JOIN users u ON mc.user_id = u.id
+                WHERE mc.message_id = ? AND mc.created_at > ?
+                
+                UNION ALL
+                
+                SELECT 'image' as type, ma.id, NULL as comment, 
+                       CASE WHEN u.is_admin = 1 THEN 1 ELSE 0 END as is_admin_comment, 
+                       ma.uploaded_at as created_at,
+                       u.username, u.social_username, u.profile_image,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
+                       ma.id as attachment_id, ma.filename, ma.original_filename,
+                       ma.file_size, ma.mime_type, ma.file_path
+                FROM message_attachments ma
+                LEFT JOIN users u ON ma.user_id = u.id
+                WHERE ma.message_id = ? AND ma.uploaded_at > ? AND ma.mime_type LIKE 'image/%'
+                
+                ORDER BY created_at ASC
+            ");
+            
+            $stmt->bind_param("isis", $messageId, $sinceDateTime, $messageId, $sinceDateTime);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $items = [];
+            while ($row = $result->fetch_assoc()) {
+                $items[] = $row;
+            }
+            
+            $stmt->close();
+            return $items;
+        } catch (Exception $e) {
+            error_log("Get new discussion items error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Get message status
+    public function getMessageStatus($messageId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("SELECT status FROM messages WHERE id = ?");
+            $stmt->bind_param("i", $messageId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                $stmt->close();
+                return $row['status'];
+            }
+            
+            $stmt->close();
+            return null;
+        } catch (Exception $e) {
+            error_log("Get message status error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
     // Add a comment to a message
     public function addComment($messageId, $userId, $comment, $isAdminComment = false) {
         try {

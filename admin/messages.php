@@ -673,10 +673,163 @@ ob_start();
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-refresh message list every 60 seconds
+    // Real-time message updates
+    <?php if ($messageId): ?>
+    let lastCheckTime = new Date().toISOString();
+    let isCheckingMessages = false;
+    
+    function checkForNewMessages() {
+        if (isCheckingMessages) return;
+        
+        isCheckingMessages = true;
+        
+        fetch(`../api/check-new-messages.php?message_id=<?= $messageId ?>&last_check=${encodeURIComponent(lastCheckTime)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.has_new_items) {
+                    appendNewMessages(data.new_items);
+                    lastCheckTime = data.last_check;
+                    
+                    // Update message status if changed
+                    updateMessageStatus(data.message_status);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking for new messages:', error);
+            })
+            .finally(() => {
+                isCheckingMessages = false;
+            });
+    }
+    
+    function appendNewMessages(newItems) {
+        const discussionContainer = document.querySelector('.content h4.title').parentElement;
+        
+        newItems.forEach(item => {
+            const messageHtml = createMessageHTML(item);
+            discussionContainer.insertAdjacentHTML('beforeend', messageHtml);
+        });
+        
+        // Scroll to bottom to show new messages
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    
+    function createMessageHTML(item) {
+        const isAdmin = item.is_admin_comment;
+        const displayName = item.display_name === 'admin' ? 'System Administrator' : item.display_name;
+        
+        let contentHTML = '';
+        if (item.type === 'comment') {
+            contentHTML = item.comment.replace(/\n/g, '<br>');
+        } else if (item.type === 'image') {
+            contentHTML = `
+                <div class="has-text-centered">
+                    <p class="mb-2"><strong>Shared an image:</strong></p>
+                    <figure class="image" style="max-width: 400px; margin: 0 auto;">
+                        <img src="../view-image.php?id=${item.attachment_id}" 
+                             alt="${item.original_filename}"
+                             style="border-radius: 8px; cursor: pointer;"
+                             onclick="showImageModal('${item.original_filename}', '../view-image.php?id=${item.attachment_id}')">
+                    </figure>
+                    <p class="is-size-7 has-text-grey mt-2">
+                        ${item.original_filename} (${item.formatted_file_size})
+                    </p>
+                </div>
+            `;
+        }
+        
+        const profileImage = item.profile_image ? 
+            `<img src="${item.profile_image.startsWith('http') ? item.profile_image : '../' + item.profile_image}" alt="Profile Picture" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">` :
+            `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
+        
+        if (isAdmin) {
+            return `
+                <article class="media" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
+                    <figure class="media-left">
+                        <p class="image is-48x48">${profileImage}</p>
+                    </figure>
+                    <div class="media-content">
+                        <div class="content">
+                            <div class="box has-background-info-light has-text-dark">
+                                <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                                    <div>
+                                        <strong class="has-text-dark">${displayName}</strong>
+                                        <span class="tag is-info is-small ml-1">Admin</span>
+                                    </div>
+                                    <small class="has-text-dark">${item.formatted_date}</small>
+                                </div>
+                                <div class="has-text-dark">${contentHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `;
+        } else {
+            return `
+                <article class="media" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
+                    <div class="media-content">
+                        <div class="content">
+                            <div class="box has-background-light has-text-dark">
+                                <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                                    <div>
+                                        <strong class="has-text-dark">${displayName}</strong>
+                                    </div>
+                                    <small class="has-text-dark">${item.formatted_date}</small>
+                                </div>
+                                <div class="has-text-dark">${contentHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <figure class="media-right">
+                        <p class="image is-48x48">${profileImage}</p>
+                    </figure>
+                </article>
+            `;
+        }
+    }
+    
+    function updateMessageStatus(newStatus) {
+        const statusElement = document.querySelector('.tag[class*="is-"]');
+        if (statusElement && statusElement.textContent.toLowerCase() !== newStatus.toLowerCase()) {
+            statusElement.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+            statusElement.className = statusElement.className.replace(/is-(danger|info|success|dark|warning)/g, 
+                newStatus === 'unread' ? 'is-danger' :
+                newStatus === 'read' ? 'is-info' :
+                newStatus === 'responded' ? 'is-success' :
+                newStatus === 'closed' ? 'is-dark' :
+                newStatus === 'archived' ? 'is-warning' : 'is-info'
+            );
+        }
+    }
+    
+    // Start checking for new messages every 5 seconds
+    const messageCheckInterval = setInterval(checkForNewMessages, 5000);
+    
+    // Clean up interval when page is hidden/unloaded
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(messageCheckInterval);
+        } else {
+            // Restart interval when page becomes visible
+            setInterval(checkForNewMessages, 5000);
+        }
+    });
+    
+    // Smooth scrolling for comment submission
+    const commentForm = document.querySelector('form[action*="add_comment"]');
+    if (commentForm) {
+        commentForm.addEventListener('submit', function() {
+            setTimeout(function() {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+    <?php else: ?>
+    // Auto-refresh message list every 60 seconds when viewing message list
     setInterval(function() {
         // You could implement AJAX refresh here if needed
     }, 60000);
+    <?php endif; ?>
 });
 
 function updateFilters(filterType, value) {
@@ -848,6 +1001,11 @@ function formatFileSize(bytes) {
     max-width: 100% !important;
     max-height: 80vh !important;
     object-fit: contain !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 
