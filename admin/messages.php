@@ -600,7 +600,7 @@ ob_start();
                 <?php endif; ?>
                 
                 <!-- Add Admin Response Form -->
-                <?php if ($currentMessage['status'] !== 'closed' && $currentMessage['status'] !== 'archived'): ?>
+                <?php if ($currentMessage['status'] !== 'closed'): ?>
                 <div class="content">
                     <h5 class="title is-6">Add Admin Response</h5>
                     <form id="comment-form" method="POST" enctype="multipart/form-data">

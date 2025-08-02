@@ -419,8 +419,8 @@ class Message {
             $conditions = [];
             
             // Exclude archived messages unless specifically requested
-            if ($status !== 'closed' && $status !== 'archived') {
-                $conditions[] = "m.status != 'closed' AND m.status != 'archived'";
+            if ($status !== 'closed') {
+                $conditions[] = "m.status != 'closed'";
             }
             
             if ($status !== null) {
@@ -594,7 +594,7 @@ class Message {
             // Add the archive comment
             $this->addComment($messageId, $archivedBy, $archiveComment, true);
             
-            // Update message status to closed
+            // Update message status to closed (which means archived)
             $stmt = $this->mysqli->prepare("
                 UPDATE messages 
                 SET status = 'closed', 
@@ -633,7 +633,7 @@ class Message {
                 FROM messages m
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
-                WHERE m.user_id = ? AND (m.status = 'closed' OR m.status = 'archived')
+                WHERE m.user_id = ? AND m.status = 'closed'
                 ORDER BY m.archived_at DESC
                 LIMIT ? OFFSET ?
             ");
@@ -672,7 +672,7 @@ class Message {
                 LEFT JOIN users u_owner ON m.user_id = u_owner.id
                 LEFT JOIN users u_creator ON m.created_by = u_creator.id
                 LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
-                WHERE (m.status = 'closed' OR m.status = 'archived')
+                WHERE m.status = 'closed'
             ";
             
             $conditions = [];

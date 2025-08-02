@@ -23,7 +23,7 @@ $messageId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 if ($messageId) {
     $currentMessage = $messageModel->getMessage($messageId, $userId);
-    if ($currentMessage && ($currentMessage['status'] === 'closed' || $currentMessage['status'] === 'archived')) {
+    if ($currentMessage && $currentMessage['status'] === 'closed') {
         $messageComments = $messageModel->getMessageComments($messageId);
     } else {
         $currentMessage = null; // Reset if not archived or not accessible

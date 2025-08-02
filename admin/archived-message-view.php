@@ -36,7 +36,7 @@ if (!$messageId) {
 // Get the archived message
 $currentMessage = $messageModel->getMessage($messageId);
 
-if (!$currentMessage || ($currentMessage['status'] !== 'closed' && $currentMessage['status'] !== 'archived')) {
+if (!$currentMessage || $currentMessage['status'] !== 'closed') {
     header('Location: archived-messages.php');
     exit;
 }
