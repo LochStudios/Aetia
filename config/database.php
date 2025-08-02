@@ -11,23 +11,10 @@ class Database {
 
     public function __construct() {
         try {
-            // Try different possible paths for the database configuration
-            $possiblePaths = [
-                '/home/aetiacom/web-config/database.php',
-                __DIR__ . '/../web-config/database.php',
-                realpath(__DIR__ . '/../web-config/database.php')
-            ];
+            $configFile = '/home/aetiacom/web-config/database.php';
             
-            $configFile = null;
-            foreach ($possiblePaths as $path) {
-                if ($path && file_exists($path)) {
-                    $configFile = $path;
-                    break;
-                }
-            }
-            
-            if (!$configFile) {
-                throw new Exception("Database configuration file 'database.php' not found in any of the expected locations");
+            if (!file_exists($configFile)) {
+                throw new Exception("Database configuration file not found at: {$configFile}");
             }
             
             // Include the configuration file to load variables
