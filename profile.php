@@ -98,30 +98,30 @@ ob_start();
     
     <div class="columns">
         <div class="column is-4">
-            <div class="card">
+            <div class="card has-background-dark">
                 <div class="card-content has-text-centered">
                     <?php if ($user['profile_image']): ?>
                         <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
                     <?php else: ?>
-                        <div style="width:120px;height:120px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                            <span class="icon is-large has-text-grey">
+                        <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                            <span class="icon is-large has-text-grey-light">
                                 <i class="fas fa-user fa-3x"></i>
                             </span>
                         </div>
                     <?php endif; ?>
                     
-                    <h3 class="title is-4"><?= htmlspecialchars($user['username']) ?></h3>
-                    <p class="subtitle is-6 has-text-grey">
+                    <h3 class="title is-4 has-text-light"><?= htmlspecialchars($user['username']) ?></h3>
+                    <p class="subtitle is-6 has-text-grey-light">
                         <?= ucfirst($user['account_type']) ?> Account
                     </p>
                     
                     <?php if ($user['first_name'] || $user['last_name']): ?>
-                    <p class="has-text-grey">
+                    <p class="has-text-grey-light">
                         <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
                     </p>
                     <?php endif; ?>
                     
-                    <p class="has-text-grey is-size-7">
+                    <p class="has-text-grey-light is-size-7">
                         Member since <?= date('M j, Y', strtotime($user['created_at'])) ?>
                     </p>
                 </div>
@@ -129,33 +129,33 @@ ob_start();
         </div>
         
         <div class="column is-8">
-            <div class="card">
+            <div class="card has-background-dark">
                 <div class="card-content">
-                    <h4 class="title is-5 mb-4">Account Information</h4>
+                    <h4 class="title is-5 has-text-light mb-4">Account Information</h4>
                     
                     <div class="field">
-                        <label class="label">Username</label>
+                        <label class="label has-text-light">Username</label>
                         <div class="control">
-                            <input class="input" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
+                            <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
                         </div>
                     </div>
                     
                     <div class="field">
-                        <label class="label">Email</label>
+                        <label class="label has-text-light">Email</label>
                         <div class="control">
-                            <input class="input" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
+                            <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
                         </div>
                     </div>
                     
                     <div class="field">
-                        <label class="label">Account Type</label>
+                        <label class="label has-text-light">Account Type</label>
                         <div class="control">
-                            <input class="input" type="text" value="<?= ucfirst($user['account_type']) ?>" readonly>
+                            <input class="input has-background-grey-darker has-text-light" type="text" value="<?= ucfirst($user['account_type']) ?>" readonly>
                         </div>
                     </div>
                     
                     <div class="field">
-                        <label class="label">Account Status</label>
+                        <label class="label has-text-light">Account Status</label>
                         <div class="control">
                             <span class="tag <?= $user['is_verified'] ? 'is-success' : 'is-warning' ?>">
                                 <span class="icon"><i class="fas fa-<?= $user['is_verified'] ? 'check-circle' : 'clock' ?>"></i></span>
@@ -167,9 +167,9 @@ ob_start();
             </div>
             
             <?php if ($user['account_type'] === 'manual'): ?>
-            <div class="card mt-4">
+            <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-5 mb-4">
+                    <h4 class="title is-5 has-text-light mb-4">
                         <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
                         Change Password
                     </h4>
@@ -185,9 +185,9 @@ ob_start();
                         <input type="hidden" name="action" value="change_password">
                         
                         <div class="field">
-                            <label class="label">Current Password</label>
+                            <label class="label has-text-light">Current Password</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="password" name="current_password" placeholder="Enter current password" required>
+                                <input class="input has-background-grey-darker has-text-light" type="password" name="current_password" placeholder="Enter current password" required>
                                 <span class="icon is-small is-left">
                                     <i class="fas fa-lock"></i>
                                 </span>
@@ -195,9 +195,9 @@ ob_start();
                         </div>
                         
                         <div class="field">
-                            <label class="label">New Password</label>
+                            <label class="label has-text-light">New Password</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
+                                <input class="input has-background-grey-darker has-text-light" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
                                 <span class="icon is-small is-left">
                                     <i class="fas fa-key"></i>
                                 </span>
@@ -205,9 +205,9 @@ ob_start();
                         </div>
                         
                         <div class="field">
-                            <label class="label">Confirm New Password</label>
+                            <label class="label has-text-light">Confirm New Password</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
+                                <input class="input has-background-grey-darker has-text-light" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
                                 <span class="icon is-small is-left">
                                     <i class="fas fa-key"></i>
                                 </span>
@@ -228,23 +228,23 @@ ob_start();
             <?php endif; ?>
             
             <?php if (!empty($socialConnections)): ?>
-            <div class="card mt-4">
+            <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-5 mb-4">Connected Social Accounts</h4>
+                    <h4 class="title is-5 has-text-light mb-4">Connected Social Accounts</h4>
                     
                     <?php foreach ($socialConnections as $connection): ?>
-                    <div class="notification is-light mb-3">
+                    <div class="notification is-dark mb-3">
                         <div class="level">
                             <div class="level-left">
                                 <div class="level-item">
-                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'link' : 'primary' ?>">
+                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'youtube' ? 'danger' : ($connection['platform'] === 'twitter' ? 'info' : 'warning')) ?>">
                                         <i class="fab fa-<?= $connection['platform'] ?> fa-2x"></i>
                                     </span>
                                 </div>
                                 <div class="level-item">
                                     <div>
-                                        <p class="title is-6"><?= ucfirst($connection['platform']) ?></p>
-                                        <p class="subtitle is-7">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                                        <p class="title is-6 has-text-light"><?= ucfirst($connection['platform']) ?></p>
+                                        <p class="subtitle is-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
                                     </div>
                                 </div>
                             </div>
