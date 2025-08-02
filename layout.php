@@ -79,6 +79,10 @@ if (!isset($content)) $content = '';
                         <span class="icon"><i class="fas fa-user-cog"></i></span>
                         <span>Profile Settings</span>
                       </a>
+                      <a href="../messages.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-envelope"></i></span>
+                        <span>Messages</span>
+                      </a>
                       <?php if ($showAdminLink): ?>
                       <a href="../admin/pending-users.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-users-cog"></i></span>

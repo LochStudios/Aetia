@@ -136,6 +136,42 @@ class Database {
             
             $this->mysqli->query($createPasswordResetTable);
 
+            // Create messages table
+            $createMessagesTable = "
+            CREATE TABLE IF NOT EXISTS messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                subject VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                priority ENUM('low', 'normal', 'high', 'urgent') DEFAULT 'normal',
+                status ENUM('unread', 'read', 'responded', 'closed') DEFAULT 'unread',
+                created_by INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id),
+                INDEX idx_user_status (user_id, status),
+                INDEX idx_created_at (created_at)
+            )";
+            
+            $this->mysqli->query($createMessagesTable);
+
+            // Create message_comments table
+            $createCommentsTable = "
+            CREATE TABLE IF NOT EXISTS message_comments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                message_id INT NOT NULL,
+                user_id INT NOT NULL,
+                comment TEXT NOT NULL,
+                is_admin_comment BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                INDEX idx_message_created (message_id, created_at)
+            )";
+            
+            $this->mysqli->query($createCommentsTable);
+
             // Add new columns to existing users table (for existing databases)
             $this->addMissingColumns();
 

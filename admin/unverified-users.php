@@ -71,6 +71,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-users-cog"></i></span>
                     <span>Pending Users</span>
                 </a>
+                <a href="messages.php" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Messages</span>
+                </a>
                 <a href="../index.php" class="button is-light is-small">
                     <span class="icon"><i class="fas fa-home"></i></span>
                     <span>Back to Website</span>
