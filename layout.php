@@ -23,7 +23,7 @@ if (!isset($content)) $content = '';
     <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="index.php">
-          <img src="img/logo.png" alt="Aetia Talant Agency Logo" style="max-height: 3rem;">
+          <img src="../img/logo.png" alt="Aetia Talant Agency Logo" style="max-height: 3rem;">
         </a>
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
           <span aria-hidden="true"></span>
