@@ -392,7 +392,7 @@ ob_start();
                 
                 <!-- Original Message -->
                 <div class="content">
-                    <div class="box has-background-light has-text-dark">
+                    <div class="box has-background-grey-dark has-text-light">
                         <?= nl2br(htmlspecialchars($currentMessage['message'])) ?>
                     </div>
                 </div>
@@ -480,19 +480,19 @@ ob_start();
                         </figure>
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-info-light has-text-dark">
+                                <div class="box has-background-info-dark has-text-light">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong class="has-text-dark">
+                                            <strong class="has-text-light">
                                                 <?= $item['display_name'] === 'admin' ? 'System Administrator' : htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                             <span class="tag is-info is-small ml-1">Admin</span>
                                         </div>
-                                        <small class="has-text-dark">
+                                        <small class="has-text-light">
                                             <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div class="has-text-dark">
+                                    <div class="has-text-light">
                                         <?php if ($item['type'] === 'comment'): ?>
                                             <?= nl2br(htmlspecialchars($item['comment'])) ?>
                                         <?php elseif ($item['type'] === 'image'): ?>
@@ -518,18 +518,18 @@ ob_start();
                         <!-- User item - icon on right -->
                         <div class="media-content">
                             <div class="content">
-                                <div class="box has-background-light has-text-dark">
+                                <div class="box has-background-grey-dark has-text-light">
                                     <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                         <div>
-                                            <strong class="has-text-dark">
+                                            <strong class="has-text-light">
                                                 <?= htmlspecialchars($item['display_name']) ?>
                                             </strong>
                                         </div>
-                                        <small class="has-text-dark">
+                                        <small class="has-text-light">
                                             <?= formatDateForUser($item['created_at']) ?>
                                         </small>
                                     </div>
-                                    <div class="has-text-dark">
+                                    <div class="has-text-light">
                                         <?php if ($item['type'] === 'comment'): ?>
                                             <?= nl2br(htmlspecialchars($item['comment'])) ?>
                                         <?php elseif ($item['type'] === 'image'): ?>
@@ -759,15 +759,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </figure>
                     <div class="media-content">
                         <div class="content">
-                            <div class="box has-background-info-light has-text-dark">
+                            <div class="box has-background-info-dark has-text-light">
                                 <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                     <div>
-                                        <strong class="has-text-dark">${displayName}</strong>
+                                        <strong class="has-text-light">${displayName}</strong>
                                         <span class="tag is-info is-small ml-1">Admin</span>
                                     </div>
-                                    <small class="has-text-dark">${item.formatted_date}</small>
+                                    <small class="has-text-light">${item.formatted_date}</small>
                                 </div>
-                                <div class="has-text-dark">${contentHTML}</div>
+                                <div class="has-text-light">${contentHTML}</div>
                             </div>
                         </div>
                     </div>
@@ -778,14 +778,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <article class="media" style="opacity: 0; animation: fadeIn 0.5s ease-in forwards;">
                     <div class="media-content">
                         <div class="content">
-                            <div class="box has-background-light has-text-dark">
+                            <div class="box has-background-grey-dark has-text-light">
                                 <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
                                     <div>
-                                        <strong class="has-text-dark">${displayName}</strong>
+                                        <strong class="has-text-light">${displayName}</strong>
                                     </div>
-                                    <small class="has-text-dark">${item.formatted_date}</small>
+                                    <small class="has-text-light">${item.formatted_date}</small>
                                 </div>
-                                <div class="has-text-dark">${contentHTML}</div>
+                                <div class="has-text-light">${contentHTML}</div>
                             </div>
                         </div>
                     </div>
