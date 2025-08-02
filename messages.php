@@ -74,6 +74,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Subject and message are required';
                 }
                 break;
+                
+            case 'archive_message':
+                $messageId = intval($_POST['message_id']);
+                $archiveReason = isset($_POST['archive_reason']) ? trim($_POST['archive_reason']) : null;
+                
+                // Verify user has access to this message
+                $messageDetails = $messageModel->getMessage($messageId, $userId);
+                if ($messageDetails) {
+                    $result = $messageModel->archiveMessage($messageId, $userId, $archiveReason);
+                    if ($result['success']) {
+                        $message = 'Message archived successfully!';
+                        // Redirect to messages list after successful archive
+                        header('Location: messages.php');
+                        exit;
+                    } else {
+                        $error = $result['message'] ?? 'Failed to archive message';
+                    }
+                } else {
+                    $error = 'Message not found or access denied';
+                }
+                break;
         }
     }
 }
@@ -205,6 +226,14 @@ ob_start();
                     </button>
                 </div>
                 
+                <!-- View Archived Messages Link -->
+                <div class="field mb-4">
+                    <a href="archived-messages.php" class="button is-light is-fullwidth">
+                        <span class="icon"><i class="fas fa-archive"></i></span>
+                        <span>View Archived Messages</span>
+                    </a>
+                </div>
+                
                 <?php if (empty($messages)): ?>
                 <div class="has-text-centered has-text-grey">
                     <span class="icon is-large">
@@ -226,6 +255,7 @@ ob_start();
                                 'read' => 'fas fa-envelope-open text-info',
                                 'responded' => 'fas fa-reply text-success',
                                 'closed' => 'fas fa-archive text-grey',
+                                'archived' => 'fas fa-box-archive text-orange',
                                 default => 'fas fa-envelope'
                             };
                             ?>
@@ -302,7 +332,8 @@ ob_start();
                                 'unread' => 'danger',
                                 'read' => 'info',
                                 'responded' => 'success',
-                                'closed' => 'dark'
+                                'closed' => 'dark',
+                                'archived' => 'warning'
                             } ?>">
                                 <?= ucfirst($currentMessage['status']) ?>
                             </span>
@@ -389,10 +420,16 @@ ob_start();
                         </div>
                         
                         <div class="field">
-                            <div class="control">
+                            <div class="control is-flex is-justify-content-space-between">
                                 <button class="button is-primary" type="submit">
                                     <span class="icon"><i class="fas fa-reply"></i></span>
                                     <span>Send Response</span>
+                                </button>
+                                
+                                <!-- Archive Message Button -->
+                                <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
+                                    <span class="icon"><i class="fas fa-archive"></i></span>
+                                    <span>Archive Message</span>
                                 </button>
                             </div>
                         </div>
@@ -402,6 +439,17 @@ ob_start();
                 <div class="notification is-warning is-light">
                     <span class="icon"><i class="fas fa-lock"></i></span>
                     This message has been closed and no longer accepts responses.
+                </div>
+                <!-- Archive button for closed messages -->
+                <div class="content">
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
+                                <span class="icon"><i class="fas fa-archive"></i></span>
+                                <span>Archive Message</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -547,6 +595,73 @@ function updateUserFilters(filterType, value) {
     
     // Navigate to the updated URL
     window.location.href = url.toString();
+}
+
+// Archive message function
+function archiveMessage(messageId) {
+    Swal.fire({
+        title: 'Archive Message',
+        text: 'Are you sure you want to archive this message? This will close the conversation.',
+        input: 'textarea',
+        inputPlaceholder: 'Optional: Reason for archiving...',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Archive Message',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ff8c00',
+        cancelButtonColor: '#d33',
+        customClass: {
+            popup: 'has-text-dark',
+            title: 'has-text-dark',
+            htmlContainer: 'has-text-dark',
+            input: 'has-text-dark'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('action', 'archive_message');
+            formData.append('message_id', messageId);
+            if (result.value) {
+                formData.append('archive_reason', result.value);
+            }
+            
+            // Submit form
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Archived!',
+                        text: 'The message has been archived successfully.',
+                        icon: 'success',
+                        customClass: {
+                            popup: 'has-text-dark',
+                            title: 'has-text-dark',
+                            htmlContainer: 'has-text-dark'
+                        }
+                    }).then(() => {
+                        // Redirect to messages list
+                        window.location.href = 'messages.php';
+                    });
+                } else {
+                    throw new Error('Archive failed');
+                }
+            }).catch(error => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to archive the message. Please try again.',
+                    icon: 'error',
+                    customClass: {
+                        popup: 'has-text-dark',
+                        title: 'has-text-dark',
+                        htmlContainer: 'has-text-dark'
+                    }
+                });
+            });
+        }
+    });
 }
 </script>
 <?php

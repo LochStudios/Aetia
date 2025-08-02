@@ -58,7 +58,7 @@ class Message {
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count
                 FROM messages m
                 LEFT JOIN users u ON m.created_by = u.id
-                WHERE (m.user_id = ? OR m.created_by = ?)";
+                WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'archived'";
             
             $params = [$userId, $userId];
             $types = "ii";
@@ -257,6 +257,11 @@ class Message {
             $types = "";
             $conditions = [];
             
+            // Exclude archived messages unless specifically requested
+            if ($status !== 'archived') {
+                $conditions[] = "m.status != 'archived'";
+            }
+            
             if ($status !== null) {
                 $conditions[] = "m.status = ?";
                 $params[] = $status;
@@ -410,6 +415,135 @@ class Message {
             return $tags;
         } catch (Exception $e) {
             error_log("Get available tags error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Archive a message
+    public function archiveMessage($messageId, $archivedBy, $archiveReason = null) {
+        try {
+            $this->ensureConnection();
+            
+            // First add a comment noting the message was archived
+            $archiveComment = "Message closed and archived.";
+            if ($archiveReason) {
+                $archiveComment .= " Reason: " . $archiveReason;
+            }
+            
+            // Add the archive comment
+            $this->addComment($messageId, $archivedBy, $archiveComment, true);
+            
+            // Update message status to archived
+            $stmt = $this->mysqli->prepare("
+                UPDATE messages 
+                SET status = 'archived', 
+                    archived_by = ?, 
+                    archived_at = CURRENT_TIMESTAMP,
+                    archive_reason = ?,
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            
+            $stmt->bind_param("isi", $archivedBy, $archiveReason, $messageId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return ['success' => $result, 'message' => $result ? 'Message archived successfully' : 'Failed to archive message'];
+        } catch (Exception $e) {
+            error_log("Archive message error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+    
+    // Get archived messages for a user
+    public function getArchivedMessages($userId, $limit = 50, $offset = 0) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                       m.archived_at, m.archive_reason,
+                       u_creator.first_name as creator_first_name, u_creator.last_name as creator_last_name,
+                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name
+                FROM messages m
+                LEFT JOIN users u_creator ON m.created_by = u_creator.id
+                LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
+                WHERE m.user_id = ? AND m.status = 'archived'
+                ORDER BY m.archived_at DESC
+                LIMIT ? OFFSET ?
+            ");
+            
+            $stmt->bind_param("iii", $userId, $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $messages = [];
+            while ($row = $result->fetch_assoc()) {
+                $messages[] = $row;
+            }
+            
+            $stmt->close();
+            return $messages;
+        } catch (Exception $e) {
+            error_log("Get archived messages error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Get all archived messages for admin
+    public function getAllArchivedMessages($limit = 50, $offset = 0, $tagFilter = null) {
+        try {
+            $this->ensureConnection();
+            
+            $baseQuery = "
+                SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                       m.archived_at, m.archive_reason,
+                       u_owner.first_name as owner_first_name, u_owner.last_name as owner_last_name,
+                       u_creator.first_name as creator_first_name, u_creator.last_name as creator_last_name,
+                       u_archiver.first_name as archiver_first_name, u_archiver.last_name as archiver_last_name
+                FROM messages m
+                LEFT JOIN users u_owner ON m.user_id = u_owner.id
+                LEFT JOIN users u_creator ON m.created_by = u_creator.id
+                LEFT JOIN users u_archiver ON m.archived_by = u_archiver.id
+                WHERE m.status = 'archived'
+            ";
+            
+            $conditions = [];
+            $types = "";
+            $params = [];
+            
+            if ($tagFilter !== null && $tagFilter !== '') {
+                $conditions[] = "m.tags LIKE ?";
+                $types .= "s";
+                $params[] = "%$tagFilter%";
+            }
+            
+            if (!empty($conditions)) {
+                $baseQuery .= " AND " . implode(" AND ", $conditions);
+            }
+            
+            $baseQuery .= " ORDER BY m.archived_at DESC LIMIT ? OFFSET ?";
+            $types .= "ii";
+            $params[] = $limit;
+            $params[] = $offset;
+            
+            $stmt = $this->mysqli->prepare($baseQuery);
+            if (!empty($params)) {
+                $stmt->bind_param($types, ...$params);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $messages = [];
+            while ($row = $result->fetch_assoc()) {
+                $messages[] = $row;
+            }
+            
+            $stmt->close();
+            return $messages;
+        } catch (Exception $e) {
+            error_log("Get all archived messages error: " . $e->getMessage());
             return [];
         }
     }
