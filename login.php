@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = $userModel->createManualUser($username, $email, $password, $firstName, $lastName);
                 
                 if ($result['success']) {
-                    $success_message = 'Account created successfully! You can now log in.';
+                    $success_message = 'Account created successfully! Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms before you can access your account.';
                     $isSignupMode = false; // Switch to login mode
                 } else {
                     $error_message = $result['message'];
@@ -106,6 +106,21 @@ ob_start();
                     <span class="icon has-text-primary"><i class="fas fa-<?= $isSignupMode ? 'user-plus' : 'sign-in-alt' ?>"></i></span>
                     <?= $isSignupMode ? 'Create Account' : 'Login' ?>
                 </h2>
+                
+                <?php if ($isSignupMode): ?>
+                <div class="notification is-info is-light mb-4">
+                    <div class="content">
+                        <p><strong>Notice:</strong> All new accounts require approval from Aetia Talant Agency.</p>
+                        <p>After creating your account, our team will contact you to discuss:</p>
+                        <ul>
+                            <li>Platform terms and conditions</li>
+                            <li>Commission structure and revenue sharing</li>
+                            <li>Business partnership agreements</li>
+                        </ul>
+                        <p>You will be able to access your account once approved.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
                 
                 <!-- Social Login Section -->
                 <div class="mb-5">
