@@ -367,18 +367,22 @@ ob_start();
                         <div class="media-content">
                             <div class="content">
                                 <div class="box has-background-<?= $comment['is_admin_comment'] ? 'info-light' : 'light' ?> <?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
-                                    <p>
-                                        <strong class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= htmlspecialchars($comment['username']) ?></strong>
-                                        <?php if ($comment['is_admin_comment']): ?>
-                                            <span class="tag is-info is-small ml-1">Admin</span>
-                                        <?php endif; ?>
-                                        <br>
-                                        <span class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>"><?= nl2br(htmlspecialchars($comment['comment'])) ?></span>
-                                        <br>
+                                    <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                                        <div>
+                                            <strong class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                                <?= $comment['username'] === 'admin' ? 'System Administrator' : htmlspecialchars($comment['username']) ?>
+                                            </strong>
+                                            <?php if ($comment['is_admin_comment']): ?>
+                                                <span class="tag is-info is-small ml-1">Admin</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <small class="has-text-grey">
                                             <?= formatDateForUser($comment['created_at']) ?>
                                         </small>
-                                    </p>
+                                    </div>
+                                    <div class="<?= $comment['is_admin_comment'] ? 'has-text-dark' : '' ?>">
+                                        <?= nl2br(htmlspecialchars($comment['comment'])) ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
