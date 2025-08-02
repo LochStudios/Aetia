@@ -13,4 +13,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // Enhanced dropdown functionality
+  const dropdowns = document.querySelectorAll('.dropdown');
+  dropdowns.forEach(dropdown => {
+    const trigger = dropdown.querySelector('.dropdown-trigger button');
+    const menu = dropdown.querySelector('.dropdown-menu');
+    
+    // Ensure dropdown shows on hover
+    dropdown.addEventListener('mouseenter', () => {
+      dropdown.classList.add('is-active');
+    });
+    
+    // Hide dropdown when mouse leaves
+    dropdown.addEventListener('mouseleave', () => {
+      dropdown.classList.remove('is-active');
+    });
+    
+    // Toggle dropdown on click for mobile/touch devices
+    if (trigger) {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        dropdown.classList.toggle('is-active');
+      });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('is-active');
+      }
+    });
+  });
 });
