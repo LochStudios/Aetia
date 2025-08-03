@@ -2,6 +2,7 @@
 // models/User.php - User model for authentication and user management
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../services/EmailService.php';
 
 class User {
     private $database;
@@ -44,6 +45,16 @@ class User {
             if ($result) {
                 $userId = $this->mysqli->insert_id;
                 $stmt->close();
+                
+                // Send welcome email
+                try {
+                    $emailService = new EmailService();
+                    $emailService->sendWelcomeEmail($email, $firstName ?: $username);
+                } catch (Exception $e) {
+                    // Log email error but don't fail the user creation
+                    error_log('Failed to send welcome email: ' . $e->getMessage());
+                }
+                
                 return ['success' => true, 'user_id' => $userId];
             } else {
                 $stmt->close();
@@ -980,6 +991,94 @@ class User {
         } catch (Exception $e) {
             error_log("Update user profile error: " . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred while updating your profile.'];
+        }
+    }
+    
+    /**
+     * Get all users for admin email functionality
+     */
+    public function getAllUsers() {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type, approval_status
+                FROM users 
+                ORDER BY username ASC
+            ");
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $users = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
+            
+            $stmt->close();
+            return $users;
+            
+        } catch (Exception $e) {
+            error_log("Get all users error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get all active users for newsletter functionality
+     */
+    public function getAllActiveUsers() {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type
+                FROM users 
+                WHERE is_active = 1 AND approval_status = 'approved'
+                ORDER BY username ASC
+            ");
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $users = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
+            
+            $stmt->close();
+            return $users;
+            
+        } catch (Exception $e) {
+            error_log("Get all active users error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get user by ID for email functionality
+     */
+    public function getUserById($userId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type, approval_status
+                FROM users 
+                WHERE id = ?
+            ");
+            
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $user;
+            
+        } catch (Exception $e) {
+            error_log("Get user by ID error: " . $e->getMessage());
+            return null;
         }
     }
 }

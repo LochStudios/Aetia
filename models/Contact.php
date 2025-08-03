@@ -2,6 +2,7 @@
 // models/Contact.php - Contact model for Aetia Talant Agency
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../services/EmailService.php';
 
 class Contact {
     private $db;
@@ -72,6 +73,21 @@ class Contact {
             $contactId = $this->mysqli->insert_id;
             $stmt->close();
             if ($result) {
+                // Send email notification to admins
+                try {
+                    $emailService = new EmailService();
+                    $contactData = [
+                        'name' => $name,
+                        'email' => $email,
+                        'subject' => $subject,
+                        'message' => $message
+                    ];
+                    $emailService->sendContactFormNotification($contactData);
+                } catch (Exception $e) {
+                    // Log email error but don't fail the contact submission
+                    error_log('Failed to send contact form email notification: ' . $e->getMessage());
+                }
+                
                 return [
                     'success' => true, 
                     'message' => 'Thank you for your message. We will get back to you soon!',
