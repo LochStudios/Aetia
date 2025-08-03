@@ -71,7 +71,7 @@ class ImageUploadService {
                 return $aws_bucket_name;
             }
         }
-        return 'aetia'; // Default bucket name
+        return ''; // Empty bucket name - files go directly to endpoint root
     }
     
     /** Get region from configuration file */
@@ -95,7 +95,7 @@ class ImageUploadService {
                 return $aws_endpoint;
             }
         }
-        return 'https://au-mel-1.linodeobjects.com'; // Default endpoint without bucket name
+        return 'https://aetia.au-mel-1.linodeobjects.com'; // Bucket endpoint
     }
     
     /**
