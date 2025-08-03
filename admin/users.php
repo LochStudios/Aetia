@@ -487,7 +487,6 @@ ob_start();
                     </div>
                 </div>
             </div>
-            
             <!-- Action Buttons -->
             <div class="buttons">
                 <?php if ($user['approval_status'] === 'pending'): ?>
@@ -501,7 +500,6 @@ ob_start();
                             <span>Mark Contact</span>
                         </button>
                     </form>
-                    
                     <!-- Approve User -->
                     <form method="POST" style="display:inline;" id="approve-form-<?= $user['id'] ?>">
                         <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
@@ -511,7 +509,6 @@ ob_start();
                             <span>Approve</span>
                         </button>
                     </form>
-                    
                     <!-- Mark as Admin -->
                     <form method="POST" style="display:inline;" id="admin-form-<?= $user['id'] ?>">
                         <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
@@ -521,7 +518,6 @@ ob_start();
                             <span>Mark as Admin</span>
                         </button>
                     </form>
-                    
                     <!-- Reject User -->
                     <form method="POST" style="display:inline;" id="reject-form-<?= $user['id'] ?>">
                         <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
@@ -533,7 +529,6 @@ ob_start();
                         </button>
                     </form>
                 <?php endif; ?>
-                
                 <?php if ($user['is_verified'] == 0 && $user['is_active'] == 1): ?>
                     <!-- Verify User -->
                     <form method="POST" style="display:inline;" id="verify-form-<?= $user['id'] ?>">
@@ -545,7 +540,6 @@ ob_start();
                         </button>
                     </form>
                 <?php endif; ?>
-                
                 <?php if ($user['is_active'] == 1): ?>
                     <!-- Deactivate User -->
                     <form method="POST" style="display:inline;" id="deactivate-form-<?= $user['id'] ?>">
@@ -558,15 +552,12 @@ ob_start();
                         </button>
                     </form>
                 <?php endif; ?>
-            </div>
-        </div>
-                    </div>
                 </div>
             </div>
         </div>
+    </div>
     <?php endforeach; ?>
     </div>
-    
     <?php endif; ?>
 </div>
 
