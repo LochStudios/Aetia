@@ -110,11 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'newsletter',
                             $_SESSION['user_id']
                         );
-                            $newsletterSubject,
-                            $newsletterBody,
-                            strip_tags($newsletterBody)
-                        );
-                        
                         if ($result) {
                             $successCount++;
                         } else {
