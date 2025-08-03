@@ -1145,9 +1145,9 @@ class User {
     }
     
     /**
-     * Update user's profile image
+     * Update user's profile image reference
      * @param int $userId The user ID
-     * @param string $imageUrl The URL of the uploaded image
+     * @param string $imageUrl The reference/flag for the uploaded image (not the actual URL)
      * @return array Success/failure result
      */
     public function updateProfileImage($userId, $imageUrl) {

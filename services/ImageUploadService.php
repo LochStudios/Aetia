@@ -96,6 +96,85 @@ class ImageUploadService {
     }
     
     /**
+     * Ensure user's profile image folder exists in the bucket
+     * @param int $userId The user ID
+     * @return bool Success status
+     */
+    private function ensureUserFolderExists($userId) {
+        try {
+            $folderKey = "profile-images/user-{$userId}/";
+            
+            // Check if the folder marker already exists
+            try {
+                $this->s3Client->headObject([
+                    'Bucket' => $this->bucketName,
+                    'Key' => $folderKey,
+                ]);
+                // Folder marker exists, we're good
+                return true;
+            } catch (Exception $e) {
+                // Folder marker doesn't exist, create it
+            }
+            
+            // Create a folder marker (empty object with trailing slash)
+            $this->s3Client->putObject([
+                'Bucket' => $this->bucketName,
+                'Key' => $folderKey,
+                'Body' => '',
+                'ContentType' => 'application/x-directory',
+                'Metadata' => [
+                    'user-id' => (string)$userId,
+                    'created-date' => date('Y-m-d H:i:s'),
+                    'folder-type' => 'profile-images',
+                ]
+            ]);
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Folder creation error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Initialize basic bucket structure
+     * This creates the main folders for organization
+     * 
+     * @return bool Success status
+     */
+    public function initializeBucketStructure() {
+        try {
+            $folders = [
+                'profile-images/',
+                'documents/',
+                'temp/',
+                'backups/',
+            ];
+            
+            foreach ($folders as $folder) {
+                $this->s3Client->putObject([
+                    'Bucket' => $this->bucketName,
+                    'Key' => $folder,
+                    'Body' => '',
+                    'ContentType' => 'application/x-directory',
+                    'Metadata' => [
+                        'created-date' => date('Y-m-d H:i:s'),
+                        'folder-type' => 'system',
+                        'purpose' => 'Organization structure',
+                    ]
+                ]);
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Bucket structure initialization error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
         * Upload profile image to S3
         * @param array $file The uploaded file from $_FILES
         * @param int $userId The user ID for unique naming
@@ -111,17 +190,24 @@ class ImageUploadService {
             // Generate unique filename with proper folder structure
             $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $fileName = "profile-images/user-{$userId}/profile." . $fileExtension;
+            
+            // Ensure the user's folder exists before uploading
+            if (!$this->ensureUserFolderExists($userId)) {
+                return ['success' => false, 'message' => 'Failed to create user folder in storage.'];
+            }
+            
             // Delete any existing profile images for this user before uploading new one
             $this->deleteAllUserProfileImages($userId);
+            
             // Resize image if needed
             $resizedImagePath = $this->resizeImage($file['tmp_name'], $fileExtension);
-            // Upload to S3
+            // Upload to S3 with authenticated read access
             $result = $this->s3Client->putObject([
                 'Bucket' => $this->bucketName,
                 'Key' => $fileName,
                 'SourceFile' => $resizedImagePath ?: $file['tmp_name'],
                 'ContentType' => $file['type'],
-                'ACL' => 'public-read', // Make the image publicly accessible
+                'ACL' => 'authenticated-read', // Only authenticated users can access
                 'Metadata' => [
                     'user-id' => (string)$userId,
                     'upload-date' => date('Y-m-d H:i:s'),
@@ -333,6 +419,137 @@ class ImageUploadService {
         } catch (Exception $e) {
             error_log("User images deletion error: " . $e->getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Generate a presigned URL for secure access to a user's profile image
+     * 
+     * @param int $userId The user ID whose image to access
+     * @param string $extension The file extension (jpg, png, etc.)
+     * @param int $expirationMinutes How long the URL should be valid (default: 60 minutes)
+     * @return string|false The presigned URL or false if failed
+     */
+    public function getPresignedProfileImageUrl($userId, $extension = 'jpg', $expirationMinutes = 60) {
+        try {
+            $fileName = "profile-images/user-{$userId}/profile.{$extension}";
+            
+            // Check if the image exists first
+            try {
+                $this->s3Client->headObject([
+                    'Bucket' => $this->bucketName,
+                    'Key' => $fileName,
+                ]);
+            } catch (Exception $e) {
+                // Image doesn't exist, try common extensions
+                $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                $found = false;
+                
+                foreach ($extensions as $ext) {
+                    if ($ext === $extension) continue; // Skip the one we already tried
+                    
+                    $testFileName = "profile-images/user-{$userId}/profile.{$ext}";
+                    try {
+                        $this->s3Client->headObject([
+                            'Bucket' => $this->bucketName,
+                            'Key' => $testFileName,
+                        ]);
+                        $fileName = $testFileName;
+                        $found = true;
+                        break;
+                    } catch (Exception $e) {
+                        continue;
+                    }
+                }
+                
+                if (!$found) {
+                    return false; // No profile image found
+                }
+            }
+            
+            // Generate presigned URL
+            $cmd = $this->s3Client->getCommand('GetObject', [
+                'Bucket' => $this->bucketName,
+                'Key' => $fileName,
+            ]);
+            
+            $request = $this->s3Client->createPresignedRequest(
+                $cmd, 
+                '+' . $expirationMinutes . ' minutes'
+            );
+            
+            return (string) $request->getUri();
+            
+        } catch (Exception $e) {
+            error_log("Presigned URL generation error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get a user's profile image URL for display
+     * This checks if the user owns the image or is an admin
+     * 
+     * @param int $targetUserId The user whose image to display
+     * @param int $currentUserId The current logged-in user
+     * @param bool $isAdmin Whether the current user is an admin
+     * @param int $expirationMinutes How long the URL should be valid
+     * @return string|false The image URL or false if no access
+     */
+    public function getUserProfileImageUrl($targetUserId, $currentUserId, $isAdmin = false, $expirationMinutes = 60) {
+        // Check if user has permission to view this image
+        if ($targetUserId !== $currentUserId && !$isAdmin) {
+            return false; // No permission to view this image
+        }
+        
+        return $this->getPresignedProfileImageUrl($targetUserId, 'jpg', $expirationMinutes);
+    }
+    
+    /**
+     * Get profile image info for a user (for admins)
+     * 
+     * @param int $userId The user ID
+     * @return array Image info including URL, size, upload date, etc.
+     */
+    public function getProfileImageInfo($userId) {
+        try {
+            $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            
+            foreach ($extensions as $ext) {
+                $fileName = "profile-images/user-{$userId}/profile.{$ext}";
+                
+                try {
+                    $result = $this->s3Client->headObject([
+                        'Bucket' => $this->bucketName,
+                        'Key' => $fileName,
+                    ]);
+                    
+                    return [
+                        'exists' => true,
+                        'size' => $result['ContentLength'],
+                        'last_modified' => $result['LastModified']->format('Y-m-d H:i:s'),
+                        'content_type' => $result['ContentType'],
+                        'extension' => $ext,
+                        'presigned_url' => $this->getPresignedProfileImageUrl($userId, $ext, 60),
+                        'metadata' => $result['Metadata'] ?? []
+                    ];
+                    
+                } catch (Exception $e) {
+                    continue;
+                }
+            }
+            
+            return [
+                'exists' => false,
+                'message' => 'No profile image found'
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Profile image info error: " . $e->getMessage());
+            return [
+                'exists' => false,
+                'error' => $e->getMessage()
+            ];
         }
     }
 }

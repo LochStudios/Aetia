@@ -163,8 +163,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $imageUploadService = new ImageUploadService();
             $uploadResult = $imageUploadService->uploadProfileImage($_FILES['profile_image'], $_SESSION['user_id']);
             if ($uploadResult['success']) {
-                // Save the image URL to the database
-                $updateResult = $userModel->updateProfileImage($_SESSION['user_id'], $uploadResult['image_url']);
+                // Instead of storing the S3 URL, store a flag indicating the user has an image
+                // The actual image will be served through our secure endpoint
+                $profileImageFlag = 'user-' . $_SESSION['user_id'] . '-has-image';
+                $updateResult = $userModel->updateProfileImage($_SESSION['user_id'], $profileImageFlag);
                 if ($updateResult['success']) {
                     $success_message = 'Profile image uploaded successfully!';
                     // Refresh user data to reflect changes in the UI
@@ -246,7 +248,18 @@ ob_start();
                         <!-- Profile Image Column -->
                         <div class="column is-4 has-text-centered">
                             <?php if ($user['profile_image']): ?>
-                                <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" class="profile-image-preview">
+                                <?php if ($user['account_type'] === 'manual'): ?>
+                                    <!-- Manual account - use secure S3 endpoint -->
+                                    <img id="profile-image-display" src="view-profile-image.php?user_id=<?= $_SESSION['user_id'] ?>" alt="Profile Picture" class="profile-image-preview" onerror="this.style.display='none'; document.getElementById('profile-placeholder').style.display='flex';">
+                                    <div id="profile-placeholder" class="profile-image-placeholder" style="display:none;">
+                                        <span class="icon is-large has-text-grey-light">
+                                            <i class="fas fa-user fa-3x"></i>
+                                        </span>
+                                    </div>
+                                <?php else: ?>
+                                    <!-- Social account - use direct image URL from social platform -->
+                                    <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" class="profile-image-preview">
+                                <?php endif; ?>
                             <?php else: ?>
                                 <div class="profile-image-placeholder">
                                     <span class="icon is-large has-text-grey-light">
@@ -869,6 +882,30 @@ function handleImageUpload(input) {
         }
     }
 }
+
+// Handle profile image loading with secure endpoint (for manual accounts only)
+function loadSecureProfileImage() {
+    const profileImg = document.getElementById('profile-image-display');
+    const placeholder = document.getElementById('profile-placeholder');
+    
+    // Only handle secure loading if both elements exist (manual accounts only)
+    if (profileImg && placeholder) {
+        profileImg.onerror = function() {
+            this.style.display = 'none';
+            placeholder.style.display = 'flex';
+        };
+        
+        profileImg.onload = function() {
+            this.style.display = 'block';
+            placeholder.style.display = 'none';
+        };
+    }
+}
+
+// Initialize secure image loading when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadSecureProfileImage();
+});
 </script>
 
 <?php
