@@ -1145,6 +1145,70 @@ class User {
     }
     
     /**
+     * Update user's profile image
+     * @param int $userId The user ID
+     * @param string $imageUrl The URL of the uploaded image
+     * @return array Success/failure result
+     */
+    public function updateProfileImage($userId, $imageUrl) {
+        try {
+            $this->ensureConnection();
+            // Validate input
+            if (empty($imageUrl)) {
+                return ['success' => false, 'message' => 'Image URL is required.'];
+            }
+            // Update the user's profile image
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET profile_image = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $imageUrl, $userId);
+            $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+            if ($result && $affectedRows > 0) {
+                return ['success' => true, 'message' => 'Profile image updated successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update profile image or user not found.'];
+            }
+        } catch (Exception $e) {
+            error_log("Update profile image error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while updating your profile image.'];
+        }
+    }
+    
+    /**
+     * Remove user's profile image
+     * @param int $userId The user ID
+     * @return array Success/failure result
+     */
+    public function removeProfileImage($userId) {
+        try {
+            $this->ensureConnection();
+            
+            // Update the user's profile image to NULL
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET profile_image = NULL, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+            if ($result && $affectedRows > 0) {
+                return ['success' => true, 'message' => 'Profile image removed successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to remove profile image or user not found.'];
+            }
+        } catch (Exception $e) {
+            error_log("Remove profile image error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while removing your profile image.'];
+        }
+    }
+    
+    /**
      * Get all users for admin email functionality
      */
     public function getAllUsers() {

@@ -115,6 +115,55 @@
     object-fit: cover;
 }
 
+/* Profile image upload controls */
+.profile-image-upload {
+    margin-top: 0.75rem;
+}
+
+.profile-image-upload .button {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.profile-image-upload .button.is-small {
+    height: auto;
+    line-height: 1.2;
+}
+
+/* Profile image preview */
+.profile-image-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #363636;
+    transition: border-color 0.3s ease;
+}
+
+.profile-image-preview:hover {
+    border-color: #209cee;
+}
+
+/* Profile image placeholder */
+.profile-image-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #363636;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 3px solid #4a4a4a;
+    transition: all 0.3s ease;
+}
+
+.profile-image-placeholder:hover {
+    background: #4a4a4a;
+    border-color: #209cee;
+}
+
 /* Attachment card styling */
 .attachment-card {
     width: 300px;

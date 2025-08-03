@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
+require_once __DIR__ . '/services/ImageUploadService.php';
 
 $userModel = new User();
 $error_message = '';
@@ -155,6 +156,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle profile image upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_image') {
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+        try {
+            $imageUploadService = new ImageUploadService();
+            $uploadResult = $imageUploadService->uploadProfileImage($_FILES['profile_image'], $_SESSION['user_id']);
+            if ($uploadResult['success']) {
+                // Save the image URL to the database
+                $updateResult = $userModel->updateProfileImage($_SESSION['user_id'], $uploadResult['image_url']);
+                if ($updateResult['success']) {
+                    $success_message = 'Profile image uploaded successfully!';
+                    // Refresh user data to reflect changes in the UI
+                    $user = $userModel->getUserById($_SESSION['user_id']);
+                } else {
+                    $error_message = $updateResult['message'];
+                }
+            } else {
+                $error_message = $uploadResult['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Profile image upload error: " . $e->getMessage());
+            $error_message = 'An error occurred while uploading your profile image. Please try again.';
+        }
+    } else {
+        $error_message = 'Please select a valid image file to upload.';
+    }
+}
+
+// Handle profile image removal
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'remove_image') {
+    if (!empty($user['profile_image'])) {
+        try {
+            // Delete from S3 first
+            $imageUploadService = new ImageUploadService();
+            $imageUploadService->deleteProfileImage($user['profile_image']);
+            // Remove from database
+            $result = $userModel->removeProfileImage($_SESSION['user_id']);
+            if ($result['success']) {
+                $success_message = $result['message'];
+                // Refresh user data to reflect changes in the UI
+                $user = $userModel->getUserById($_SESSION['user_id']);
+            } else {
+                $error_message = $result['message'];
+            }
+        } catch (Exception $e) {
+            error_log("Profile image removal error: " . $e->getMessage());
+            $error_message = 'An error occurred while removing your profile image.';
+        }
+    } else {
+        $error_message = 'No profile image to remove.';
+    }
+}
+
 $pageTitle = 'Profile | Aetia Talant Agency';
 ob_start();
 ?>
@@ -192,13 +246,55 @@ ob_start();
                         <!-- Profile Image Column -->
                         <div class="column is-4 has-text-centered">
                             <?php if ($user['profile_image']): ?>
-                                <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">
+                                <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" class="profile-image-preview">
                             <?php else: ?>
-                                <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+                                <div class="profile-image-placeholder">
                                     <span class="icon is-large has-text-grey-light">
                                         <i class="fas fa-user fa-3x"></i>
                                     </span>
                                 </div>
+                            <?php endif; ?>
+                            <?php if ($user['account_type'] === 'manual'): ?>
+                            <!-- Profile Image Upload Controls for Manual Accounts -->
+                            <div class="profile-image-upload">
+                                <?php if ($user['profile_image']): ?>
+                                    <!-- Replace Image Button -->
+                                    <button class="button is-small is-info mb-2" onclick="document.getElementById('imageUploadInput').click()">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span>Change Image</span>
+                                    </button>
+                                    <br>
+                                    <!-- Remove Image Button -->
+                                    <form method="POST" action="profile.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove your profile image?')">
+                                        <input type="hidden" name="action" value="remove_image">
+                                        <button type="submit" class="button is-small is-danger">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-trash"></i>
+                                            </span>
+                                            <span>Remove</span>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <!-- Upload Image Button -->
+                                    <button class="button is-small is-success" onclick="document.getElementById('imageUploadInput').click()">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span>Upload Image</span>
+                                    </button>
+                                <?php endif; ?>
+                                <!-- Hidden File Input -->
+                                <form id="imageUploadForm" method="POST" action="profile.php" enctype="multipart/form-data" style="display:none;">
+                                    <input type="hidden" name="action" value="upload_image">
+                                    <input type="file" id="imageUploadInput" name="profile_image" accept="image/jpeg,image/png,image/gif,image/webp" onchange="handleImageUpload(this)">
+                                </form>
+                                <!-- Upload Info -->
+                                <p class="help has-text-grey-light is-size-7 mt-2">
+                                    Maximum 5MB. JPEG, PNG, GIF, or WebP format.
+                                </p>
+                            </div>
                             <?php endif; ?>
                         </div>
                         <!-- Profile Information Column -->
@@ -733,6 +829,44 @@ function togglePasswordChange() {
         // Collapse
         form.style.display = 'none';
         iconElement.className = 'fas fa-chevron-down';
+    }
+}
+
+function handleImageUpload(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please select a valid image file (JPEG, PNG, GIF, or WebP).');
+            input.value = '';
+            return;
+        }
+        
+        // Validate file size (5MB max)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.size > maxSize) {
+            alert('Image file must be smaller than 5MB.');
+            input.value = '';
+            return;
+        }
+        
+        // Show confirmation dialog
+        if (confirm('Are you sure you want to upload this image as your profile picture?')) {
+            // Show loading state
+            const uploadButtons = document.querySelectorAll('.button');
+            uploadButtons.forEach(btn => {
+                btn.classList.add('is-loading');
+                btn.disabled = true;
+            });
+            
+            // Submit the form
+            document.getElementById('imageUploadForm').submit();
+        } else {
+            // Reset the input if user cancels
+            input.value = '';
+        }
     }
 }
 </script>
