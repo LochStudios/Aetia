@@ -1,5 +1,6 @@
 <?php
 // services.php - Services page for Aetia Talant Agency
+session_start();
 $pageTitle = 'Services | Aetia Talant Agency';
 ob_start();
 ?>

@@ -1,5 +1,6 @@
 <?php
 // contact.php - Contact page for Aetia Talant Agency
+session_start();
 $pageTitle = 'Contact | Aetia Talant Agency';
 ob_start();
 ?>

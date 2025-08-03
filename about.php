@@ -1,5 +1,6 @@
 <?php
 // about.php - About page for Aetia Talant Agency
+session_start();
 $pageTitle = 'About | Aetia Talant Agency';
 ob_start();
 ?>
