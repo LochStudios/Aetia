@@ -27,16 +27,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $userModel->generatePasswordResetToken($email);
         
         if ($result['success']) {
-            // In a real application, you would send an email here
-            // For now, we'll display the reset link directly
-            $resetLink = "http" . (isset($_SERVER['HTTPS']) ? "s" : "") . "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']) . "/reset-password.php?token=" . $result['token'];
+            // Generate the reset URL
+            $resetLink = "https://aetia.com.au/reset-password.php?resetcode=" . $result['token'];
             
-            $success_message = "Password reset instructions have been generated for this account.";
+            // Send the password reset email
+            try {
+                require_once __DIR__ . '/services/EmailService.php';
+                $emailService = new EmailService();
+                $emailService->sendPasswordResetEmail(
+                    $email, 
+                    $result['username'], 
+                    $result['token'], 
+                    $resetLink
+                );
+            } catch (Exception $e) {
+                error_log('Password reset email failed: ' . $e->getMessage());
+                $error_message = 'Unable to send password reset email. Please try again later.';
+            }
             
-            // For development purposes, show the reset link
-            $success_message .= "<br><br><strong>Development Note:</strong> Since email is not configured, here is your reset link:<br>";
-            $success_message .= "<a href='" . $resetLink . "' class='button is-primary is-small mt-2'>Reset Password</a>";
-            $success_message .= "<br><small>This link expires in 1 hour.</small>";
+            if (!isset($error_message)) {
+                $success_message = "Password reset instructions have been sent to your email address. Please check your inbox and follow the instructions to reset your password.";
+                $success_message .= "<br><small>The reset link will expire in 1 hour for security reasons.</small>";
+            }
         } else {
             // Don't reveal if email exists or not for security
             $success_message = "If an account with that email exists, password reset instructions have been sent.";

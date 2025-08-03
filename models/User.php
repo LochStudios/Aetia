@@ -21,6 +21,30 @@ class User {
         }
     }
     
+    // Generate a secure reset code (24-32 characters, alphanumeric)
+    private function generateResetCode() {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $allCharacters = $uppercase . $lowercase . $numbers;
+        
+        $codeLength = random_int(24, 32); // Random length between 24-32 characters
+        $resetCode = '';
+        
+        // Ensure we have at least one character from each required set
+        $resetCode .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $resetCode .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $resetCode .= $numbers[random_int(0, strlen($numbers) - 1)];
+        
+        // Fill the rest with random characters from all sets
+        for ($i = 3; $i < $codeLength; $i++) {
+            $resetCode .= $allCharacters[random_int(0, strlen($allCharacters) - 1)];
+        }
+        
+        // Shuffle the string to randomize the order
+        return str_shuffle($resetCode);
+    }
+    
     // Create a new manual user account
     public function createManualUser($username, $email, $password, $firstName = '', $lastName = '') {
         try {
@@ -702,11 +726,11 @@ class User {
             $user = $result->fetch_assoc();
             $stmt->close();
             
-            // Generate secure token
-            $token = bin2hex(random_bytes(32));
+            // Generate secure reset code (24-32 characters, alphanumeric)
+            $resetCode = $this->generateResetCode();
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
             
-            // Store the token
+            // Store the reset code
             $stmt = $this->mysqli->prepare("
                 INSERT INTO password_reset_tokens (user_id, token, expires_at) 
                 VALUES (?, ?, ?)
@@ -715,14 +739,14 @@ class User {
                 expires_at = VALUES(expires_at), 
                 created_at = NOW()
             ");
-            $stmt->bind_param("iss", $user['id'], $token, $expiresAt);
+            $stmt->bind_param("iss", $user['id'], $resetCode, $expiresAt);
             $result = $stmt->execute();
             $stmt->close();
             
             if ($result) {
                 return [
                     'success' => true, 
-                    'token' => $token,
+                    'token' => $resetCode,
                     'username' => $user['username'],
                     'user_id' => $user['id']
                 ];
@@ -757,7 +781,7 @@ class User {
                 return ['success' => true, 'user' => $user];
             } else {
                 $stmt->close();
-                return ['success' => false, 'message' => 'Invalid or expired reset token.'];
+                return ['success' => false, 'message' => 'Invalid or expired reset code.'];
             }
             
         } catch (Exception $e) {

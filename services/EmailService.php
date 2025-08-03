@@ -231,7 +231,7 @@ class EmailService {
     }
     
     /** Send password reset email */
-    public function sendPasswordResetEmail($userEmail, $userName, $resetToken, $resetUrl) {
+    public function sendPasswordResetEmail($userEmail, $userName, $resetCode, $resetUrl) {
         $subject = "Password Reset Request - Aetia Talent Agency";
         
         $body = "
@@ -242,7 +242,7 @@ class EmailService {
         <p><a href='{$resetUrl}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Reset Password</a></p>
         <p>If the button doesn't work, copy and paste this link into your browser:</p>
         <p>{$resetUrl}</p>
-        <p>This link will expire in 24 hours for security reasons.</p>
+        <p>This link will expire in 1 hour for security reasons.</p>
         <p>If you didn't request this password reset, please ignore this email.</p>
         <br>
         <p>Best regards,<br>The Aetia Team</p>

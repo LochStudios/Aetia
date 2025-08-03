@@ -12,14 +12,14 @@ require_once __DIR__ . '/models/User.php';
 
 $error_message = '';
 $success_message = '';
-$token = $_GET['token'] ?? '';
+$resetCode = $_GET['resetcode'] ?? '';
 
-if (empty($token)) {
-    $error_message = 'Invalid or missing reset token.';
+if (empty($resetCode)) {
+    $error_message = 'Invalid or missing reset code.';
     $validToken = false;
 } else {
     $userModel = new User();
-    $tokenValidation = $userModel->validatePasswordResetToken($token);
+    $tokenValidation = $userModel->validatePasswordResetToken($resetCode);
     $validToken = $tokenValidation['success'];
     
     if (!$validToken) {
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
     } elseif (strlen($newPassword) < 8) {
         $error_message = 'Password must be at least 8 characters long.';
     } else {
-        $result = $userModel->resetPasswordWithToken($token, $newPassword);
+        $result = $userModel->resetPasswordWithToken($resetCode, $newPassword);
         
         if ($result['success']) {
             $success_message = 'Password reset successfully! You can now login with your new password.';
@@ -84,7 +84,7 @@ ob_start();
                     </div>
                 </div>
                 
-                <form method="POST" action="reset-password.php?token=<?= htmlspecialchars($token) ?>">
+                <form method="POST" action="reset-password.php?resetcode=<?= htmlspecialchars($resetCode) ?>">
                     <div class="field">
                         <label class="label">New Password</label>
                         <div class="control has-icons-left">
