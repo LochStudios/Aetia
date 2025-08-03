@@ -188,7 +188,7 @@ ob_start();
         <div class="column is-4">
             <div class="card has-background-dark">
                 <div class="card-content has-text-centered">
-                    <?php if (!empty($user['profile_image'])): ?>
+                    <?php if ($user['profile_image']): ?>
                         <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
                     <?php else: ?>
                         <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
@@ -207,7 +207,7 @@ ob_start();
                     </p>
                     <?php endif; ?>
                     <p class="has-text-grey-light is-size-7">
-                        Member since <?= !empty($user['created_at']) ? formatDateForUser($user['created_at']) : 'Unknown' ?>
+                        Member since <?= formatDateForUser($user['created_at']) ?>
                     </p>
                 </div>
             </div>
@@ -267,9 +267,9 @@ ob_start();
                                 </span>
                                 <?php
                                 // Verification status tag
-                                $verificationClass = isset($user['is_verified']) && $user['is_verified'] ? 'is-info' : 'is-warning';
-                                $verificationIcon = isset($user['is_verified']) && $user['is_verified'] ? 'shield-alt' : 'clock';
-                                $verificationText = isset($user['is_verified']) && $user['is_verified'] ? 'Verified' : 'Pending Verification';
+                                $verificationClass = $user['is_verified'] ? 'is-info' : 'is-warning';
+                                $verificationIcon = $user['is_verified'] ? 'shield-alt' : 'clock';
+                                $verificationText = $user['is_verified'] ? 'Verified' : 'Pending Verification';
                                 ?>
                                 <span class="tag <?= $verificationClass ?>">
                                     <span class="icon"><i class="fas fa-<?= $verificationIcon ?>"></i></span>

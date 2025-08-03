@@ -1211,21 +1211,13 @@ class User {
     public function getUserById($userId) {
         try {
             $this->ensureConnection();
-            
-            $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type, approval_status
-                FROM users 
-                WHERE id = ?
-            ");
-            
+            $stmt = $this->mysqli->prepare("SELECT * FROM users  WHERE id = ?");
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
-            
             return $user;
-            
         } catch (Exception $e) {
             error_log("Get user by ID error: " . $e->getMessage());
             return null;
