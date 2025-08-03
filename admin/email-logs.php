@@ -532,9 +532,9 @@ ob_start();
             </a>
         </div>
         <div class="control">
-            <a href="../index.php" class="button is-light">
-                <span class="icon"><i class="fas fa-home"></i></span>
-                <span>Home</span>
+            <a href="../admin/users.php" class="button is-light">
+                <span class="icon"><i class="fas fa-users"></i></span>
+                <span>Users</span>
             </a>
         </div>
     </div>
