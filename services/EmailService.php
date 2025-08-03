@@ -459,6 +459,7 @@ class EmailService {
             $cleanOutput = preg_replace('/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', "\n$1", $cleanOutput);
             $cleanOutput = str_replace('220-', "\n220-", $cleanOutput);
             $cleanOutput = str_replace('250-', "\n250-", $cleanOutput);
+            $cleanOutput = str_replace('250 ', "\n250 ", $cleanOutput);
             $cleanOutput = str_replace('334 ', "\n334 ", $cleanOutput);
             $cleanOutput = str_replace('235 ', "\n235 ", $cleanOutput);
             $cleanOutput = str_replace('221 ', "\n221 ", $cleanOutput);
