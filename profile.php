@@ -225,27 +225,59 @@ ob_start();
                         Connected Accounts
                     </h4>
                     <?php foreach ($socialConnections as $connection): ?>
-                    <div class="level mb-3" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 6px;">
-                        <div class="level-left">
-                            <div class="level-item">
-                                <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
-                                    <i class="fab fa-<?= $connection['platform'] ?>"></i>
-                                </span>
+                    <div class="mb-3" style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 6px;">
+                        <div class="level is-mobile mb-2">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
+                                        <i class="fab fa-<?= $connection['platform'] ?>"></i>
+                                    </span>
+                                </div>
+                                <div class="level-item">
+                                    <div>
+                                        <p class="is-size-7 has-text-light"><?= ucfirst($connection['platform']) ?></p>
+                                        <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="level-item">
-                                <div>
-                                    <p class="is-size-7 has-text-light"><?= ucfirst($connection['platform']) ?></p>
-                                    <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <?php if ($connection['is_primary']): ?>
+                                        <span class="tag is-primary is-small">Primary</span>
+                                    <?php else: ?>
+                                        <span class="tag is-success is-small">Connected</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-                        <div class="level-right">
-                            <div class="level-item">
-                                <?php if ($connection['is_primary']): ?>
-                                    <span class="tag is-primary is-small">Primary</span>
-                                <?php else: ?>
-                                    <span class="tag is-success is-small">Connected</span>
-                                <?php endif; ?>
+                        <!-- Action buttons -->
+                        <div class="field is-grouped is-grouped-multiline">
+                            <?php if (!$connection['is_primary']): ?>
+                            <div class="control">
+                                <form method="post" style="display: inline;">
+                                    <input type="hidden" name="action" value="set_primary_social">
+                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                    <button type="submit" class="button is-small is-warning">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-star"></i>
+                                        </span>
+                                        <span>Primary</span>
+                                    </button>
+                                </form>
+                            </div>
+                            <?php endif; ?>
+                            <div class="control">
+                                <form method="post" style="display: inline;">
+                                    <input type="hidden" name="action" value="unlink_social">
+                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                    <button type="submit" class="button is-small is-danger" 
+                                            onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
+                                        <span class="icon is-small">
+                                            <i class="fas fa-unlink"></i>
+                                        </span>
+                                        <span>Unlink</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
