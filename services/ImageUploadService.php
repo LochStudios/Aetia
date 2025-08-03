@@ -26,7 +26,7 @@ class ImageUploadService {
                 'version' => 'latest',
                 'region' => $this->region,
                 'endpoint' => $this->endpoint,
-                'use_path_style_endpoint' => true,
+                'use_path_style_endpoint' => false,
                 'credentials' => [
                     'key' => $this->getAccessKey(),
                     'secret' => $this->getSecretKey(),
