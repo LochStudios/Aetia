@@ -337,14 +337,15 @@ ob_start();
                                 <?php if ($isCustomEmail): ?>
                                     This is your professional email address that clients can use to contact you directly.
                                     <br><span class="has-text-info"><i class="fas fa-star"></i> Custom email address assigned by our talent team</span>
-                                    <br><span class="has-text-grey-lighter">You can always request this to be changed to something that fits your brand via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
                                 <?php else: ?>
                                     This is your professional email address that clients can use to contact you directly.
                                     <br><span class="has-text-grey-lighter">You can request this to be changed to something that fits your brand by messaging our talent team directly via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <span class="has-text-warning"><i class="fas fa-clock"></i> When you're approved and part of our team, this will be your professional email address that you can make public.</span>
+                                <?php if (!$isCustomEmail): ?>
                                 <br><span class="has-text-grey-lighter">You can always request this to be changed to something that fits your brand once approved via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </p>
                     </div>
