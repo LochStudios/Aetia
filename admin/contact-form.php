@@ -260,8 +260,8 @@ ob_start();
                                         'closed' => 'is-dark'
                                     ][$contact['status']] ?? 'is-dark';
                                     ?>
-                                    <span class="tag is-small <?= $statusClass ?> mr-2">
-                                        <?= ucfirst($contact['status']) ?>
+                                    <span class="tag is-small <?= $statusClass ?> mr-2 has-text-weight-bold">
+                                        <?= strtoupper($contact['status']) ?>
                                     </span>
                                     
                                     <!-- Priority Badge -->
@@ -272,8 +272,8 @@ ob_start();
                                         'low' => 'is-dark'
                                     ][$contact['priority']] ?? 'is-dark';
                                     ?>
-                                    <span class="tag is-small <?= $priorityClass ?>">
-                                        <?= ucfirst($contact['priority']) ?> Priority
+                                    <span class="tag is-small <?= $priorityClass ?> has-text-weight-bold">
+                                        <?= strtoupper($contact['priority']) ?> PRIORITY
                                     </span>
                                     <?php endif; ?>
                                 </div>
