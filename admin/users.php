@@ -84,6 +84,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error deactivating user.';
             }
             break;
+            
+        case 'make_admin':
+            if ($userModel->makeUserAdmin($userId, $adminName)) {
+                $message = 'User granted admin privileges successfully!';
+            } else {
+                $message = 'Error granting admin privileges.';
+            }
+            break;
+            
+        case 'remove_admin':
+            if ($userModel->removeUserAdmin($userId, $adminName)) {
+                $message = 'Admin privileges removed successfully!';
+            } else {
+                $message = 'Error removing admin privileges.';
+            }
+            break;
     }
 }
 
@@ -516,6 +532,28 @@ ob_start();
                         </button>
                     </form>
                 <?php endif; ?>
+                <!-- Admin Management Buttons -->
+                <?php if ($user['is_admin'] == 0): ?>
+                    <!-- Make Admin -->
+                    <form method="POST" style="display:inline;" id="make-admin-form-<?= $user['id'] ?>">
+                        <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                        <input type="hidden" name="action" value="make_admin">
+                        <button class="button is-info is-small make-admin-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                            <span class="icon"><i class="fas fa-crown"></i></span>
+                            <span>Make Admin</span>
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <!-- Remove Admin -->
+                    <form method="POST" style="display:inline;" id="remove-admin-form-<?= $user['id'] ?>">
+                        <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                        <input type="hidden" name="action" value="remove_admin">
+                        <button class="button is-warning is-small remove-admin-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                            <span class="icon"><i class="fas fa-user-minus"></i></span>
+                            <span>Remove Admin</span>
+                        </button>
+                    </form>
+                <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -627,6 +665,66 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById(`admin-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+
+    // Handle Make Admin buttons (for non-admin users)
+    document.querySelectorAll('.make-admin-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username || 'Unknown User';
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
+            Swal.fire({
+                title: 'Make Admin?',
+                html: `Are you sure you want to make <strong style="color: #333;">${decodedUsername}</strong> an administrator?<br><br><strong>This will grant them:</strong><br>• Full admin privileges<br>• Ability to manage other users<br>• Access to admin-only features`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3e8ed0',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-crown"></i> Yes, Make Admin',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-info',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`make-admin-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+
+    // Handle Remove Admin buttons (for admin users)
+    document.querySelectorAll('.remove-admin-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username || 'Unknown User';
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
+            Swal.fire({
+                title: 'Remove Admin Privileges?',
+                html: `Are you sure you want to remove admin privileges from <strong style="color: #333;">${decodedUsername}</strong>?<br><br><strong>This will:</strong><br>• Remove all admin privileges<br>• Restrict access to admin features<br>• Convert them to a regular user`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffdd57',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-user-minus"></i> Yes, Remove Admin',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-warning',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`remove-admin-form-${userId}`).submit();
                 }
             });
         });

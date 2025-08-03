@@ -743,6 +743,46 @@ class User {
             return false;
         }
     }
+
+    // Make user admin (without changing approval status)
+    public function makeUserAdmin($userId, $grantedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_admin = 1, 
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Make user admin error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Remove admin privileges from user
+    public function removeUserAdmin($userId, $removedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_admin = 0, 
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Remove user admin error: " . $e->getMessage());
+            return false;
+        }
+    }
     
     // Get first admin user for receiving team messages
     public function getFirstAdmin() {
