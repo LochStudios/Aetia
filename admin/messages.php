@@ -214,6 +214,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-plus"></i></span>
                     <span>New Message</span>
                 </a>
+                <a href="contact-form.php" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Contact Forms</span>
+                </a>
                 <a href="pending-users.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-users-cog"></i></span>
                     <span>Pending Users</span>

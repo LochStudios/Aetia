@@ -91,6 +91,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>Active Messages</span>
                 </a>
+                <a href="contact-form.php" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Contact Forms</span>
+                </a>
                 <a href="create-message.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-plus"></i></span>
                     <span>New Message</span>

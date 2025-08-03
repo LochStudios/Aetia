@@ -70,6 +70,10 @@ ob_start();
         </div>
         <div class="level-right">
             <div class="buttons">
+                <a href="contact-form.php" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Contact Forms</span>
+                </a>
                 <a href="pending-users.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-users-cog"></i></span>
                     <span>Pending Users</span>
