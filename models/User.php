@@ -830,6 +830,77 @@ class User {
         }
     }
     
+    // Check if email exists and can be used for password reset
+    public function checkEmailExists($email) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if user exists with this email
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, account_type, is_active, approval_status 
+                FROM users 
+                WHERE email = ?
+            ");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                $stmt->close();
+                return [
+                    'exists' => false,
+                    'canReset' => false,
+                    'message' => 'No account found with that email address.'
+                ];
+            }
+            
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            // Check if user can reset password
+            if ($user['account_type'] !== 'manual') {
+                return [
+                    'exists' => true,
+                    'canReset' => false,
+                    'message' => 'This account is linked to a social login service. Password reset is not available for social accounts.'
+                ];
+            }
+            
+            if (!$user['is_active']) {
+                return [
+                    'exists' => true,
+                    'canReset' => false,
+                    'message' => 'This account is currently deactivated. Please contact support for assistance.'
+                ];
+            }
+            
+            if ($user['approval_status'] !== 'approved') {
+                return [
+                    'exists' => true,
+                    'canReset' => false,
+                    'message' => 'This account is pending approval. Password reset is not available until your account is approved.'
+                ];
+            }
+            
+            // User exists and can reset password
+            return [
+                'exists' => true,
+                'canReset' => true,
+                'message' => 'Account found and eligible for password reset.',
+                'user_id' => $user['id'],
+                'username' => $user['username']
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Email check error: " . $e->getMessage());
+            return [
+                'exists' => false,
+                'canReset' => false,
+                'message' => 'An error occurred while checking the email. Please try again.'
+            ];
+        }
+    }
+    
     // Generate password reset token
     public function generatePasswordResetToken($email) {
         try {

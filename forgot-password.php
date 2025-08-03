@@ -24,34 +24,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = 'Please enter a valid email address.';
     } else {
-        $result = $userModel->generatePasswordResetToken($email);
-        
-        if ($result['success']) {
-            // Generate the reset URL
-            $resetLink = "https://aetia.com.au/reset-password.php?resetcode=" . $result['token'];
-            
-            // Send the password reset email
-            try {
-                require_once __DIR__ . '/services/EmailService.php';
-                $emailService = new EmailService();
-                $emailService->sendPasswordResetEmail(
-                    $email, 
-                    $result['username'], 
-                    $result['token'], 
-                    $resetLink
-                );
-            } catch (Exception $e) {
-                error_log('Password reset email failed: ' . $e->getMessage());
-                $error_message = 'Unable to send password reset email. Please try again later.';
-            }
-            
-            if (!isset($error_message)) {
-                $success_message = "Password reset instructions have been sent to your email address. Please check your inbox and follow the instructions to reset your password.";
-                $success_message .= "<br><small>The reset link will expire in 1 hour for security reasons.</small>";
+        // Check if the email belongs to a valid client account
+        $emailCheck = $userModel->checkEmailExists($email);
+        // Always show the same success message for security (prevent email enumeration)
+        $success_message = "If an account with that email exists, you will receive an email with instructions within the next few minutes.";
+        $success_message .= "<br><small>Please check your inbox and spam folder. The reset link will expire in 1 hour for security reasons.</small>";
+        // Only actually send the email if the account exists and can be reset
+        if ($emailCheck['exists'] && $emailCheck['canReset']) {
+            $result = $userModel->generatePasswordResetToken($email);
+            if ($result['success']) {
+                // Generate the reset URL
+                $resetLink = "https://aetia.com.au/reset-password.php?resetcode=" . $result['token'];
+                // Send the password reset email
+                try {
+                    require_once __DIR__ . '/services/EmailService.php';
+                    $emailService = new EmailService();
+                    $emailService->sendPasswordResetEmail(
+                        $email, 
+                        $result['username'], 
+                        $result['token'], 
+                        $resetLink
+                    );
+                    // Email sent successfully - but we don't change the message
+                    error_log("Password reset email sent to: " . $email);
+                } catch (Exception $e) {
+                    error_log('Password reset email failed for ' . $email . ': ' . $e->getMessage());
+                    // Don't show email failure to user for security reasons
+                    // The generic success message will still be displayed
+                }
+            } else {
+                error_log("Password reset token generation failed for: " . $email);
+                // Don't reveal token generation failure to user
             }
         } else {
-            // Don't reveal if email exists or not for security
-            $success_message = "If an account with that email exists, password reset instructions have been sent.";
+            // Log the reason why reset was not allowed (for admin debugging)
+            if (!$emailCheck['exists']) {
+                error_log("Password reset requested for non-existent email: " . $email);
+            } else {
+                error_log("Password reset requested for ineligible account: " . $email . " - " . $emailCheck['message']);
+            }
         }
     }
 }
