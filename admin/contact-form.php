@@ -254,11 +254,11 @@ ob_start();
                                     <!-- Status Badge -->
                                     <?php 
                                     $statusClass = [
-                                        'new' => 'is-warning',
+                                        'new' => 'is-danger',
                                         'read' => 'is-info', 
                                         'responded' => 'is-success',
-                                        'closed' => 'is-light'
-                                    ][$contact['status']] ?? 'is-light';
+                                        'closed' => 'is-dark'
+                                    ][$contact['status']] ?? 'is-dark';
                                     ?>
                                     <span class="tag is-small <?= $statusClass ?> mr-2">
                                         <?= ucfirst($contact['status']) ?>
@@ -269,11 +269,11 @@ ob_start();
                                     <?php 
                                     $priorityClass = [
                                         'high' => 'is-danger',
-                                        'low' => 'is-light'
-                                    ][$contact['priority']] ?? 'is-light';
+                                        'low' => 'is-dark'
+                                    ][$contact['priority']] ?? 'is-dark';
                                     ?>
                                     <span class="tag is-small <?= $priorityClass ?>">
-                                        <?= ucfirst($contact['priority']) ?>
+                                        <?= ucfirst($contact['priority']) ?> Priority
                                     </span>
                                     <?php endif; ?>
                                 </div>
@@ -343,11 +343,11 @@ ob_start();
                         <div class="tags">
                             <?php 
                             $statusClass = [
-                                'new' => 'is-warning',
+                                'new' => 'is-danger',
                                 'read' => 'is-info', 
                                 'responded' => 'is-success',
-                                'closed' => 'is-light'
-                            ][$currentContact['status']] ?? 'is-light';
+                                'closed' => 'is-dark'
+                            ][$currentContact['status']] ?? 'is-dark';
                             ?>
                             <span class="tag <?= $statusClass ?>">
                                 Status: <?= ucfirst($currentContact['status']) ?>
@@ -357,7 +357,7 @@ ob_start();
                             $priorityClass = [
                                 'high' => 'is-danger',
                                 'normal' => 'is-info',
-                                'low' => 'is-light'
+                                'low' => 'is-dark'
                             ][$currentContact['priority']] ?? 'is-info';
                             ?>
                             <span class="tag <?= $priorityClass ?>">
