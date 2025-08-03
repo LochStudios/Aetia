@@ -178,7 +178,7 @@ ob_start();
     <!-- Statistics Cards -->
     <div class="columns mb-4">
         <div class="column is-3">
-            <div class="card has-background-info-light">
+            <div class="card has-background-info">
                 <div class="card-content has-text-centered">
                     <p class="title is-4"><?= $contactStats['total'] ?? 0 ?></p>
                     <p class="subtitle is-6">Total Submissions</p>
@@ -186,7 +186,7 @@ ob_start();
             </div>
         </div>
         <div class="column is-3">
-            <div class="card has-background-warning-light">
+            <div class="card has-background-warning">
                 <div class="card-content has-text-centered">
                     <p class="title is-4"><?= $contactStats['status']['new'] ?? 0 ?></p>
                     <p class="subtitle is-6">New Submissions</p>
@@ -194,7 +194,7 @@ ob_start();
             </div>
         </div>
         <div class="column is-3">
-            <div class="card has-background-success-light">
+            <div class="card has-background-success">
                 <div class="card-content has-text-centered">
                     <p class="title is-4"><?= $contactStats['today'] ?? 0 ?></p>
                     <p class="subtitle is-6">Today</p>
@@ -202,7 +202,7 @@ ob_start();
             </div>
         </div>
         <div class="column is-3">
-            <div class="card has-background-primary-light">
+            <div class="card has-background-primary">
                 <div class="card-content has-text-centered">
                     <p class="title is-4"><?= $contactStats['this_week'] ?? 0 ?></p>
                     <p class="subtitle is-6">This Week</p>
