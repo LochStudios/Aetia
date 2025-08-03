@@ -228,6 +228,14 @@ ob_start();
                             <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
                         </div>
                     </div>
+                    <?php if (!empty($user['first_name']) && !empty($user['last_name'])): ?>
+                    <div class="field">
+                        <label class="label has-text-light">Full Name</label>
+                        <div class="control">
+                            <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>" readonly>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <div class="field">
                         <label class="label has-text-light">Account Type</label>
                         <div class="control">
