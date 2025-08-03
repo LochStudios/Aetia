@@ -307,7 +307,7 @@ ob_start();
                                     <?php if ($user['account_type'] === 'manual'): ?>
                                         <!-- Manual account - use secure endpoint -->
                                         <img id="profile-image-display-<?= $user['id'] ?>" src="view-user-profile-image.php?user_id=<?= $user['id'] ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'; document.getElementById('profile-placeholder-<?= $user['id'] ?>').style.display='flex';">
-                                        <div id="profile-placeholder-<?= $user['id'] ?>" class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;display:none;">
+                                        <div id="profile-placeholder-<?= $user['id'] ?>" class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;display:none;position:absolute;">
                                             <span class="icon is-large has-text-grey">
                                                 <i class="fas fa-user fa-2x"></i>
                                             </span>
