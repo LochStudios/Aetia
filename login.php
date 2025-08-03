@@ -182,19 +182,19 @@ ob_start();
                 <div class="mb-5">
                     <h3 class="subtitle is-6 has-text-centered mb-3">Login with Social Media</h3>
                     <div class="buttons is-centered">
-                        <a href="<?= htmlspecialchars($twitchAuthUrl) ?>" class="button is-link is-fullwidth mb-2">
+                        <a href="<?= htmlspecialchars($twitchAuthUrl) ?>" class="button is-link is-fullwidth mb-2 has-text-white">
                             <span class="icon"><i class="fab fa-twitch"></i></span>
                             <span>Continue with Twitch</span>
                         </a>
-                        <a href="<?= htmlspecialchars($discordAuthUrl) ?>" class="button is-primary is-fullwidth mb-2" style="background-color: #5865F2;">
+                        <a href="<?= htmlspecialchars($discordAuthUrl) ?>" class="button is-primary is-fullwidth mb-2 has-text-white" style="background-color: #5865F2;">
                             <span class="icon"><i class="fab fa-discord"></i></span>
                             <span>Continue with Discord</span>
                         </a>
-                        <button class="button is-danger is-fullwidth mb-2" disabled>
+                        <button class="button is-danger is-fullwidth mb-2 has-text-white" disabled>
                             <span class="icon"><i class="fab fa-youtube"></i></span>
                             <span>Continue with YouTube (Coming Soon)</span>
                         </button>
-                        <button class="button is-info is-fullwidth" disabled>
+                        <button class="button is-info is-fullwidth has-text-white" disabled>
                             <span class="icon"><i class="fab fa-twitter"></i></span>
                             <span>Continue with Twitter (Coming Soon)</span>
                         </button>
