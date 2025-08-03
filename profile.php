@@ -245,10 +245,37 @@ ob_start();
                     <div class="field">
                         <label class="label has-text-light">Account Status</label>
                         <div class="control">
-                            <span class="tag <?= $user['is_verified'] ? 'is-success' : 'is-warning' ?>">
-                                <span class="icon"><i class="fas fa-<?= $user['is_verified'] ? 'check-circle' : 'clock' ?>"></i></span>
-                                <span><?= $user['is_verified'] ? 'Verified' : 'Pending Verification' ?></span>
-                            </span>
+                            <div class="tags">
+                                <?php
+                                // Approval status tag
+                                $approvalClass = 'is-warning';
+                                $approvalIcon = 'clock';
+                                $approvalText = 'Pending Approval';
+                                if ($user['approval_status'] === 'approved') {
+                                    $approvalClass = 'is-success';
+                                    $approvalIcon = 'check-circle';
+                                    $approvalText = 'Approved';
+                                } elseif ($user['approval_status'] === 'rejected') {
+                                    $approvalClass = 'is-danger';
+                                    $approvalIcon = 'times-circle';
+                                    $approvalText = 'Rejected';
+                                }
+                                ?>
+                                <span class="tag <?= $approvalClass ?>">
+                                    <span class="icon"><i class="fas fa-<?= $approvalIcon ?>"></i></span>
+                                    <span><?= $approvalText ?></span>
+                                </span>
+                                <?php
+                                // Verification status tag
+                                $verificationClass = $user['is_verified'] ? 'is-info' : 'is-warning';
+                                $verificationIcon = $user['is_verified'] ? 'shield-alt' : 'clock';
+                                $verificationText = $user['is_verified'] ? 'Verified' : 'Pending Verification';
+                                ?>
+                                <span class="tag <?= $verificationClass ?>">
+                                    <span class="icon"><i class="fas fa-<?= $verificationIcon ?>"></i></span>
+                                    <span><?= $verificationText ?></span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
