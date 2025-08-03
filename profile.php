@@ -315,20 +315,29 @@ ob_start();
                                 <i class="fas fa-info-circle"></i>
                             </span>
                         </label>
-                        <div class="control has-icons-right">
-                            <?php 
-                            // Use custom public_email if set, otherwise default to username@aetia.com.au
-                            $publicEmail = !empty($user['public_email']) ? $user['public_email'] : $user['username'] . '@aetia.com.au';
-                            $isCustomEmail = !empty($user['public_email']);
-                            ?>
-                            <input class="input has-background-grey-darker has-text-light" 
-                                   type="email" 
-                                   value="<?= htmlspecialchars($publicEmail) ?>" 
-                                   readonly
-                                   id="publicEmail">
-                            <span class="icon is-small is-right" style="cursor: pointer;" onclick="copyPublicEmail()" title="Click to copy">
-                                <i class="fas fa-copy"></i>
-                            </span>
+                        <div class="field has-addons">
+                            <div class="control is-expanded">
+                                <?php 
+                                // Use custom public_email if set, otherwise default to username@aetia.com.au
+                                $publicEmail = !empty($user['public_email']) ? $user['public_email'] : $user['username'] . '@aetia.com.au';
+                                $isCustomEmail = !empty($user['public_email']);
+                                ?>
+                                <input class="input has-background-grey-darker has-text-light" 
+                                       type="email" 
+                                       value="<?= htmlspecialchars($publicEmail) ?>" 
+                                       readonly
+                                       id="publicEmail">
+                            </div>
+                            <div class="control">
+                                <button class="button has-background-grey-darker has-text-light" 
+                                        type="button" 
+                                        onclick="copyPublicEmail()" 
+                                        title="Click to copy email">
+                                    <span class="icon">
+                                        <i class="fas fa-copy" id="copy-icon"></i>
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                         <p class="help has-text-grey-light">
                             <?php if ($user['approval_status'] === 'approved'): ?>
@@ -675,7 +684,7 @@ function fallbackCopyTextToClipboard(text) {
 
 function showCopySuccess() {
     // Change the icon temporarily to show success
-    const iconElement = document.querySelector('#publicEmail').parentNode.querySelector('.icon i');
+    const iconElement = document.getElementById('copy-icon');
     if (iconElement) {
         const originalClass = iconElement.className;
         iconElement.className = 'fas fa-check';
@@ -690,7 +699,7 @@ function showCopySuccess() {
 
 function showCopyError() {
     // Change the icon temporarily to show error
-    const iconElement = document.querySelector('#publicEmail').parentNode.querySelector('.icon i');
+    const iconElement = document.getElementById('copy-icon');
     if (iconElement) {
         const originalClass = iconElement.className;
         iconElement.className = 'fas fa-times';
