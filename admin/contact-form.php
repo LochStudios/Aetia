@@ -179,33 +179,33 @@ ob_start();
     <div class="columns mb-4">
         <div class="column is-3">
             <div class="card has-background-info">
-                <div class="card-content has-text-centered has-text-black">
-                    <p class="title is-4"><?= $contactStats['total'] ?? 0 ?></p>
-                    <p class="subtitle is-6">Total Submissions</p>
+                <div class="card-content has-text-centered">
+                    <p class="title is-4 has-text-black"><?= $contactStats['total'] ?? 0 ?></p>
+                    <p class="subtitle is-6 has-text-black">Total Submissions</p>
                 </div>
             </div>
         </div>
         <div class="column is-3">
             <div class="card has-background-warning">
-                <div class="card-content has-text-centered has-text-black">
-                    <p class="title is-4"><?= $contactStats['status']['new'] ?? 0 ?></p>
-                    <p class="subtitle is-6">New Submissions</p>
+                <div class="card-content has-text-centered">
+                    <p class="title is-4 has-text-black"><?= $contactStats['status']['new'] ?? 0 ?></p>
+                    <p class="subtitle is-6 has-text-black">New Submissions</p>
                 </div>
             </div>
         </div>
         <div class="column is-3">
             <div class="card has-background-success">
-                <div class="card-content has-text-centered has-text-black">
-                    <p class="title is-4"><?= $contactStats['today'] ?? 0 ?></p>
-                    <p class="subtitle is-6">Today</p>
+                <div class="card-content has-text-centered">
+                    <p class="title is-4 has-text-black"><?= $contactStats['today'] ?? 0 ?></p>
+                    <p class="subtitle is-6 has-text-black">Today</p>
                 </div>
             </div>
         </div>
         <div class="column is-3">
             <div class="card has-background-primary">
-                <div class="card-content has-text-centered has-text-black">
-                    <p class="title is-4"><?= $contactStats['this_week'] ?? 0 ?></p>
-                    <p class="subtitle is-6">This Week</p>
+                <div class="card-content has-text-centered">
+                    <p class="title is-4 has-text-black"><?= $contactStats['this_week'] ?? 0 ?></p>
+                    <p class="subtitle is-6 has-text-black">This Week</p>
                 </div>
             </div>
         </div>
@@ -279,6 +279,12 @@ ob_start();
                                 </div>
                                 <p class="has-text-weight-semibold">
                                     <?= htmlspecialchars($contact['name']) ?>
+                                    <?php if ($contact['geo_data']): ?>
+                                        <?php $flag = $contactModel->getCountryFlag($contact['geo_data']); ?>
+                                        <?php if ($flag): ?>
+                                            <span class="ml-1"><?= $flag ?></span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </p>
                                 <p class="is-size-7 has-text-grey">
                                     <?= htmlspecialchars($contact['email']) ?>
@@ -287,6 +293,15 @@ ob_start();
                                 <p class="is-size-7">
                                     <?= htmlspecialchars(substr($contact['subject'], 0, 50)) ?><?= strlen($contact['subject']) > 50 ? '...' : '' ?>
                                 </p>
+                                <?php endif; ?>
+                                <?php if ($contact['geo_data']): ?>
+                                    <?php $location = $contactModel->getLocationString($contact['geo_data']); ?>
+                                    <?php if ($location): ?>
+                                    <p class="is-size-7 has-text-grey">
+                                        <span class="icon is-small"><i class="fas fa-map-marker-alt"></i></span>
+                                        <?= htmlspecialchars($location) ?>
+                                    </p>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                             <div class="has-text-right">
