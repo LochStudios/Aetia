@@ -425,17 +425,6 @@ class User {
         }
     }
     
-    // Get user by ID
-    public function getUserById($userId) {
-        $stmt = $this->mysqli->prepare("SELECT * FROM users WHERE id = ? AND is_active = 1");
-        $stmt->bind_param("i", $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
-        $stmt->close();
-        return $user;
-    }
-    
     // Get user's social connections
     public function getUserSocialConnections($userId) {
         $stmt = $this->mysqli->prepare("SELECT * FROM social_connections WHERE user_id = ? ORDER BY is_primary DESC, created_at ASC");
