@@ -188,9 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'remove_image') {
     if (!empty($user['profile_image'])) {
         try {
-            // Delete from S3 first
+            // Delete all profile images for this user from S3
             $imageUploadService = new ImageUploadService();
-            $imageUploadService->deleteProfileImage($user['profile_image']);
+            $imageUploadService->deleteAllUserProfileImages($_SESSION['user_id']);
             // Remove from database
             $result = $userModel->removeProfileImage($_SESSION['user_id']);
             if ($result['success']) {

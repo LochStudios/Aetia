@@ -108,9 +108,11 @@ class ImageUploadService {
             if (!$validation['valid']) {
                 return ['success' => false, 'message' => $validation['message']];
             }
-            // Generate unique filename
+            // Generate unique filename with proper folder structure
             $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $fileName = "profile-images/user-{$userId}-" . time() . "." . $fileExtension;
+            $fileName = "profile-images/user-{$userId}/profile." . $fileExtension;
+            // Delete any existing profile images for this user before uploading new one
+            $this->deleteAllUserProfileImages($userId);
             // Resize image if needed
             $resizedImagePath = $this->resizeImage($file['tmp_name'], $fileExtension);
             // Upload to S3
@@ -292,6 +294,44 @@ class ImageUploadService {
             return true;
         } catch (Exception $e) {
             error_log("Image deletion error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Delete all existing profile images for a user
+     * 
+     * @param int $userId The user ID
+     * @return bool Success status
+     */
+    public function deleteAllUserProfileImages($userId) {
+        try {
+            $prefix = "profile-images/user-{$userId}/";
+            
+            // List all objects with the user's prefix
+            $result = $this->s3Client->listObjectsV2([
+                'Bucket' => $this->bucketName,
+                'Prefix' => $prefix,
+            ]);
+            
+            if (isset($result['Contents']) && count($result['Contents']) > 0) {
+                // Delete all found objects
+                $deleteKeys = array_map(function($object) {
+                    return ['Key' => $object['Key']];
+                }, $result['Contents']);
+                
+                $this->s3Client->deleteObjects([
+                    'Bucket' => $this->bucketName,
+                    'Delete' => [
+                        'Objects' => $deleteKeys,
+                    ],
+                ]);
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("User images deletion error: " . $e->getMessage());
             return false;
         }
     }
