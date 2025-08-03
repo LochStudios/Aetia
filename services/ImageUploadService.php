@@ -99,48 +99,6 @@ class ImageUploadService {
     }
     
     /**
-     * Ensure user's profile image folder exists in the bucket
-     * @param int $userId The user ID
-     * @return bool Success status
-     */
-    private function ensureUserFolderExists($userId) {
-        try {
-            $folderKey = "profile-images/user-{$userId}/";
-            
-            // Check if the folder marker already exists
-            try {
-                $this->s3Client->headObject([
-                    'Bucket' => $this->bucketName,
-                    'Key' => $folderKey,
-                ]);
-                // Folder marker exists, we're good
-                return true;
-            } catch (Exception $e) {
-                // Folder marker doesn't exist, create it
-            }
-            
-            // Create a folder marker (empty object with trailing slash)
-            $this->s3Client->putObject([
-                'Bucket' => $this->bucketName,
-                'Key' => $folderKey,
-                'Body' => '',
-                'ContentType' => 'application/x-directory',
-                'Metadata' => [
-                    'user-id' => (string)$userId,
-                    'created-date' => date('Y-m-d H:i:s'),
-                    'folder-type' => 'profile-images',
-                ]
-            ]);
-            
-            return true;
-            
-        } catch (Exception $e) {
-            error_log("Folder creation error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
      * Initialize basic bucket structure
      * This creates the main folders for organization
      * 
@@ -197,17 +155,8 @@ class ImageUploadService {
             $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $fileName = "profile-images/user-{$userId}/profile." . $fileExtension;
             error_log("Generated filename: " . $fileName);
-            
-            // Ensure the user's folder exists before uploading
-            if (!$this->ensureUserFolderExists($userId)) {
-                error_log("Failed to create user folder");
-                return ['success' => false, 'message' => 'Failed to create user folder in storage.'];
-            }
-            error_log("User folder exists");
-            
             // Delete any existing profile images for this user before uploading new one
             $this->deleteAllUserProfileImages($userId);
-            
             // Resize image if needed
             error_log("About to resize image");
             $resizedImagePath = $this->resizeImage($file['tmp_name'], $fileExtension);
