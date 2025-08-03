@@ -19,6 +19,9 @@ class ImageUploadService {
         $this->endpoint = $this->getEndpoint();
         
         try {
+            // Debug: Log configuration being used
+            error_log("S3 Config - Region: " . $this->region . ", Endpoint: " . $this->endpoint . ", Bucket: " . $this->bucketName);
+            
             $this->s3Client = new S3Client([
                 'version' => 'latest',
                 'region' => $this->region,
@@ -31,7 +34,7 @@ class ImageUploadService {
             ]);
         } catch (Exception $e) {
             error_log("Object Storage Client initialization failed: " . $e->getMessage());
-            throw new Exception("Image upload service is currently unavailable.");
+            throw new Exception("Image upload service initialization failed: " . $e->getMessage());
         }
     }
     
@@ -227,10 +230,12 @@ class ImageUploadService {
             
         } catch (AwsException $e) {
             error_log("Object Storage upload error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to upload image to cloud storage.'];
+            // Temporarily show detailed error for debugging
+            return ['success' => false, 'message' => 'Upload failed: ' . $e->getMessage()];
         } catch (Exception $e) {
             error_log("Image upload error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'An error occurred while uploading your image.'];
+            // Temporarily show detailed error for debugging
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
     
