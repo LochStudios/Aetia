@@ -220,7 +220,7 @@ ob_start();
             <!-- Connected Social Accounts under profile card -->
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-6 has-text-light mb-4">
+                    <h4 class="title is-6 has-text-light mb-2">
                         <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
                         Connected Accounts
                     </h4>
@@ -238,7 +238,7 @@ ob_start();
                                         <p class="is-size-7 has-text-light">
                                             <?= ucfirst($connection['platform']) ?>
                                             <?php if ($connection['is_primary']): ?>
-                                                <span class="tag is-primary is-small ml-1">Primary</span>
+                                                <span class="tag is-primary is-small ml-1" style="font-size: 0.6rem; padding: 2px 6px;">Primary</span>
                                             <?php endif; ?>
                                         </p>
                                         <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
@@ -260,7 +260,6 @@ ob_start();
                                                 </button>
                                             </form>
                                         </div>
-                                        <?php endif; ?>
                                         <div class="control">
                                             <form method="post" style="display: inline;">
                                                 <input type="hidden" name="action" value="unlink_social">
@@ -274,6 +273,7 @@ ob_start();
                                                 </button>
                                             </form>
                                         </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
