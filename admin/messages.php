@@ -226,13 +226,13 @@ ob_start();
                     <span class="icon"><i class="fas fa-user-check"></i></span>
                     <span>Unverified Users</span>
                 </a>
+                <a href="email-logs.php" class="button is-success is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Email History</span>
+                </a>
                 <a href="archived-messages.php" class="button is-dark is-small">
                     <span class="icon"><i class="fas fa-archive"></i></span>
                     <span>Archived Messages</span>
-                </a>
-                <a href="../index.php" class="button is-light is-small">
-                    <span class="icon"><i class="fas fa-home"></i></span>
-                    <span>Back to Website</span>
                 </a>
             </div>
         </div>

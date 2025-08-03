@@ -408,12 +408,6 @@ ob_start();
                 <span>Back to Messages</span>
             </a>
         </div>
-        <div class="control">
-            <a href="../index.php" class="button is-light">
-                <span class="icon"><i class="fas fa-home"></i></span>
-                <span>Back to Dashboard</span>
-            </a>
-        </div>
     </div>
 </div>
 
