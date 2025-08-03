@@ -216,18 +216,6 @@ ob_start();
             <div class="card has-background-dark">
                 <div class="card-content">
                     <h4 class="title is-5 has-text-light mb-4">Account Information</h4>
-                    <div class="field">
-                        <label class="label has-text-light">Username</label>
-                        <div class="control">
-                            <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label class="label has-text-light">Email</label>
-                        <div class="control">
-                            <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
-                        </div>
-                    </div>
                     <?php if (!empty($user['first_name']) && !empty($user['last_name'])): ?>
                     <div class="field">
                         <label class="label has-text-light">Full Name</label>
@@ -237,7 +225,19 @@ ob_start();
                     </div>
                     <?php endif; ?>
                     <div class="field">
-                        <label class="label has-text-light">Account Type</label>
+                        <label class="label has-text-light">Username</label>
+                        <div class="control">
+                            <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label has-text-light">Email Address</label>
+                        <div class="control">
+                            <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label has-text-light">Account Default</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="text" value="<?= ucfirst($user['account_type']) ?>" readonly>
                         </div>
