@@ -1233,37 +1233,5 @@ class User {
             return [];
         }
     }
-
-    /**
-     * Get all social connections for a specific user
-     */
-    public function getUserSocialConnections($userId) {
-        try {
-            $this->ensureConnection();
-            
-            $stmt = $this->mysqli->prepare("
-                SELECT platform, social_id, social_username, social_data, is_primary
-                FROM social_connections 
-                WHERE user_id = ?
-                ORDER BY is_primary DESC, platform ASC
-            ");
-            
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $connections = [];
-            
-            while ($row = $result->fetch_assoc()) {
-                $connections[] = $row;
-            }
-            
-            $stmt->close();
-            return $connections;
-            
-        } catch (Exception $e) {
-            error_log("Get user social connections error: " . $e->getMessage());
-            return [];
-        }
-    }
 }
 ?>
