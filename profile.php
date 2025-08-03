@@ -260,10 +260,10 @@ ob_start();
                         <span class="icon has-text-info"><i class="fas fa-user-edit"></i></span>
                         Complete Your Profile
                     </h4>
-                    <div class="notification is-info is-light mb-4">
+                    <div class="notification is-info mb-4">
                         <div class="content">
-                            <p><strong>Complete Your Profile:</strong> Please provide your first and last name to complete your profile.</p>
-                            <p>This information helps us personalize your experience and improve our services.</p>
+                            <p class="hast-text-black"><strong>Complete Your Profile:</strong> Please provide your first and last name to complete your profile.</p>
+                            <p class="hast-text-black">This information helps us personalize your experience and improve our services.</p>
                         </div>
                     </div>
                     <form method="POST" action="profile.php">
@@ -301,63 +301,6 @@ ob_start();
                         <div class="field">
                             <div class="control">
                                 <button class="button is-info" type="submit">
-                                    <span class="icon"><i class="fas fa-save"></i></span>
-                                    <span>Update Profile</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($user['first_name']) && !empty($user['last_name'])): ?>
-            <div class="card has-background-dark mt-4">
-                <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">
-                        <span class="icon has-text-warning"><i class="fas fa-user-edit"></i></span>
-                        Edit Profile Information
-                    </h4>
-                    <div class="notification is-light mb-4">
-                        <div class="content">
-                            <p class="has-text-black"><strong>Update Your Name:</strong> You can modify your first and last name below if needed.</p>
-                        </div>
-                    </div>
-                    <form method="POST" action="profile.php">
-                        <input type="hidden" name="action" value="update_profile">
-                        
-                        <div class="field">
-                            <label class="label has-text-light">First Name</label>
-                            <div class="control has-icons-left">
-                                <input class="input has-background-grey-darker has-text-light" 
-                                       type="text" 
-                                       name="first_name" 
-                                       placeholder="Enter your first name" 
-                                       value="<?= htmlspecialchars($user['first_name']) ?>"
-                                       maxlength="50"
-                                       required>
-                                <span class="icon is-small is-left">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label class="label has-text-light">Last Name</label>
-                            <div class="control has-icons-left">
-                                <input class="input has-background-grey-darker has-text-light" 
-                                       type="text" 
-                                       name="last_name" 
-                                       placeholder="Enter your last name" 
-                                       value="<?= htmlspecialchars($user['last_name']) ?>"
-                                       maxlength="50"
-                                       required>
-                                <span class="icon is-small is-left">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="control">
-                                <button class="button is-warning" type="submit">
                                     <span class="icon"><i class="fas fa-save"></i></span>
                                     <span>Update Profile</span>
                                 </button>
