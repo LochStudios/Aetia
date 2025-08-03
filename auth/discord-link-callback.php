@@ -38,8 +38,11 @@ try {
     $discordOAuth = new DiscordOAuth();
     $userModel = new User();
     
-    // Exchange code for access token
-    $tokenData = $discordOAuth->getAccessToken($code);
+    // Generate the link redirect URI that was used for authorization
+    $linkRedirectUri = str_replace('discord-callback.php', 'discord-link-callback.php', $discordOAuth->getRedirectUri());
+    
+    // Exchange code for access token using the same redirect URI used for authorization
+    $tokenData = $discordOAuth->getAccessToken($code, $linkRedirectUri);
     
     if (!isset($tokenData['access_token'])) {
         throw new Exception('Failed to obtain access token from Discord');

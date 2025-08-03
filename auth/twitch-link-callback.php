@@ -38,8 +38,11 @@ try {
     $twitchOAuth = new TwitchOAuth();
     $userModel = new User();
     
-    // Exchange code for access token
-    $tokenData = $twitchOAuth->getAccessToken($code);
+    // Generate the link redirect URI that was used for authorization
+    $linkRedirectUri = str_replace('twitch-callback.php', 'twitch-link-callback.php', $twitchOAuth->getRedirectUri());
+    
+    // Exchange code for access token using the same redirect URI used for authorization
+    $tokenData = $twitchOAuth->getAccessToken($code, $linkRedirectUri);
     
     if (!isset($tokenData['access_token'])) {
         throw new Exception('Failed to obtain access token from Twitch');

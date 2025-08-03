@@ -89,13 +89,16 @@ class DiscordOAuth {
     }
     
     // Exchange authorization code for access token
-    public function getAccessToken($code) {
+    public function getAccessToken($code, $redirectUri = null) {
+        // Use provided redirect URI or default to the configured one
+        $useRedirectUri = $redirectUri ?: $this->redirectUri;
+        
         $data = [
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
             'code' => $code,
             'grant_type' => 'authorization_code',
-            'redirect_uri' => $this->redirectUri
+            'redirect_uri' => $useRedirectUri
         ];
         
         $ch = curl_init();
@@ -189,6 +192,11 @@ class DiscordOAuth {
         } else {
             return false;
         }
+    }
+    
+    // Getter method for redirect URI
+    public function getRedirectUri() {
+        return $this->redirectUri;
     }
 }
 ?>
