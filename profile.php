@@ -189,7 +189,7 @@ ob_start();
             <div class="card has-background-dark">
                 <div class="card-content has-text-centered">
                     <?php if ($user['profile_image']): ?>
-                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
+                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;display:block;">
                     <?php else: ?>
                         <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
                             <span class="icon is-large has-text-grey-light">
