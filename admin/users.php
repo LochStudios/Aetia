@@ -366,9 +366,29 @@ ob_start();
                         <?php if ($user['first_name'] || $user['last_name']): ?>
                         <p><strong>Name:</strong> <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?></p>
                         <?php endif; ?>
+                        <p><strong>Account Created:</strong> <?= formatDateForUser($user['created_at']) ?></p>
+                        <?php if (isset($user['contact_attempted']) && $user['contact_attempted'] && isset($user['contact_date']) && $user['contact_date']): ?>
+                        <p><strong>Last Contact:</strong> <?= formatDateForUser($user['contact_date']) ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($user['approval_date']) && $user['approval_date']): ?>
+                        <p><strong>Approved:</strong> <?= formatDateForUser($user['approval_date']) ?>
+                        <?php if (isset($user['approved_by']) && $user['approved_by']): ?> by <?= htmlspecialchars($user['approved_by']) ?><?php endif; ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($user['verified_date']) && $user['verified_date']): ?>
+                        <p><strong>Verified:</strong> <?= formatDateForUser($user['verified_date']) ?>
+                        <?php if (isset($user['verified_by']) && $user['verified_by']): ?> by <?= htmlspecialchars($user['verified_by']) ?><?php endif; ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($user['rejection_reason']) && $user['rejection_reason']): ?>
+                        <p><strong>Rejection Reason:</strong> <?= htmlspecialchars($user['rejection_reason']) ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($user['deactivation_reason']) && $user['deactivation_reason']): ?>
+                        <p><strong>Deactivation Reason:</strong> <?= htmlspecialchars($user['deactivation_reason']) ?></p>
+                        <p><strong>Deactivated:</strong> <?= formatDateForUser($user['deactivation_date']) ?>
+                        <?php if (isset($user['deactivated_by']) && $user['deactivated_by']): ?> by <?= htmlspecialchars($user['deactivated_by']) ?><?php endif; ?></p>
+                        <?php endif; ?>
                         <?php $socialConnections = $userModel->getUserSocialConnections($user['id']); ?>
                         <?php if (!empty($socialConnections)): ?>
-                        <div class="social-accounts mb-3">
+                        <div class="social-accounts mt-4">
                             <p><strong>Connected Social Accounts:</strong></p>
                             <div class="tags">
                                 <?php foreach ($socialConnections as $connection): ?>
@@ -427,26 +447,6 @@ ob_start();
                                 <?php endforeach; ?>
                             </div>
                         </div>
-                        <?php endif; ?>
-                        <p><strong>Account Created:</strong> <?= formatDateForUser($user['created_at']) ?></p>
-                        <?php if (isset($user['contact_attempted']) && $user['contact_attempted'] && isset($user['contact_date']) && $user['contact_date']): ?>
-                        <p><strong>Last Contact:</strong> <?= formatDateForUser($user['contact_date']) ?></p>
-                        <?php endif; ?>
-                        <?php if (isset($user['approval_date']) && $user['approval_date']): ?>
-                        <p><strong>Approved:</strong> <?= formatDateForUser($user['approval_date']) ?>
-                        <?php if (isset($user['approved_by']) && $user['approved_by']): ?> by <?= htmlspecialchars($user['approved_by']) ?><?php endif; ?></p>
-                        <?php endif; ?>
-                        <?php if (isset($user['verified_date']) && $user['verified_date']): ?>
-                        <p><strong>Verified:</strong> <?= formatDateForUser($user['verified_date']) ?>
-                        <?php if (isset($user['verified_by']) && $user['verified_by']): ?> by <?= htmlspecialchars($user['verified_by']) ?><?php endif; ?></p>
-                        <?php endif; ?>
-                        <?php if (isset($user['rejection_reason']) && $user['rejection_reason']): ?>
-                        <p><strong>Rejection Reason:</strong> <?= htmlspecialchars($user['rejection_reason']) ?></p>
-                        <?php endif; ?>
-                        <?php if (isset($user['deactivation_reason']) && $user['deactivation_reason']): ?>
-                        <p><strong>Deactivation Reason:</strong> <?= htmlspecialchars($user['deactivation_reason']) ?></p>
-                        <p><strong>Deactivated:</strong> <?= formatDateForUser($user['deactivation_date']) ?>
-                        <?php if (isset($user['deactivated_by']) && $user['deactivated_by']): ?> by <?= htmlspecialchars($user['deactivated_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                     </div>
                 </div>

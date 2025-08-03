@@ -288,7 +288,24 @@ button[disabled], input[disabled] {
     padding-top: 1rem;
 }
 
+/* User status tags styling */
+.card-header-title .tags {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.card-header-title .tag {
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
 /* Ensure social tags don't break layout */
+.social-accounts {
+    margin-top: 1.5rem !important;
+    padding-top: 1rem;
+    border-top: 1px solid #dbdbdb;
+}
+
 .social-accounts .tags {
     margin-bottom: 0.5rem;
 }
