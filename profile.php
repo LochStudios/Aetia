@@ -675,30 +675,32 @@ function fallbackCopyTextToClipboard(text) {
 
 function showCopySuccess() {
     // Change the icon temporarily to show success
-    const icon = document.querySelector('#publicEmail + .icon i');
-    const originalClass = icon.className;
-    icon.className = 'fas fa-check';
-    icon.style.color = '#48c78e';
-    
-    // Reset after 2 seconds
-    setTimeout(function() {
-        icon.className = originalClass;
-        icon.style.color = '';
-    }, 2000);
+    const iconElement = document.querySelector('#publicEmail').parentNode.querySelector('.icon i');
+    if (iconElement) {
+        const originalClass = iconElement.className;
+        iconElement.className = 'fas fa-check';
+        iconElement.style.color = '#48c78e';
+        // Reset after 2 seconds
+        setTimeout(function() {
+            iconElement.className = originalClass;
+            iconElement.style.color = '';
+        }, 2000);
+    }
 }
 
 function showCopyError() {
     // Change the icon temporarily to show error
-    const icon = document.querySelector('#publicEmail + .icon i');
-    const originalClass = icon.className;
-    icon.className = 'fas fa-times';
-    icon.style.color = '#ff3b30';
-    
-    // Reset after 2 seconds
-    setTimeout(function() {
-        icon.className = originalClass;
-        icon.style.color = '';
-    }, 2000);
+    const iconElement = document.querySelector('#publicEmail').parentNode.querySelector('.icon i');
+    if (iconElement) {
+        const originalClass = iconElement.className;
+        iconElement.className = 'fas fa-times';
+        iconElement.style.color = '#ff3b30';
+        // Reset after 2 seconds
+        setTimeout(function() {
+            iconElement.className = originalClass;
+            iconElement.style.color = '';
+        }, 2000);
+    }
 }
 
 function togglePasswordChange() {
