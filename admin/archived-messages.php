@@ -99,13 +99,9 @@ ob_start();
                     <span class="icon"><i class="fas fa-plus"></i></span>
                     <span>New Message</span>
                 </a>
-                <a href="pending-users.php" class="button is-info is-small">
+                <a href="users.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-users-cog"></i></span>
-                    <span>Pending Users</span>
-                </a>
-                <a href="unverified-users.php" class="button is-warning is-small">
-                    <span class="icon"><i class="fas fa-user-check"></i></span>
-                    <span>Unverified Users</span>
+                    <span>User Management</span>
                 </a>
                 <a href="email-logs.php" class="button is-success is-small">
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>

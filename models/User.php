@@ -1191,5 +1191,46 @@ class User {
             return null;
         }
     }
+
+    /**
+     * Get all users for admin management with comprehensive status information
+     */
+    public function getAllUsersForAdmin() {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name, account_type, social_username, 
+                       profile_image, created_at, approval_status, is_verified, is_active, is_admin,
+                       contact_attempted, contact_date, verified_date, verified_by,
+                       approved_date, approved_by, rejection_reason, rejected_by, rejected_date,
+                       deactivation_reason, deactivated_by, deactivation_date
+                FROM users 
+                ORDER BY 
+                    CASE 
+                        WHEN approval_status = 'pending' THEN 1
+                        WHEN is_verified = 0 THEN 2
+                        WHEN is_active = 0 THEN 3
+                        ELSE 4
+                    END,
+                    created_at DESC
+            ");
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $users = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
+            
+            $stmt->close();
+            return $users;
+            
+        } catch (Exception $e) {
+            error_log("Get all users for admin error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 ?>
