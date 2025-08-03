@@ -220,7 +220,6 @@ class ImageUploadService {
                     'Key' => $fileName,
                     'SourceFile' => $resizedImagePath ?: $file['tmp_name'],
                     'ContentType' => $file['type'],
-                    'ACL' => 'authenticated-read', // Only authenticated users can access
                     'Metadata' => [
                         'user-id' => (string)$userId,
                         'upload-date' => date('Y-m-d H:i:s'),
