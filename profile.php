@@ -451,54 +451,70 @@ ob_start();
             <?php if (!empty($user['password_hash'])): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">
-                        <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
-                        Change Password
-                    </h4>
-                    <div class="notification is-info is-light mb-4">
-                        <div class="content">
-                            <p>For security, please enter your current password to confirm changes.</p>
-                            <p>Your new password must be at least 8 characters long.</p>
+                    <div class="level is-mobile" style="cursor: pointer;" onclick="togglePasswordChange()">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <h4 class="title is-5 has-text-light mb-0">
+                                    <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
+                                    Change Password
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <span class="icon has-text-light" id="password-toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <form method="POST" action="profile.php">
-                        <input type="hidden" name="action" value="change_password">
-                        <div class="field">
-                            <label class="label has-text-light">Current Password</label>
-                            <div class="control has-icons-left">
-                                <input class="input has-background-grey-darker has-text-light" type="password" name="current_password" placeholder="Enter current password" required>
-                                <span class="icon is-small is-left">
-                                    <i class="fas fa-lock"></i>
-                                </span>
+                    
+                    <div id="password-change-form" style="display: none; margin-top: 1rem;">
+                        <div class="notification is-info is-light mb-4">
+                            <div class="content">
+                                <p>For security, please enter your current password to confirm changes.</p>
+                                <p>Your new password must be at least 8 characters long.</p>
                             </div>
                         </div>
-                        <div class="field">
-                            <label class="label has-text-light">New Password</label>
-                            <div class="control has-icons-left">
-                                <input class="input has-background-grey-darker has-text-light" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
-                                <span class="icon is-small is-left">
-                                    <i class="fas fa-key"></i>
-                                </span>
+                        <form method="POST" action="profile.php">
+                            <input type="hidden" name="action" value="change_password">
+                            <div class="field">
+                                <label class="label has-text-light">Current Password</label>
+                                <div class="control has-icons-left">
+                                    <input class="input has-background-grey-darker has-text-light" type="password" name="current_password" placeholder="Enter current password" required>
+                                    <span class="icon is-small is-left">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="field">
-                            <label class="label has-text-light">Confirm New Password</label>
-                            <div class="control has-icons-left">
-                                <input class="input has-background-grey-darker has-text-light" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
-                                <span class="icon is-small is-left">
-                                    <i class="fas fa-key"></i>
-                                </span>
+                            <div class="field">
+                                <label class="label has-text-light">New Password</label>
+                                <div class="control has-icons-left">
+                                    <input class="input has-background-grey-darker has-text-light" type="password" name="new_password" placeholder="Enter new password" minlength="8" required>
+                                    <span class="icon is-small is-left">
+                                        <i class="fas fa-key"></i>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="field">
-                            <div class="control">
-                                <button class="button is-warning" type="submit">
-                                    <span class="icon"><i class="fas fa-check"></i></span>
-                                    <span>Change Password</span>
-                                </button>
+                            <div class="field">
+                                <label class="label has-text-light">Confirm New Password</label>
+                                <div class="control has-icons-left">
+                                    <input class="input has-background-grey-darker has-text-light" type="password" name="confirm_password" placeholder="Confirm new password" minlength="8" required>
+                                    <span class="icon is-small is-left">
+                                        <i class="fas fa-key"></i>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                            <div class="field">
+                                <div class="control">
+                                    <button class="button is-warning" type="submit">
+                                        <span class="icon"><i class="fas fa-check"></i></span>
+                                        <span>Change Password</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
             <?php endif; ?>
@@ -683,6 +699,22 @@ function showCopyError() {
         icon.className = originalClass;
         icon.style.color = '';
     }, 2000);
+}
+
+function togglePasswordChange() {
+    const form = document.getElementById('password-change-form');
+    const icon = document.getElementById('password-toggle-icon');
+    const iconElement = icon.querySelector('i');
+    
+    if (form.style.display === 'none' || form.style.display === '') {
+        // Expand
+        form.style.display = 'block';
+        iconElement.className = 'fas fa-chevron-up';
+    } else {
+        // Collapse
+        form.style.display = 'none';
+        iconElement.className = 'fas fa-chevron-down';
+    }
 }
 </script>
 
