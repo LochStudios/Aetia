@@ -187,33 +187,41 @@ ob_start();
     <div class="columns">
         <div class="column is-4">
             <div class="card has-background-dark">
-                <div class="card-content has-text-centered">
-                    <?php if ($user['profile_image']): ?>
-                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;display:block;">
-                    <?php else: ?>
-                        <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                            <span class="icon is-large has-text-grey-light">
-                                <i class="fas fa-user fa-3x"></i>
-                            </span>
+                <div class="card-content">
+                    <div class="columns is-vcentered">
+                        <!-- Profile Image Column -->
+                        <div class="column is-4 has-text-centered">
+                            <?php if ($user['profile_image']): ?>
+                                <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">
+                            <?php else: ?>
+                                <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+                                    <span class="icon is-large has-text-grey-light">
+                                        <i class="fas fa-user fa-3x"></i>
+                                    </span>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
-                    <h3 class="title is-4 has-text-light"><?= htmlspecialchars($user['username']) ?></h3>
-                    <p class="subtitle is-6 has-text-grey-light">
-                        <?= ucfirst($user['account_type']) ?> Account
-                    </p>
-                    <?php if ($user['first_name'] || $user['last_name']): ?>
-                    <p class="has-text-grey-light">
-                        <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
-                    </p>
-                    <?php endif; ?>
-                    <?php if ($user['approval_status'] === 'approved' && !empty($user['approval_date'])): ?>
-                    <p class="has-text-grey-light is-size-7">
-                        Member since <?= formatDateForUser($user['approval_date']) ?>
-                    </p>
-                    <?php endif; ?>
-                    <p class="has-text-grey-light is-size-7">
-                        Account created <?= formatDateForUser($user['created_at']) ?>
-                    </p>
+                        <!-- Profile Information Column -->
+                        <div class="column is-8">
+                            <h3 class="title is-4 has-text-light mb-2"><?= htmlspecialchars($user['username']) ?></h3>
+                            <p class="subtitle is-6 has-text-grey-light mb-3">
+                                <?= ucfirst($user['account_type']) ?> Account
+                            </p>
+                            <?php if ($user['first_name'] || $user['last_name']): ?>
+                            <p class="has-text-grey-light mb-2">
+                                <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
+                            </p>
+                            <?php endif; ?>
+                            <?php if ($user['approval_status'] === 'approved' && !empty($user['approval_date'])): ?>
+                            <p class="has-text-grey-light is-size-7 mb-1">
+                                Member since <?= formatDateForUser($user['approval_date']) ?>
+                            </p>
+                            <?php endif; ?>
+                            <p class="has-text-grey-light is-size-7">
+                                Account created <?= formatDateForUser($user['created_at']) ?>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <?php if (!empty($socialConnections)): ?>
