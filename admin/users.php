@@ -302,26 +302,29 @@ ob_start();
                 <div class="card-content">
                     <div class="media">
                         <div class="media-left">
-                            <figure class="image is-64x64" style="position: relative;">
-                                <?php if ($user['profile_image']): ?>
-                                    <?php if ($user['account_type'] === 'manual'): ?>
-                                        <!-- Manual account - use secure endpoint -->
-                                        <img id="profile-image-display-<?= $user['id'] ?>" src="view-user-profile-image.php?user_id=<?= $user['id'] ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'; document.getElementById('profile-placeholder-<?= $user['id'] ?>').style.display='flex';">
-                                        <div id="profile-placeholder-<?= $user['id'] ?>" class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;display:none;position:absolute;top:0;left:0;">
+                            <figure class="image is-64x64">
+                                <?php if ($user['account_type'] === 'manual'): ?>
+                                    <!-- Manual account - check if they have an image -->
+                                    <?php if ($user['profile_image']): ?>
+                                        <img src="view-user-profile-image.php?user_id=<?= $user['id'] ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+                                    <?php else: ?>
+                                        <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
                                             <span class="icon is-large has-text-grey">
                                                 <i class="fas fa-user fa-2x"></i>
                                             </span>
                                         </div>
-                                    <?php else: ?>
-                                        <!-- Social account - use direct URL -->
-                                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
-                                        <span class="icon is-large has-text-grey">
-                                            <i class="fas fa-user fa-2x"></i>
-                                        </span>
-                                    </div>
+                                    <!-- Social account - use profile image URL from database -->
+                                    <?php if ($user['profile_image']): ?>
+                                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+                                    <?php else: ?>
+                                        <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
+                                            <span class="icon is-large has-text-grey">
+                                                <i class="fas fa-user fa-2x"></i>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </figure>
                         </div>
