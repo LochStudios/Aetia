@@ -21,11 +21,30 @@ class Contact {
             if (empty($name) || empty($email) || empty($message)) {
                 return ['success' => false, 'message' => 'All fields are required'];
             }
-
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return ['success' => false, 'message' => 'Invalid email address'];
             }
-
+            // Get GeoIP information if available
+            $geoData = null;
+            if ($ipAddress && function_exists('geoip_record_by_name')) {
+                try {
+                    $geoRecord = geoip_record_by_name($ipAddress);
+                    if ($geoRecord) {
+                        $geoData = json_encode([
+                            'country_code' => $geoRecord['country_code'] ?? null,
+                            'country_name' => $geoRecord['country_name'] ?? null,
+                            'region' => $geoRecord['region'] ?? null,
+                            'city' => $geoRecord['city'] ?? null,
+                            'latitude' => $geoRecord['latitude'] ?? null,
+                            'longitude' => $geoRecord['longitude'] ?? null,
+                            'timezone' => $geoRecord['timezone'] ?? null
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    // GeoIP lookup failed, continue without geo data
+                    error_log('GeoIP lookup failed for IP ' . $ipAddress . ': ' . $e->getMessage());
+                }
+            }
             // Prevent spam - check for recent submissions from same IP
             if ($ipAddress) {
                 $stmt = $this->mysqli->prepare("
@@ -39,23 +58,19 @@ class Contact {
                 $result = $stmt->get_result();
                 $spamCheck = $result->fetch_assoc();
                 $stmt->close();
-
                 if ($spamCheck['count'] >= 5) {
                     return ['success' => false, 'message' => 'Too many submissions from your IP address. Please try again later.'];
                 }
             }
-
             // Insert the contact submission
             $stmt = $this->mysqli->prepare("
-                INSERT INTO contact_submissions (name, email, subject, message, ip_address, user_agent) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO contact_submissions (name, email, subject, message, ip_address, user_agent, geo_data) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            
-            $stmt->bind_param("ssssss", $name, $email, $subject, $message, $ipAddress, $userAgent);
+            $stmt->bind_param("sssssss", $name, $email, $subject, $message, $ipAddress, $userAgent, $geoData);
             $result = $stmt->execute();
             $contactId = $this->mysqli->insert_id;
             $stmt->close();
-
             if ($result) {
                 return [
                     'success' => true, 
@@ -65,7 +80,6 @@ class Contact {
             } else {
                 return ['success' => false, 'message' => 'Failed to submit your message. Please try again.'];
             }
-
         } catch (Exception $e) {
             error_log('Contact form submission error: ' . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred. Please try again later.'];
@@ -80,13 +94,11 @@ class Contact {
             $whereClause = "";
             $params = [];
             $types = "";
-
             if ($statusFilter && $statusFilter !== 'all') {
                 $whereClause = "WHERE status = ?";
                 $params[] = $statusFilter;
                 $types .= "s";
             }
-
             $query = "
                 SELECT 
                     id,
@@ -97,6 +109,7 @@ class Contact {
                     status,
                     priority,
                     ip_address,
+                    geo_data,
                     responded_by,
                     responded_at,
                     created_at,
@@ -118,11 +131,9 @@ class Contact {
                     created_at DESC 
                 LIMIT ? OFFSET ?
             ";
-
             $params[] = $limit;
             $params[] = $offset;
             $types .= "ii";
-
             $stmt = $this->mysqli->prepare($query);
             if (!empty($params)) {
                 $stmt->bind_param($types, ...$params);
@@ -137,7 +148,6 @@ class Contact {
             
             $stmt->close();
             return $submissions;
-
         } catch (Exception $e) {
             error_log('Get contact submissions error: ' . $e->getMessage());
             return [];
@@ -163,9 +173,7 @@ class Contact {
             $result = $stmt->get_result();
             $submission = $result->fetch_assoc();
             $stmt->close();
-
             return $submission;
-
         } catch (Exception $e) {
             error_log('Get contact submission error: ' . $e->getMessage());
             return null;
@@ -181,7 +189,6 @@ class Contact {
             if (!in_array($status, $validStatuses)) {
                 return false;
             }
-
             if ($status === 'responded' && $userId) {
                 $stmt = $this->mysqli->prepare("
                     UPDATE contact_submissions 
@@ -197,11 +204,9 @@ class Contact {
                 ");
                 $stmt->bind_param("si", $status, $id);
             }
-
             $result = $stmt->execute();
             $stmt->close();
             return $result;
-
         } catch (Exception $e) {
             error_log('Update contact status error: ' . $e->getMessage());
             return false;
@@ -217,7 +222,6 @@ class Contact {
             if (!in_array($priority, $validPriorities)) {
                 return false;
             }
-
             $stmt = $this->mysqli->prepare("
                 UPDATE contact_submissions 
                 SET priority = ? 
@@ -228,7 +232,6 @@ class Contact {
             $result = $stmt->execute();
             $stmt->close();
             return $result;
-
         } catch (Exception $e) {
             error_log('Update contact priority error: ' . $e->getMessage());
             return false;
@@ -250,7 +253,6 @@ class Contact {
             $result = $stmt->execute();
             $stmt->close();
             return $result;
-
         } catch (Exception $e) {
             error_log('Add response notes error: ' . $e->getMessage());
             return false;
@@ -263,11 +265,9 @@ class Contact {
     public function getContactStats() {
         try {
             $stats = [];
-
             // Total submissions
             $result = $this->mysqli->query("SELECT COUNT(*) as total FROM contact_submissions");
             $stats['total'] = $result->fetch_assoc()['total'];
-
             // By status
             $result = $this->mysqli->query("
                 SELECT status, COUNT(*) as count 
@@ -277,7 +277,6 @@ class Contact {
             while ($row = $result->fetch_assoc()) {
                 $stats['status'][$row['status']] = $row['count'];
             }
-
             // Today's submissions
             $result = $this->mysqli->query("
                 SELECT COUNT(*) as today 
@@ -285,7 +284,6 @@ class Contact {
                 WHERE DATE(created_at) = CURDATE()
             ");
             $stats['today'] = $result->fetch_assoc()['today'];
-
             // This week's submissions
             $result = $this->mysqli->query("
                 SELECT COUNT(*) as this_week 
@@ -293,9 +291,7 @@ class Contact {
                 WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
             ");
             $stats['this_week'] = $result->fetch_assoc()['this_week'];
-
             return $stats;
-
         } catch (Exception $e) {
             error_log('Get contact stats error: ' . $e->getMessage());
             return [];
@@ -312,10 +308,63 @@ class Contact {
             $result = $stmt->execute();
             $stmt->close();
             return $result;
-
         } catch (Exception $e) {
             error_log('Delete contact submission error: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Get formatted location string from geo data
+     */
+    public function getLocationString($geoData) {
+        if (empty($geoData)) {
+            return null;
+        }
+        try {
+            $data = json_decode($geoData, true);
+            if (!$data) {
+                return null;
+            }
+            $location = [];
+            if (!empty($data['city'])) {
+                $location[] = $data['city'];
+            }
+            if (!empty($data['region'])) {
+                $location[] = $data['region'];
+            }
+            if (!empty($data['country_name'])) {
+                $location[] = $data['country_name'];
+            }
+            return implode(', ', $location);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get country flag emoji from country code
+     */
+    public function getCountryFlag($geoData) {
+        if (empty($geoData)) {
+            return null;
+        }
+        try {
+            $data = json_decode($geoData, true);
+            if (!$data || empty($data['country_code'])) {
+                return null;
+            }
+            $countryCode = strtoupper($data['country_code']);
+            
+            // Convert country code to flag emoji
+            $flag = '';
+            for ($i = 0; $i < strlen($countryCode); $i++) {
+                $flag .= mb_chr(ord($countryCode[$i]) - ord('A') + 0x1F1E6, 'UTF-8');
+            }
+            
+            return $flag;
+        } catch (Exception $e) {
+            return null;
         }
     }
 }

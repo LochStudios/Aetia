@@ -390,6 +390,31 @@ ob_start();
                             <?php if ($currentContact['ip_address']): ?>
                             <p><strong>IP Address:</strong> <?= htmlspecialchars($currentContact['ip_address']) ?></p>
                             <?php endif; ?>
+                            <?php if ($currentContact['geo_data']): ?>
+                                <?php 
+                                $geoData = json_decode($currentContact['geo_data'], true);
+                                $location = $contactModel->getLocationString($currentContact['geo_data']);
+                                $flag = $contactModel->getCountryFlag($currentContact['geo_data']);
+                                ?>
+                                <?php if ($location): ?>
+                                <p><strong>Location:</strong> 
+                                    <?php if ($flag): ?><?= $flag ?> <?php endif; ?>
+                                    <?= htmlspecialchars($location) ?>
+                                </p>
+                                <?php endif; ?>
+                                <?php if (!empty($geoData['timezone'])): ?>
+                                <p><strong>Timezone:</strong> <?= htmlspecialchars($geoData['timezone']) ?></p>
+                                <?php endif; ?>
+                                <?php if (!empty($geoData['latitude']) && !empty($geoData['longitude'])): ?>
+                                <p><strong>Coordinates:</strong> 
+                                    <a href="https://maps.google.com/?q=<?= urlencode($geoData['latitude'] . ',' . $geoData['longitude']) ?>" 
+                                       target="_blank" class="has-text-info">
+                                        <?= number_format($geoData['latitude'], 4) ?>, <?= number_format($geoData['longitude'], 4) ?>
+                                        <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                                    </a>
+                                </p>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                         <div class="column is-half">
                             <?php if ($currentContact['responded_at']): ?>

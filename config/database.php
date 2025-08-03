@@ -210,6 +210,7 @@ class Database {
                 priority ENUM('low', 'normal', 'high') DEFAULT 'normal',
                 ip_address VARCHAR(45),
                 user_agent TEXT,
+                geo_data JSON,
                 responded_by INT NULL,
                 responded_at TIMESTAMP NULL,
                 response_notes TEXT,
@@ -226,6 +227,7 @@ class Database {
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
+            $this->addMissingContactColumns();
             $this->updateSocialConnectionsPlatforms();
 
             // Create initial admin user if no users exist
@@ -355,6 +357,31 @@ class Database {
             }
         } catch (Exception $e) {
             error_log("Add missing message columns error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Add missing columns to existing contact_submissions table
+    private function addMissingContactColumns() {
+        try {
+            // Check if columns exist and add them if they don't
+            $columnsToAdd = [
+                'geo_data' => 'JSON'
+            ];
+            foreach ($columnsToAdd as $columnName => $columnDefinition) {
+                // Check if column exists
+                $checkColumn = "SHOW COLUMNS FROM contact_submissions LIKE '{$columnName}'";
+                $result = $this->mysqli->query($checkColumn);
+                if ($result && $result->num_rows == 0) {
+                    // Column doesn't exist, add it
+                    $alterQuery = "ALTER TABLE contact_submissions ADD COLUMN {$columnName} {$columnDefinition}";
+                    if ($this->mysqli->query($alterQuery)) {
+                        error_log("Added column '{$columnName}' to contact_submissions table");
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Add missing contact columns error: " . $e->getMessage());
             // Don't throw exception - continue normal operation
         }
     }
