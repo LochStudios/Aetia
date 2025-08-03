@@ -185,43 +185,68 @@ class ImageUploadService {
     */
     public function uploadProfileImage($file, $userId) {
         try {
+            error_log("Starting upload for user {$userId}");
             // Validate file input
             $validation = $this->validateImageFile($file);
             if (!$validation['valid']) {
+                error_log("File validation failed: " . $validation['message']);
                 return ['success' => false, 'message' => $validation['message']];
             }
+            error_log("File validation passed");
             // Generate unique filename with proper folder structure
             $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $fileName = "profile-images/user-{$userId}/profile." . $fileExtension;
+            error_log("Generated filename: " . $fileName);
             
             // Ensure the user's folder exists before uploading
             if (!$this->ensureUserFolderExists($userId)) {
+                error_log("Failed to create user folder");
                 return ['success' => false, 'message' => 'Failed to create user folder in storage.'];
             }
+            error_log("User folder exists");
             
             // Delete any existing profile images for this user before uploading new one
             $this->deleteAllUserProfileImages($userId);
             
             // Resize image if needed
+            error_log("About to resize image");
             $resizedImagePath = $this->resizeImage($file['tmp_name'], $fileExtension);
+            error_log("Resized image path: " . ($resizedImagePath ?: 'null'));
             // Upload to S3 with authenticated read access
-            $result = $this->s3Client->putObject([
-                'Bucket' => $this->bucketName,
-                'Key' => $fileName,
-                'SourceFile' => $resizedImagePath ?: $file['tmp_name'],
-                'ContentType' => $file['type'],
-                'ACL' => 'authenticated-read', // Only authenticated users can access
-                'Metadata' => [
-                    'user-id' => (string)$userId,
-                    'upload-date' => date('Y-m-d H:i:s'),
-                ]
-            ]);
+            error_log("About to upload to S3 with key: " . $fileName);
+            try {
+                $result = $this->s3Client->putObject([
+                    'Bucket' => $this->bucketName,
+                    'Key' => $fileName,
+                    'SourceFile' => $resizedImagePath ?: $file['tmp_name'],
+                    'ContentType' => $file['type'],
+                    'ACL' => 'authenticated-read', // Only authenticated users can access
+                    'Metadata' => [
+                        'user-id' => (string)$userId,
+                        'upload-date' => date('Y-m-d H:i:s'),
+                    ]
+                ]);
+                error_log("S3 upload successful. Result: " . json_encode($result));
+            } catch (Exception $e) {
+                error_log("S3 upload failed: " . $e->getMessage());
+                throw $e;
+            }
             // Clean up temporary resized file if created
             if ($resizedImagePath && file_exists($resizedImagePath)) {
                 unlink($resizedImagePath);
             }
             // Get the public URL
             $imageUrl = $result['ObjectURL'];
+            error_log("Image URL: " . $imageUrl);
+            // Update user's profile image in database
+            error_log("About to update database with image URL");
+            $user = new User();
+            $updateResult = $user->updateProfileImage($userId, $fileName);
+            if (!$updateResult) {
+                error_log("Failed to update database with image URL");
+                return ['success' => false, 'message' => 'Image uploaded but failed to update database.'];
+            }
+            error_log("Database updated successfully");
             return [
                 'success' => true, 
                 'message' => 'Profile image uploaded successfully!',
