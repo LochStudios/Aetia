@@ -366,29 +366,119 @@ ob_start();
                         <?php if ($user['first_name'] || $user['last_name']): ?>
                         <p><strong>Name:</strong> <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?></p>
                         <?php endif; ?>
-                        <?php if (isset($user['social_username']) && $user['social_username']): ?>
-                        <p><strong>Social Username:</strong> <?= htmlspecialchars($user['social_username']) ?></p>
+                        <?php 
+                        $hasSocialAccounts = false;
+                        $socialData = null;
+                        if (isset($user['social_data']) && $user['social_data']) {
+                            $socialData = json_decode($user['social_data'], true);
+                            $hasSocialAccounts = !empty($socialData);
+                        }
+                        ?>
+                        <?php if ($hasSocialAccounts || (isset($user['social_username']) && $user['social_username'])): ?>
+                        <div class="social-accounts mb-3">
+                            <p><strong>Connected Social Accounts:</strong></p>
+                            <div class="tags">
+                                <?php if (isset($user['social_username']) && $user['social_username']): ?>
+                                    <?php 
+                                    // Determine social platform based on account_type or other indicators
+                                    $platform = 'Social';
+                                    $platformIcon = 'fas fa-user';
+                                    $platformColor = 'is-info';
+                                    if (isset($user['account_type'])) {
+                                        switch ($user['account_type']) {
+                                            case 'twitch':
+                                                $platform = 'Twitch';
+                                                $platformIcon = 'fab fa-twitch';
+                                                $platformColor = 'is-primary';
+                                                break;
+                                            case 'discord':
+                                                $platform = 'Discord';
+                                                $platformIcon = 'fab fa-discord';
+                                                $platformColor = 'is-link';
+                                                break;
+                                            case 'youtube':
+                                                $platform = 'YouTube';
+                                                $platformIcon = 'fab fa-youtube';
+                                                $platformColor = 'is-danger';
+                                                break;
+                                            case 'twitter':
+                                                $platform = 'Twitter/X';
+                                                $platformIcon = 'fab fa-twitter';
+                                                $platformColor = 'is-info';
+                                                break;
+                                        }
+                                    }
+                                    ?>
+                                    <span class="tag <?= $platformColor ?> is-medium">
+                                        <span class="icon">
+                                            <i class="<?= $platformIcon ?>"></i>
+                                        </span>
+                                        <span><?= htmlspecialchars($platform) ?>: <?= htmlspecialchars($user['social_username']) ?></span>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($socialData && is_array($socialData)): ?>
+                                    <?php foreach ($socialData as $platform => $data): ?>
+                                        <?php if (is_array($data) && isset($data['username'])): ?>
+                                            <?php
+                                            $platformIcon = 'fas fa-user';
+                                            $platformColor = 'is-info';
+                                            $displayName = ucfirst($platform);
+                                            switch (strtolower($platform)) {
+                                                case 'twitch':
+                                                    $platformIcon = 'fab fa-twitch';
+                                                    $platformColor = 'is-primary';
+                                                    break;
+                                                case 'discord':
+                                                    $platformIcon = 'fab fa-discord';
+                                                    $platformColor = 'is-link';
+                                                    break;
+                                                case 'youtube':
+                                                    $platformIcon = 'fab fa-youtube';
+                                                    $platformColor = 'is-danger';
+                                                    break;
+                                                case 'twitter':
+                                                case 'x':
+                                                    $platformIcon = 'fab fa-twitter';
+                                                    $platformColor = 'is-info';
+                                                    $displayName = 'Twitter/X';
+                                                    break;
+                                                case 'instagram':
+                                                    $platformIcon = 'fab fa-instagram';
+                                                    $platformColor = 'is-warning';
+                                                    break;
+                                                case 'tiktok':
+                                                    $platformIcon = 'fab fa-tiktok';
+                                                    $platformColor = 'is-dark';
+                                                    break;
+                                            }
+                                            ?>
+                                            <span class="tag <?= $platformColor ?> is-medium">
+                                                <span class="icon">
+                                                    <i class="<?= $platformIcon ?>"></i>
+                                                </span>
+                                                <span><?= htmlspecialchars($displayName) ?>: <?= htmlspecialchars($data['username']) ?></span>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                         <?php endif; ?>
                         <p><strong>Account Created:</strong> <?= formatDateForUser($user['created_at']) ?></p>
-                        
                         <?php if (isset($user['contact_attempted']) && $user['contact_attempted'] && isset($user['contact_date']) && $user['contact_date']): ?>
                         <p><strong>Last Contact:</strong> <?= formatDateForUser($user['contact_date']) ?></p>
                         <?php endif; ?>
-                        
                         <?php if (isset($user['approval_date']) && $user['approval_date']): ?>
                         <p><strong>Approved:</strong> <?= formatDateForUser($user['approval_date']) ?>
                         <?php if (isset($user['approved_by']) && $user['approved_by']): ?> by <?= htmlspecialchars($user['approved_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
-                        
                         <?php if (isset($user['verified_date']) && $user['verified_date']): ?>
                         <p><strong>Verified:</strong> <?= formatDateForUser($user['verified_date']) ?>
                         <?php if (isset($user['verified_by']) && $user['verified_by']): ?> by <?= htmlspecialchars($user['verified_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
-                        
                         <?php if (isset($user['rejection_reason']) && $user['rejection_reason']): ?>
                         <p><strong>Rejection Reason:</strong> <?= htmlspecialchars($user['rejection_reason']) ?></p>
                         <?php endif; ?>
-                        
                         <?php if (isset($user['deactivation_reason']) && $user['deactivation_reason']): ?>
                         <p><strong>Deactivation Reason:</strong> <?= htmlspecialchars($user['deactivation_reason']) ?></p>
                         <p><strong>Deactivated:</strong> <?= formatDateForUser($user['deactivation_date']) ?>
