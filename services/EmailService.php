@@ -445,12 +445,15 @@ class EmailService {
     /** Test email configuration */
     public function testConfiguration() {
         try {
-            // Test SMTP connection
+            // Capture debug output
+            ob_start();
             $this->mail->SMTPDebug = SMTP::DEBUG_CONNECTION;
             $success = $this->mail->smtpConnect();
             $this->mail->smtpClose();
+            $debugOutput = ob_get_clean();
             $this->mail->SMTPDebug = 0;
-            
+            // Store debug output in session for JavaScript to access
+            $_SESSION['smtp_debug_output'] = $debugOutput;
             return $success;
         } catch (Exception $e) {
             error_log("Email configuration test failed: " . $e->getMessage());

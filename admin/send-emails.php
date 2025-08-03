@@ -498,6 +498,16 @@ function loadTemplate(type) {
         bodyField.value = templates[type].body;
     }
 }
+
+// Check for SMTP debug output and log to console
+<?php if (isset($_SESSION['smtp_debug_output']) && !empty($_SESSION['smtp_debug_output'])): ?>
+console.log('SMTP Debug Output:');
+console.log(<?php echo json_encode($_SESSION['smtp_debug_output']); ?>);
+<?php 
+    // Clear the debug output from session after displaying
+    unset($_SESSION['smtp_debug_output']); 
+endif; 
+?>
 </script>
 
 <?php
