@@ -452,8 +452,12 @@ class EmailService {
             $this->mail->smtpClose();
             $debugOutput = ob_get_clean();
             $this->mail->SMTPDebug = 0;
-            // Store debug output in session for JavaScript to access
-            $_SESSION['smtp_debug_output'] = $debugOutput;
+            // Clean up the debug output for console display
+            $cleanOutput = strip_tags($debugOutput); // Remove HTML tags
+            $cleanOutput = html_entity_decode($cleanOutput); // Decode HTML entities
+            $cleanOutput = trim($cleanOutput); // Remove extra whitespace
+            // Store cleaned debug output in session for JavaScript to access
+            $_SESSION['smtp_debug_output'] = $cleanOutput;
             return $success;
         } catch (Exception $e) {
             error_log("Email configuration test failed: " . $e->getMessage());
