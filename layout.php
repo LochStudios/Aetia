@@ -97,21 +97,17 @@ if (!isset($content)) $content = '';
                         <span class="icon"><i class="fas fa-user-cog"></i></span>
                         <span>Profile Settings</span>
                       </a>
-                      <a href="../messages.php" class="dropdown-item">
-                        <span class="icon"><i class="fas fa-envelope"></i></span>
-                        <span>Messages</span>
+                      <a href="../logout.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                        <span>Logout</span>
                       </a>
                       <?php if ($showAdminLink): ?>
+                      <hr class="dropdown-divider">
                       <a href="../admin/pending-users.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-users-cog"></i></span>
                         <span>Admin Panel</span>
                       </a>
                       <?php endif; ?>
-                      <hr class="dropdown-divider">
-                      <a href="../logout.php" class="dropdown-item">
-                        <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
-                        <span>Logout</span>
-                      </a>
                     </div>
                   </div>
                 </div>
