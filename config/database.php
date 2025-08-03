@@ -198,6 +198,31 @@ class Database {
             
             $this->mysqli->query($createAttachmentsTable);
 
+            // Create contact_submissions table
+            $createContactTable = "
+            CREATE TABLE IF NOT EXISTS contact_submissions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL,
+                subject VARCHAR(255) DEFAULT NULL,
+                message TEXT NOT NULL,
+                status ENUM('new', 'read', 'responded', 'closed') DEFAULT 'new',
+                priority ENUM('low', 'normal', 'high') DEFAULT 'normal',
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                responded_by INT NULL,
+                responded_at TIMESTAMP NULL,
+                response_notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (responded_by) REFERENCES users(id),
+                INDEX idx_status (status),
+                INDEX idx_created_at (created_at),
+                INDEX idx_email (email)
+            )";
+            
+            $this->mysqli->query($createContactTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
