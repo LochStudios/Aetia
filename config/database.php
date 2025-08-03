@@ -76,6 +76,7 @@ class Database {
                 first_name VARCHAR(50),
                 last_name VARCHAR(50),
                 profile_image VARCHAR(255),
+                public_email VARCHAR(100) NULL,
                 account_type ENUM('manual', 'twitch', 'youtube', 'twitter', 'instagram') DEFAULT 'manual',
                 social_id VARCHAR(100),
                 social_username VARCHAR(100),
@@ -332,7 +333,8 @@ class Database {
                 'deactivation_reason' => 'TEXT',
                 'deactivated_by' => 'VARCHAR(100)',
                 'deactivation_date' => 'TIMESTAMP NULL',
-                'signup_email_sent' => 'BOOLEAN DEFAULT FALSE'
+                'signup_email_sent' => 'BOOLEAN DEFAULT FALSE',
+                'public_email' => 'VARCHAR(100) NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {

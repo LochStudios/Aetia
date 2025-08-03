@@ -206,11 +206,53 @@ ob_start();
                         <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
                     </p>
                     <?php endif; ?>
+                    <?php if ($user['approval_status'] === 'approved' && !empty($user['approval_date'])): ?>
                     <p class="has-text-grey-light is-size-7">
-                        Member since <?= formatDateForUser($user['created_at']) ?>
+                        Member since <?= formatDateForUser($user['approval_date']) ?>
+                    </p>
+                    <?php endif; ?>
+                    <p class="has-text-grey-light is-size-7">
+                        Account created <?= formatDateForUser($user['created_at']) ?>
                     </p>
                 </div>
             </div>
+            <?php if (!empty($socialConnections)): ?>
+            <!-- Connected Social Accounts under profile card -->
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-6 has-text-light mb-4">
+                        <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
+                        Connected Accounts
+                    </h4>
+                    <?php foreach ($socialConnections as $connection): ?>
+                    <div class="level mb-3" style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 6px;">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
+                                    <i class="fab fa-<?= $connection['platform'] ?>"></i>
+                                </span>
+                            </div>
+                            <div class="level-item">
+                                <div>
+                                    <p class="is-size-7 has-text-light"><?= ucfirst($connection['platform']) ?></p>
+                                    <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <?php if ($connection['is_primary']): ?>
+                                    <span class="tag is-primary is-small">Primary</span>
+                                <?php else: ?>
+                                    <span class="tag is-success is-small">Connected</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <div class="column is-8">
             <div class="card has-background-dark">
@@ -235,6 +277,44 @@ ob_start();
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
                         </div>
+                    </div>
+                    <div class="field">
+                        <label class="label has-text-light">
+                            Public Contact Email
+                            <span class="icon has-text-info" title="This is your public email address for client contact">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <div class="control has-icons-right">
+                            <?php 
+                            // Use custom public_email if set, otherwise default to username@aetia.com.au
+                            $publicEmail = !empty($user['public_email']) ? $user['public_email'] : $user['username'] . '@aetia.com.au';
+                            $isCustomEmail = !empty($user['public_email']);
+                            ?>
+                            <input class="input has-background-grey-darker has-text-light" 
+                                   type="email" 
+                                   value="<?= htmlspecialchars($publicEmail) ?>" 
+                                   readonly
+                                   id="publicEmail">
+                            <span class="icon is-small is-right" style="cursor: pointer;" onclick="copyPublicEmail()" title="Click to copy">
+                                <i class="fas fa-copy"></i>
+                            </span>
+                        </div>
+                        <p class="help has-text-grey-light">
+                            <?php if ($user['approval_status'] === 'approved'): ?>
+                                <?php if ($isCustomEmail): ?>
+                                    This is your professional email address that clients can use to contact you directly.
+                                    <br><span class="has-text-info"><i class="fas fa-star"></i> Custom email address assigned by our talent team</span>
+                                    <br><span class="has-text-grey-lighter">You can always request this to be changed to something that fits your brand via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
+                                <?php else: ?>
+                                    This is your professional email address that clients can use to contact you directly.
+                                    <br><span class="has-text-grey-lighter">You can request this to be changed to something that fits your brand by messaging our talent team directly via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="has-text-warning"><i class="fas fa-clock"></i> When you're approved and part of our team, this will be your professional email address that you can make public.</span>
+                                <br><span class="has-text-grey-lighter">You can always request this to be changed to something that fits your brand once approved via the <a href="messages.php" class="has-text-info">Messages</a> page.</span>
+                            <?php endif; ?>
+                        </p>
                     </div>
                     <div class="field">
                         <label class="label has-text-light">Account Default</label>
@@ -437,76 +517,6 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
-            <?php if (!empty($socialConnections)): ?>
-            <div class="card has-background-dark mt-4">
-                <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">
-                        <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
-                        Connected Social Accounts
-                    </h4>
-                    <?php foreach ($socialConnections as $connection): ?>
-                    <div class="notification is-dark mb-3">
-                        <div class="level">
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : ($connection['platform'] === 'youtube' ? 'danger' : ($connection['platform'] === 'twitter' ? 'info' : 'warning'))) ?>">
-                                        <i class="fab fa-<?= $connection['platform'] ?> fa-2x"></i>
-                                    </span>
-                                </div>
-                                <div class="level-item">
-                                    <div>
-                                        <p class="title is-6 has-text-light"><?= ucfirst($connection['platform']) ?></p>
-                                        <p class="subtitle is-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
-                                        <p class="is-size-7 has-text-grey-light">Connected <?= formatDateForUser($connection['created_at']) ?></p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="level-right">
-                                <div class="level-item">
-                                    <div class="field is-grouped">
-                                        <?php if ($connection['is_primary']): ?>
-                                            <div class="control">
-                                                <span class="tag is-primary">Primary</span>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="control">
-                                                <form method="post" style="display: inline;">
-                                                    <input type="hidden" name="action" value="set_primary_social">
-                                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
-                                                    <button type="submit" class="button is-small is-warning">
-                                                        <span class="icon is-small">
-                                                            <i class="fas fa-star"></i>
-                                                        </span>
-                                                        <span>Set Primary</span>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div class="control">
-                                            <span class="tag is-success">Connected</span>
-                                        </div>
-                                        <div class="control">
-                                            <form method="post" style="display: inline;">
-                                                <input type="hidden" name="action" value="unlink_social">
-                                                <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
-                                                <button type="submit" class="button is-small is-danger" 
-                                                        onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
-                                                    <span class="icon is-small">
-                                                        <i class="fas fa-unlink"></i>
-                                                    </span>
-                                                    <span>Unlink</span>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
             <!-- Link Additional Social Accounts -->
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
@@ -572,6 +582,79 @@ ob_start();
         </div>
     </div>
 </div>
+
+<script>
+function copyPublicEmail() {
+    const emailInput = document.getElementById('publicEmail');
+    const email = emailInput.value;
+    
+    // Modern clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(email).then(function() {
+            showCopySuccess();
+        }).catch(function(err) {
+            fallbackCopyTextToClipboard(email);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(email);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            showCopyError();
+        }
+    } catch (err) {
+        showCopyError();
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Change the icon temporarily to show success
+    const icon = document.querySelector('#publicEmail + .icon i');
+    const originalClass = icon.className;
+    icon.className = 'fas fa-check';
+    icon.style.color = '#48c78e';
+    
+    // Reset after 2 seconds
+    setTimeout(function() {
+        icon.className = originalClass;
+        icon.style.color = '';
+    }, 2000);
+}
+
+function showCopyError() {
+    // Change the icon temporarily to show error
+    const icon = document.querySelector('#publicEmail + .icon i');
+    const originalClass = icon.className;
+    icon.className = 'fas fa-times';
+    icon.style.color = '#ff3b30';
+    
+    // Reset after 2 seconds
+    setTimeout(function() {
+        icon.className = originalClass;
+        icon.style.color = '';
+    }, 2000);
+}
+</script>
+
 <?php
 $content = ob_get_clean();
 include 'layout.php';
