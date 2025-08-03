@@ -37,10 +37,8 @@ $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
 // Handle unlinking social accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_social') {
     $platform = $_POST['platform'] ?? '';
-    
     if (!empty($platform)) {
         $result = $userModel->unlinkSocialAccount($_SESSION['user_id'], $platform);
-        
         if ($result['success']) {
             $success_message = $result['message'];
             // Refresh data
@@ -55,10 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Handle setting primary social account
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_primary_social') {
     $platform = $_POST['platform'] ?? '';
-    
     if (!empty($platform)) {
         $result = $userModel->setPrimarySocialConnection($_SESSION['user_id'], $platform);
-        
         if ($result['success']) {
             $success_message = $result['message'];
             // Refresh data
@@ -72,10 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Handle setting primary social account
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_primary_social') {
     $platform = $_POST['platform'] ?? '';
-    
     if (!empty($platform)) {
         $result = $userModel->setPrimarySocialConnection($_SESSION['user_id'], $platform);
-        
         if ($result['success']) {
             $success_message = $result['message'];
             // Refresh data
@@ -90,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_password') {
     $newPassword = trim($_POST['new_password'] ?? '');
     $confirmPassword = trim($_POST['confirm_password'] ?? '');
-    
     if (empty($newPassword) || empty($confirmPassword)) {
         $error_message = 'Please fill in all password fields.';
     } elseif ($newPassword !== $confirmPassword) {
@@ -99,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $error_message = 'Password must be at least 8 characters long.';
     } else {
         $result = $userModel->setPasswordForSocialUser($_SESSION['user_id'], $newPassword);
-        
         if ($result['success']) {
             $success_message = $result['message'];
             // Refresh user data to reflect password is now set
@@ -119,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $currentPassword = trim($_POST['current_password'] ?? '');
         $newPassword = trim($_POST['new_password'] ?? '');
         $confirmPassword = trim($_POST['confirm_password'] ?? '');
-        
         if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
             $error_message = 'Please fill in all password fields.';
         } elseif ($newPassword !== $confirmPassword) {
@@ -129,22 +120,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             // Use the new changeUserPassword method which includes current password verification
             $changeResult = $userModel->changeUserPassword($_SESSION['user_id'], $currentPassword, $newPassword);
-            
             if ($changeResult['success']) {
                 $success_message = $changeResult['message'];
-                
                 // If this is the auto-generated admin account, mark setup as complete
                 if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated') {
                     $setupResult = $userModel->markAdminSetupComplete($_SESSION['user_id']);
                     // Also set a session flag to immediately hide the warning
                     $_SESSION['admin_setup_complete'] = true;
                 }
-                
                 // Refresh user data to reflect changes in the UI
                 $user = $userModel->getUserById($_SESSION['user_id']);
             } else {
                 $error_message = $changeResult['message'];
             }
+        }
+    }
+}
+
+// Handle profile update (first name and last name)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
+    $firstName = trim($_POST['first_name'] ?? '');
+    $lastName = trim($_POST['last_name'] ?? '');
+    if (empty($firstName) && empty($lastName)) {
+        $error_message = 'Please provide at least one name field.';
+    } else {
+        $result = $userModel->updateUserProfile($_SESSION['user_id'], $firstName, $lastName);
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh user data to reflect changes in the UI
+            $user = $userModel->getUserById($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
         }
     }
 }
@@ -157,7 +163,6 @@ ob_start();
         <span class="icon"><i class="fas fa-user-cog"></i></span>
         Profile Settings
     </h2>
-    
     <?php if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated' && !isset($_SESSION['admin_setup_complete'])): ?>
     <div class="notification is-warning is-light mb-4">
         <div class="content">
@@ -167,21 +172,18 @@ ob_start();
         </div>
     </div>
     <?php endif; ?>
-    
     <?php if ($error_message): ?>
     <div class="notification is-danger is-light mb-4">
         <button class="delete"></button>
         <?= htmlspecialchars($error_message) ?>
     </div>
     <?php endif; ?>
-    
     <?php if ($success_message): ?>
     <div class="notification is-success is-light mb-4">
         <button class="delete"></button>
         <?= htmlspecialchars($success_message) ?>
     </div>
     <?php endif; ?>
-    
     <div class="columns">
         <div class="column is-4">
             <div class="card has-background-dark">
@@ -195,51 +197,43 @@ ob_start();
                             </span>
                         </div>
                     <?php endif; ?>
-                    
                     <h3 class="title is-4 has-text-light"><?= htmlspecialchars($user['username']) ?></h3>
                     <p class="subtitle is-6 has-text-grey-light">
                         <?= ucfirst($user['account_type']) ?> Account
                     </p>
-                    
                     <?php if ($user['first_name'] || $user['last_name']): ?>
                     <p class="has-text-grey-light">
                         <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
                     </p>
                     <?php endif; ?>
-                    
                     <p class="has-text-grey-light is-size-7">
                         Member since <?= formatDateForUser($user['created_at']) ?>
                     </p>
                 </div>
             </div>
         </div>
-        
         <div class="column is-8">
             <div class="card has-background-dark">
                 <div class="card-content">
                     <h4 class="title is-5 has-text-light mb-4">Account Information</h4>
-                    
                     <div class="field">
                         <label class="label has-text-light">Username</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
                         </div>
                     </div>
-                    
                     <div class="field">
                         <label class="label has-text-light">Email</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
                         </div>
                     </div>
-                    
                     <div class="field">
                         <label class="label has-text-light">Account Type</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="text" value="<?= ucfirst($user['account_type']) ?>" readonly>
                         </div>
                     </div>
-                    
                     <div class="field">
                         <label class="label has-text-light">Account Status</label>
                         <div class="control">
@@ -251,7 +245,120 @@ ob_start();
                     </div>
                 </div>
             </div>
-            
+            <?php if (empty($user['first_name']) || empty($user['last_name'])): ?>
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-info"><i class="fas fa-user-edit"></i></span>
+                        Complete Your Profile
+                    </h4>
+                    <div class="notification is-info is-light mb-4">
+                        <div class="content">
+                            <p><strong>Complete Your Profile:</strong> Please provide your first and last name to complete your profile.</p>
+                            <p>This information helps us personalize your experience and improve our services.</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="update_profile">
+                        <div class="field">
+                            <label class="label has-text-light">First Name</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" 
+                                       type="text" 
+                                       name="first_name" 
+                                       placeholder="Enter your first name" 
+                                       value="<?= htmlspecialchars($user['first_name'] ?? '') ?>"
+                                       maxlength="50"
+                                       <?= empty($user['first_name']) ? 'required' : '' ?>>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label has-text-light">Last Name</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" 
+                                       type="text" 
+                                       name="last_name" 
+                                       placeholder="Enter your last name" 
+                                       value="<?= htmlspecialchars($user['last_name'] ?? '') ?>"
+                                       maxlength="50"
+                                       <?= empty($user['last_name']) ? 'required' : '' ?>>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-info" type="submit">
+                                    <span class="icon"><i class="fas fa-save"></i></span>
+                                    <span>Update Profile</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($user['first_name']) && !empty($user['last_name'])): ?>
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-warning"><i class="fas fa-user-edit"></i></span>
+                        Edit Profile Information
+                    </h4>
+                    <div class="notification is-light mb-4">
+                        <div class="content">
+                            <p><strong>Update Your Name:</strong> You can modify your first and last name below if needed.</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="update_profile">
+                        
+                        <div class="field">
+                            <label class="label has-text-light">First Name</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" 
+                                       type="text" 
+                                       name="first_name" 
+                                       placeholder="Enter your first name" 
+                                       value="<?= htmlspecialchars($user['first_name']) ?>"
+                                       maxlength="50"
+                                       required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label has-text-light">Last Name</label>
+                            <div class="control has-icons-left">
+                                <input class="input has-background-grey-darker has-text-light" 
+                                       type="text" 
+                                       name="last_name" 
+                                       placeholder="Enter your last name" 
+                                       value="<?= htmlspecialchars($user['last_name']) ?>"
+                                       maxlength="50"
+                                       required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-warning" type="submit">
+                                    <span class="icon"><i class="fas fa-save"></i></span>
+                                    <span>Update Profile</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
             <?php if (!empty($user['password_hash'])): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
@@ -259,17 +366,14 @@ ob_start();
                         <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
                         Change Password
                     </h4>
-                    
                     <div class="notification is-info is-light mb-4">
                         <div class="content">
                             <p>For security, please enter your current password to confirm changes.</p>
                             <p>Your new password must be at least 8 characters long.</p>
                         </div>
                     </div>
-                    
                     <form method="POST" action="profile.php">
                         <input type="hidden" name="action" value="change_password">
-                        
                         <div class="field">
                             <label class="label has-text-light">Current Password</label>
                             <div class="control has-icons-left">
@@ -279,7 +383,6 @@ ob_start();
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="field">
                             <label class="label has-text-light">New Password</label>
                             <div class="control has-icons-left">
@@ -289,7 +392,6 @@ ob_start();
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="field">
                             <label class="label has-text-light">Confirm New Password</label>
                             <div class="control has-icons-left">
@@ -299,7 +401,6 @@ ob_start();
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="field">
                             <div class="control">
                                 <button class="button is-warning" type="submit">
@@ -312,7 +413,6 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
-            
             <?php if ($user['account_type'] !== 'manual' && empty($user['password_hash'])): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
@@ -320,7 +420,6 @@ ob_start();
                         <span class="icon has-text-info"><i class="fas fa-key"></i></span>
                         Set Manual Login Password
                     </h4>
-                    
                     <div class="notification is-info is-light mb-4">
                         <div class="content">
                             <p><strong>Enable Manual Login:</strong> Set a password to login with your username and password in addition to your social accounts.</p>
@@ -328,10 +427,8 @@ ob_start();
                             <p>Your password must be at least 8 characters long.</p>
                         </div>
                     </div>
-                    
                     <form method="POST" action="profile.php">
                         <input type="hidden" name="action" value="set_password">
-                        
                         <div class="field">
                             <label class="label has-text-light">New Password</label>
                             <div class="control has-icons-left">
@@ -341,7 +438,6 @@ ob_start();
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="field">
                             <label class="label has-text-light">Confirm New Password</label>
                             <div class="control has-icons-left">
@@ -351,7 +447,6 @@ ob_start();
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="field">
                             <div class="control">
                                 <button class="button is-info" type="submit">
@@ -364,7 +459,6 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
-            
             <?php if (!empty($socialConnections)): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
@@ -372,7 +466,6 @@ ob_start();
                         <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
                         Connected Social Accounts
                     </h4>
-                    
                     <?php foreach ($socialConnections as $connection): ?>
                     <div class="notification is-dark mb-3">
                         <div class="level">
@@ -436,7 +529,6 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
-            
             <!-- Link Additional Social Accounts -->
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
@@ -444,14 +536,12 @@ ob_start();
                         <span class="icon has-text-success"><i class="fas fa-plus-circle"></i></span>
                         Link Additional Social Accounts
                     </h4>
-                    
                     <div class="notification is-info is-light mb-4">
                         <div class="content">
                             <p><strong>Link Multiple Accounts:</strong> You can connect accounts from different platforms even if they use different email addresses.</p>
                             <p>This allows you to access your account through any of your connected social platforms.</p>
                         </div>
                     </div>
-                    
                     <div class="buttons">
                         <?php
                         // Check if user already has Twitch linked
@@ -462,7 +552,6 @@ ob_start();
                             if ($conn['platform'] === 'discord') $hasDiscord = true;
                         }
                         ?>
-                        
                         <?php if (!$hasTwitch): ?>
                             <?php
                             try {
@@ -481,7 +570,6 @@ ob_start();
                             </a>
                             <?php endif; ?>
                         <?php endif; ?>
-                        
                         <?php if (!$hasDiscord): ?>
                             <?php
                             try {

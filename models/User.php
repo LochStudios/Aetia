@@ -940,5 +940,47 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while setting primary account.'];
         }
     }
+    
+    // Update user profile information (first name and last name)
+    public function updateUserProfile($userId, $firstName, $lastName) {
+        try {
+            $this->ensureConnection();
+            
+            // Trim and validate input
+            $firstName = trim($firstName);
+            $lastName = trim($lastName);
+            
+            // Basic validation
+            if (empty($firstName) && empty($lastName)) {
+                return ['success' => false, 'message' => 'At least one name field must be provided.'];
+            }
+            
+            if (strlen($firstName) > 50 || strlen($lastName) > 50) {
+                return ['success' => false, 'message' => 'Name fields must be 50 characters or less.'];
+            }
+            
+            // Update the user's profile
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET first_name = ?, last_name = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            
+            $stmt->bind_param("ssi", $firstName, $lastName, $userId);
+            $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+            
+            if ($result && $affectedRows > 0) {
+                return ['success' => true, 'message' => 'Profile updated successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'No changes were made or user not found.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Update user profile error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while updating your profile.'];
+        }
+    }
 }
 ?>
