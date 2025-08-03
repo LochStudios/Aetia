@@ -455,6 +455,13 @@ class EmailService {
             // Clean up the debug output for console display
             $cleanOutput = strip_tags($debugOutput); // Remove HTML tags
             $cleanOutput = html_entity_decode($cleanOutput); // Decode HTML entities
+            // Add proper line breaks for better readability
+            $cleanOutput = preg_replace('/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', "\n$1", $cleanOutput);
+            $cleanOutput = str_replace('220-', "\n220-", $cleanOutput);
+            $cleanOutput = str_replace('250-', "\n250-", $cleanOutput);
+            $cleanOutput = str_replace('334 ', "\n334 ", $cleanOutput);
+            $cleanOutput = str_replace('235 ', "\n235 ", $cleanOutput);
+            $cleanOutput = str_replace('221 ', "\n221 ", $cleanOutput);
             $cleanOutput = trim($cleanOutput); // Remove extra whitespace
             // Store cleaned debug output in session for JavaScript to access
             $_SESSION['smtp_debug_output'] = $cleanOutput;
