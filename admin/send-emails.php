@@ -59,7 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $user['email'],
                             $emailSubject,
                             $emailBody,
-                            strip_tags($emailBody)
+                            strip_tags($emailBody),
+                            [],
+                            null,
+                            'admin_custom',
+                            $_SESSION['user_id']
                         );
                         
                         if ($result) {
@@ -98,6 +102,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($user['email'])) {
                         $result = $emailService->sendEmail(
                             $user['email'],
+                            $newsletterSubject,
+                            $newsletterBody,
+                            strip_tags($newsletterBody),
+                            [],
+                            null,
+                            'newsletter',
+                            $_SESSION['user_id']
+                        );
                             $newsletterSubject,
                             $newsletterBody,
                             strip_tags($newsletterBody)
@@ -385,10 +397,22 @@ ob_start();
     <!-- Navigation -->
     <div class="field is-grouped">
         <div class="control">
-            <a href="messages.php" class="button is-light">Back to Messages</a>
+            <a href="email-logs.php" class="button is-info">
+                <span class="icon"><i class="fas fa-list"></i></span>
+                <span>View Email Logs</span>
+            </a>
         </div>
         <div class="control">
-            <a href="../index.php" class="button is-light">Back to Dashboard</a>
+            <a href="messages.php" class="button is-light">
+                <span class="icon"><i class="fas fa-comments"></i></span>
+                <span>Back to Messages</span>
+            </a>
+        </div>
+        <div class="control">
+            <a href="../index.php" class="button is-light">
+                <span class="icon"><i class="fas fa-home"></i></span>
+                <span>Back to Dashboard</span>
+            </a>
         </div>
     </div>
 </div>

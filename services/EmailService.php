@@ -11,13 +11,22 @@ require_once '/home/aetiacom/vendors/PHPMailer/src/Exception.php';
 require_once '/home/aetiacom/vendors/PHPMailer/src/PHPMailer.php';
 require_once '/home/aetiacom/vendors/PHPMailer/src/SMTP.php';
 
+// Include database connection
+require_once __DIR__ . '/../config/database.php';
+
 class EmailService {
     private $mail;
     private $config;
+    private $db;
+    private $mysqli;
     
     public function __construct() {
         // Load email configuration
         $this->loadConfig();
+        
+        // Initialize database connection
+        $this->db = new Database();
+        $this->mysqli = $this->db->getConnection();
         
         // Create a new PHPMailer instance
         $this->mail = new PHPMailer(true);
@@ -144,6 +153,57 @@ class EmailService {
         return $body . $footer;
     }
     
+    /** Log email to database */
+    private function logEmail($recipientEmail, $recipientName, $recipientUserId, $senderUserId, $emailType, $subject, $body, $status, $errorMessage = null) {
+        try {
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO email_logs (
+                    recipient_user_id, recipient_email, recipient_name, sender_user_id, 
+                    email_type, subject, body_content, html_content, status, error_message, 
+                    ip_address, user_agent
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $htmlContent = $this->addEmailFooter($body);
+            $plainContent = strip_tags(html_entity_decode($body));
+            
+            $stmt->bind_param(
+                "ississssssss", 
+                $recipientUserId, $recipientEmail, $recipientName, $senderUserId,
+                $emailType, $subject, $plainContent, $htmlContent, $status, $errorMessage,
+                $ipAddress, $userAgent
+            );
+            
+            $stmt->execute();
+            $logId = $this->mysqli->insert_id;
+            $stmt->close();
+            
+            return $logId;
+        } catch (Exception $e) {
+            error_log("Failed to log email: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /** Get recipient user ID from email address */
+    private function getRecipientUserId($email) {
+        try {
+            $stmt = $this->mysqli->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $user ? $user['id'] : null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+    
     /** Send an email
         * @param string|array $to Recipient email address(es)
         * @param string $subject Email subject
@@ -151,26 +211,34 @@ class EmailService {
         * @param string $altBody Plain text alternative body
         * @param array $attachments Array of file paths to attach
         * @param string $replyTo Reply-to email address
+        * @param string $emailType Type of email for logging (default: 'general')
+        * @param int $senderUserId User ID of sender (for logging)
         * @return bool Success status
     */
-    public function sendEmail($to, $subject, $body, $altBody = '', $attachments = [], $replyTo = null) {
+    public function sendEmail($to, $subject, $body, $altBody = '', $attachments = [], $replyTo = null, $emailType = 'general', $senderUserId = null) {
+        $recipients = [];
+        $logIds = [];
+        
         try {
             // Clear any previous recipients
             $this->mail->clearAddresses();
             $this->mail->clearAttachments();
             $this->mail->clearReplyTos();
             
-            // Add recipients
+            // Process recipients and prepare for logging
             if (is_array($to)) {
                 foreach ($to as $email => $name) {
                     if (is_numeric($email)) {
                         $this->mail->addAddress($name);
+                        $recipients[] = ['email' => $name, 'name' => ''];
                     } else {
                         $this->mail->addAddress($email, $name);
+                        $recipients[] = ['email' => $email, 'name' => $name];
                     }
                 }
             } else {
                 $this->mail->addAddress($to);
+                $recipients[] = ['email' => $to, 'name' => ''];
             }
             
             // Set reply-to if provided
@@ -190,7 +258,7 @@ class EmailService {
             // Content
             $this->mail->isHTML($this->config['html']);
             $this->mail->Subject = $subject;
-            $this->mail->Body = $body;
+            $this->mail->Body = $this->addEmailFooter($body);
             
             if ($altBody) {
                 $this->mail->AltBody = $altBody;
@@ -202,6 +270,29 @@ class EmailService {
             // Send the email
             $result = $this->mail->send();
             
+            // Log email for each recipient
+            foreach ($recipients as $recipient) {
+                $recipientUserId = $this->getRecipientUserId($recipient['email']);
+                $status = $result ? 'sent' : 'failed';
+                $errorMessage = $result ? null : $this->mail->ErrorInfo;
+                
+                $logId = $this->logEmail(
+                    $recipient['email'], 
+                    $recipient['name'], 
+                    $recipientUserId, 
+                    $senderUserId, 
+                    $emailType, 
+                    $subject, 
+                    $body, 
+                    $status, 
+                    $errorMessage
+                );
+                
+                if ($logId) {
+                    $logIds[] = $logId;
+                }
+            }
+            
             if ($result) {
                 error_log("Email sent successfully to: " . (is_array($to) ? implode(', ', array_keys($to)) : $to));
             }
@@ -209,6 +300,22 @@ class EmailService {
             return $result;
             
         } catch (Exception $e) {
+            // Log failed email attempts
+            foreach ($recipients as $recipient) {
+                $recipientUserId = $this->getRecipientUserId($recipient['email']);
+                $this->logEmail(
+                    $recipient['email'], 
+                    $recipient['name'], 
+                    $recipientUserId, 
+                    $senderUserId, 
+                    $emailType, 
+                    $subject, 
+                    $body, 
+                    'failed', 
+                    $e->getMessage()
+                );
+            }
+            
             error_log("Email sending failed: " . $e->getMessage());
             return false;
         }
@@ -227,7 +334,40 @@ class EmailService {
         <p>Best regards,<br>The Aetia Team</p>
         ";
         
-        return $this->sendEmail($userEmail, $subject, $body);
+        return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'welcome');
+    }
+    
+    /** Send signup notification email to new users */
+    public function sendSignupNotificationEmail($userEmail, $userName) {
+        $subject = "Account Created - Approval Required - Aetia Talent Agency";
+        
+        $body = "
+        <h2>Welcome to Aetia Talent Agency, {$userName}!</h2>
+        <p>Thank you for creating your account with us.</p>
+        
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;'>
+            <h3 style='color: #495057; margin-top: 0;'>Important Notice</h3>
+            <p><strong>All new accounts require approval from Aetia Talent Agency.</strong></p>
+            
+            <p>After creating your account, our team will contact you to discuss:</p>
+            <ul>
+                <li>Platform terms and conditions</li>
+                <li>Commission structure and revenue sharing</li>
+                <li>Business partnership agreements</li>
+            </ul>
+            
+            <p><strong>You will be able to access your account once approved.</strong></p>
+        </div>
+        
+        <p>We appreciate your patience during the approval process. Our team will be in touch with you soon.</p>
+        
+        <p>If you have any immediate questions, please contact us at <a href='mailto:talant@aetia.com.au'>talant@aetia.com.au</a></p>
+        
+        <br>
+        <p>Best regards,<br>The Aetia Team</p>
+        ";
+        
+        return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'signup_notification');
     }
     
     /** Send password reset email */
@@ -248,7 +388,7 @@ class EmailService {
         <p>Best regards,<br>The Aetia Team</p>
         ";
         
-        return $this->sendEmail($userEmail, $subject, $body);
+        return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'password_reset');
     }
     
     /** Send notification email to admins */

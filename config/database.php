@@ -95,6 +95,7 @@ class Database {
                 deactivation_reason TEXT,
                 deactivated_by VARCHAR(100),
                 deactivation_date TIMESTAMP NULL,
+                signup_email_sent BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
@@ -224,6 +225,38 @@ class Database {
             
             $this->mysqli->query($createContactTable);
 
+            // Create email_logs table
+            $createEmailLogsTable = "
+            CREATE TABLE IF NOT EXISTS email_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                recipient_user_id INT NULL,
+                recipient_email VARCHAR(100) NOT NULL,
+                recipient_name VARCHAR(100),
+                sender_user_id INT NULL,
+                email_type VARCHAR(50) NOT NULL,
+                subject VARCHAR(255) NOT NULL,
+                body_content TEXT NOT NULL,
+                html_content TEXT,
+                status ENUM('sent', 'failed', 'queued') DEFAULT 'sent',
+                error_message TEXT NULL,
+                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                delivery_attempts INT DEFAULT 1,
+                email_service_response TEXT,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (sender_user_id) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_recipient_email (recipient_email),
+                INDEX idx_recipient_user (recipient_user_id),
+                INDEX idx_email_type (email_type),
+                INDEX idx_status (status),
+                INDEX idx_sent_at (sent_at),
+                INDEX idx_created_at (created_at)
+            )";
+            
+            $this->mysqli->query($createEmailLogsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
@@ -298,7 +331,8 @@ class Database {
                 'verified_by' => 'VARCHAR(100)',
                 'deactivation_reason' => 'TEXT',
                 'deactivated_by' => 'VARCHAR(100)',
-                'deactivation_date' => 'TIMESTAMP NULL'
+                'deactivation_date' => 'TIMESTAMP NULL',
+                'signup_email_sent' => 'BOOLEAN DEFAULT FALSE'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {

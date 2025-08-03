@@ -45,6 +45,97 @@ class User {
         return str_shuffle($resetCode);
     }
     
+    // Send signup notification email if not already sent
+    private function sendSignupNotificationIfNeeded($userId, $email, $name) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if signup email has already been sent
+            $stmt = $this->mysqli->prepare("SELECT signup_email_sent FROM users WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$user || $user['signup_email_sent']) {
+                // Email already sent or user not found
+                return;
+            }
+            
+            // Send the signup notification email
+            try {
+                $emailService = new EmailService();
+                $emailSent = $emailService->sendSignupNotificationEmail($email, $name);
+                
+                if ($emailSent) {
+                    // Mark email as sent
+                    $stmt = $this->mysqli->prepare("UPDATE users SET signup_email_sent = TRUE WHERE id = ?");
+                    $stmt->bind_param("i", $userId);
+                    $stmt->execute();
+                    $stmt->close();
+                }
+            } catch (Exception $e) {
+                error_log('Failed to send signup notification email: ' . $e->getMessage());
+            }
+            
+        } catch (Exception $e) {
+            error_log('Error checking/sending signup notification: ' . $e->getMessage());
+        }
+    }
+    
+    // Public method to check and send signup notification for existing users
+    public function checkAndSendSignupNotification($userId) {
+        try {
+            $this->ensureConnection();
+            
+            // Get user details
+            $stmt = $this->mysqli->prepare("
+                SELECT id, email, first_name, last_name, username, social_username, social_data, signup_email_sent 
+                FROM users 
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$user || $user['signup_email_sent']) {
+                // User not found or email already sent
+                return;
+            }
+            
+            // Determine user's display name
+            $name = '';
+            if (!empty($user['first_name'])) {
+                $name = $user['first_name'];
+                if (!empty($user['last_name'])) {
+                    $name .= ' ' . $user['last_name'];
+                }
+            } elseif (!empty($user['social_username'])) {
+                $name = $user['social_username'];
+            } else {
+                $name = $user['username'];
+            }
+            
+            // If we have social_data, try to get display name from there
+            if (!empty($user['social_data'])) {
+                $socialData = json_decode($user['social_data'], true);
+                if (isset($socialData['display_name'])) {
+                    $name = $socialData['display_name'];
+                } elseif (isset($socialData['name'])) {
+                    $name = $socialData['name'];
+                }
+            }
+            
+            $this->sendSignupNotificationIfNeeded($userId, $user['email'], $name);
+            
+        } catch (Exception $e) {
+            error_log('Error in checkAndSendSignupNotification: ' . $e->getMessage());
+        }
+    }
+    
     // Create a new manual user account
     public function createManualUser($username, $email, $password, $firstName = '', $lastName = '') {
         try {
@@ -70,14 +161,8 @@ class User {
                 $userId = $this->mysqli->insert_id;
                 $stmt->close();
                 
-                // Send welcome email
-                try {
-                    $emailService = new EmailService();
-                    $emailService->sendWelcomeEmail($email, $firstName ?: $username);
-                } catch (Exception $e) {
-                    // Log email error but don't fail the user creation
-                    error_log('Failed to send welcome email: ' . $e->getMessage());
-                }
+                // Send signup notification email
+                $this->sendSignupNotificationIfNeeded($userId, $email, $firstName ?: $username);
                 
                 return ['success' => true, 'user_id' => $userId];
             } else {
@@ -116,6 +201,9 @@ class User {
                 } elseif ($user['approval_status'] === 'rejected') {
                     return ['success' => false, 'message' => 'Your account application has been declined. Please contact talant@aetia.com.au for more information.'];
                 }
+                
+                // Check if we need to send signup notification to this user
+                $this->checkAndSendSignupNotification($user['id']);
                 
                 return ['success' => true, 'user' => $user];
             } else {
@@ -157,6 +245,10 @@ class User {
                 if (!$updateResult) {
                     return ['success' => false, 'message' => 'Failed to update social connection'];
                 }
+                
+                // Check if we need to send signup notification to existing user
+                $this->checkAndSendSignupNotification($existingUser['id']);
+                
                 return ['success' => true, 'user' => $existingUser, 'action' => 'updated'];
             } else {
                 // Create new user
@@ -190,6 +282,11 @@ class User {
                     $result = $stmt->get_result();
                     $user = $result->fetch_assoc();
                     $stmt->close();
+                    
+                    // Send signup notification email
+                    $userName = isset($socialData['display_name']) ? $socialData['display_name'] : 
+                                (isset($socialData['name']) ? $socialData['name'] : $socialUsername);
+                    $this->sendSignupNotificationIfNeeded($userId, $email, $userName);
                     
                     return ['success' => true, 'user' => $user, 'action' => 'created'];
                 } else {
