@@ -311,7 +311,7 @@ ob_start();
                     </h4>
                     <div class="notification is-light mb-4">
                         <div class="content">
-                            <p><strong>Update Your Name:</strong> You can modify your first and last name below if needed.</p>
+                            <p class="has-text-black"><strong>Update Your Name:</strong> You can modify your first and last name below if needed.</p>
                         </div>
                     </div>
                     <form method="POST" action="profile.php">
