@@ -185,126 +185,106 @@ ob_start();
     </div>
     <?php endif; ?>
     <div class="columns">
-        <div class="column is-12">
+        <div class="column is-4">
             <div class="card has-background-dark">
-                <div class="card-content">
-                    <div class="columns">
-                        <!-- Profile Image Column -->
-                        <div class="column is-3">
-                            <div class="has-text-centered">
-                                <?php if ($user['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;display:block;">
-                                <?php else: ?>
-                                    <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                                        <span class="icon is-large has-text-grey-light">
-                                            <i class="fas fa-user fa-3x"></i>
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                <div class="card-content has-text-centered">
+                    <?php if ($user['profile_image']): ?>
+                        <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;display:block;">
+                    <?php else: ?>
+                        <div style="width:120px;height:120px;border-radius:50%;background:#363636;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                            <span class="icon is-large has-text-grey-light">
+                                <i class="fas fa-user fa-3x"></i>
+                            </span>
                         </div>
-                        
-                        <!-- Profile Information Column -->
-                        <div class="column is-9">
-                            <h3 class="title is-4 has-text-light"><?= htmlspecialchars($user['username']) ?></h3>
-                            <p class="subtitle is-6 has-text-grey-light mb-3">
-                                <?= ucfirst($user['account_type']) ?> Account
-                            </p>
-                            
-                            <div class="columns">
-                                <div class="column is-6">
-                                    <?php if ($user['first_name'] || $user['last_name']): ?>
-                                    <p class="has-text-grey-light mb-2">
-                                        <strong>Full Name:</strong> <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
-                                    </p>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($user['approval_status'] === 'approved' && !empty($user['approval_date'])): ?>
-                                    <p class="has-text-grey-light mb-2">
-                                        <strong>Member since:</strong> <?= formatDateForUser($user['approval_date']) ?>
-                                    </p>
-                                    <?php endif; ?>
-                                    
-                                    <p class="has-text-grey-light mb-2">
-                                        <strong>Account created:</strong> <?= formatDateForUser($user['created_at']) ?>
-                                    </p>
+                    <?php endif; ?>
+                    <h3 class="title is-4 has-text-light"><?= htmlspecialchars($user['username']) ?></h3>
+                    <p class="subtitle is-6 has-text-grey-light">
+                        <?= ucfirst($user['account_type']) ?> Account
+                    </p>
+                    <?php if ($user['first_name'] || $user['last_name']): ?>
+                    <p class="has-text-grey-light">
+                        <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
+                    </p>
+                    <?php endif; ?>
+                    <?php if ($user['approval_status'] === 'approved' && !empty($user['approval_date'])): ?>
+                    <p class="has-text-grey-light is-size-7">
+                        Member since <?= formatDateForUser($user['approval_date']) ?>
+                    </p>
+                    <?php endif; ?>
+                    <p class="has-text-grey-light is-size-7">
+                        Account created <?= formatDateForUser($user['created_at']) ?>
+                    </p>
+                </div>
+            </div>
+            <?php if (!empty($socialConnections)): ?>
+            <!-- Connected Social Accounts under profile card -->
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-6 has-text-light mb-2">
+                        <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
+                        Connected Accounts
+                    </h4>
+                    <?php foreach ($socialConnections as $connection): ?>
+                    <div class="mb-3" style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 6px;">
+                        <div class="level is-mobile">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
+                                        <i class="fab fa-<?= $connection['platform'] ?>"></i>
+                                    </span>
                                 </div>
-                                
-                                <div class="column is-6">
-                                    <?php if (!empty($socialConnections)): ?>
-                                    <div class="mb-4">
-                                        <h5 class="title is-6 has-text-light mb-2">
-                                            <span class="icon has-text-info"><i class="fab fa-connectdevelop"></i></span>
-                                            Connected Accounts
-                                        </h5>
-                                        <?php foreach ($socialConnections as $connection): ?>
-                                        <div class="mb-2" style="background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 4px;">
-                                            <div class="level is-mobile">
-                                                <div class="level-left">
-                                                    <div class="level-item">
-                                                        <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
-                                                            <i class="fab fa-<?= $connection['platform'] ?>"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div class="level-item">
-                                                        <div>
-                                                            <p class="is-size-7 has-text-light">
-                                                                <?= ucfirst($connection['platform']) ?>
-                                                                <?php if ($connection['is_primary']): ?>
-                                                                    <span class="tag is-primary is-small ml-1" style="font-size: 0.6rem; padding: 2px 6px;">Primary</span>
-                                                                <?php endif; ?>
-                                                            </p>
-                                                            <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="level-right">
-                                                    <div class="level-item">
-                                                        <div class="field is-grouped">
-                                                            <?php if (!$connection['is_primary']): ?>
-                                                            <div class="control">
-                                                                <form method="post" style="display: inline;">
-                                                                    <input type="hidden" name="action" value="set_primary_social">
-                                                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
-                                                                    <button type="submit" class="button is-small is-warning" title="Set as primary">
-                                                                        <span class="icon is-small">
-                                                                            <i class="fas fa-star"></i>
-                                                                        </span>
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                            <div class="control">
-                                                                <form method="post" style="display: inline;">
-                                                                    <input type="hidden" name="action" value="unlink_social">
-                                                                    <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
-                                                                    <button type="submit" class="button is-small is-danger" 
-                                                                            title="Unlink account"
-                                                                            onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
-                                                                        <span class="icon is-small">
-                                                                            <i class="fas fa-unlink"></i>
-                                                                        </span>
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php endforeach; ?>
+                                <div class="level-item">
+                                    <div>
+                                        <p class="is-size-7 has-text-light">
+                                            <?= ucfirst($connection['platform']) ?>
+                                            <?php if ($connection['is_primary']): ?>
+                                                <span class="tag is-primary is-small ml-1" style="font-size: 0.6rem; padding: 2px 6px;">Primary</span>
+                                            <?php endif; ?>
+                                        </p>
+                                        <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
                                     </div>
-                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <div class="field is-grouped">
+                                        <?php if (!$connection['is_primary']): ?>
+                                        <div class="control">
+                                            <form method="post" style="display: inline;">
+                                                <input type="hidden" name="action" value="set_primary_social">
+                                                <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                                <button type="submit" class="button is-small is-warning" title="Set as primary">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-star"></i>
+                                                    </span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <div class="control">
+                                            <form method="post" style="display: inline;">
+                                                <input type="hidden" name="action" value="unlink_social">
+                                                <input type="hidden" name="platform" value="<?= htmlspecialchars($connection['platform']) ?>">
+                                                <button type="submit" class="button is-small is-danger" 
+                                                        title="Unlink account"
+                                                        onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-unlink"></i>
+                                                    </span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
-    </div>
-    <div class="columns">
-        <div class="column is-12">
+        <div class="column is-8">
             <div class="card has-background-dark">
                 <div class="card-content">
                     <h4 class="title is-5 has-text-light mb-4">Account Information</h4>
