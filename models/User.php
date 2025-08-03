@@ -1200,11 +1200,12 @@ class User {
             $this->ensureConnection();
             
             $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, first_name, last_name, account_type, social_username, 
-                       profile_image, created_at, approval_status, is_verified, is_active, is_admin,
-                       contact_attempted, contact_date, verified_date, verified_by,
-                       approved_date, approved_by, rejection_reason, rejected_by, rejected_date,
-                       deactivation_reason, deactivated_by, deactivation_date
+                SELECT id, username, email, first_name, last_name, profile_image, 
+                       account_type, social_id, social_username, social_data, approval_status, 
+                       approval_date, approved_by, rejection_reason, contact_attempted, contact_date, 
+                       contact_notes, is_admin, is_verified, is_active, created_at, updated_at, 
+                       verified_date, verified_by, deactivation_reason, deactivated_by, 
+                       deactivation_date, signup_email_sent
                 FROM users 
                 ORDER BY 
                     CASE 
