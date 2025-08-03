@@ -278,26 +278,29 @@ ob_start();
     </div>
     <?php endif; ?>
     
+    <!-- Users Grid (2x2 Layout) -->
+    <div class="columns is-multiline">
     <?php foreach ($filteredUsers as $user): ?>
-    <div class="card mb-4">
-        <div class="card-content">
-            <div class="media">
-                <div class="media-left">
-                    <figure class="image is-64x64">
-                        <?php if ($user['profile_image']): ?>
-                            <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
-                        <?php else: ?>
-                            <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
-                                <span class="icon is-large has-text-grey">
-                                    <i class="fas fa-user fa-2x"></i>
-                                </span>
-                            </div>
-                        <?php endif; ?>
-                    </figure>
-                </div>
-                <div class="media-content">
-                    <p class="title is-4"><?= htmlspecialchars($user['username']) ?></p>
-                    <p class="subtitle is-6">
+        <div class="column is-half">
+            <div class="card">
+                <div class="card-content">
+                    <div class="media">
+                        <div class="media-left">
+                            <figure class="image is-64x64">
+                                <?php if ($user['profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+                                <?php else: ?>
+                                    <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
+                                        <span class="icon is-large has-text-grey">
+                                            <i class="fas fa-user fa-2x"></i>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+                            </figure>
+                        </div>
+                        <div class="media-content">
+                            <p class="title is-5"><?= htmlspecialchars($user['username']) ?></p>
+                            <p class="subtitle is-6">
                         <!-- Account Type -->
                         <span class="tag is-<?= $user['account_type'] === 'manual' ? 'info' : 'link' ?>">
                             <?= ucfirst($user['account_type']) ?> Account
@@ -363,35 +366,33 @@ ob_start();
                         <?php if ($user['first_name'] || $user['last_name']): ?>
                         <p><strong>Name:</strong> <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?></p>
                         <?php endif; ?>
-                        <?php if ($user['social_username']): ?>
+                        <?php if (isset($user['social_username']) && $user['social_username']): ?>
                         <p><strong>Social Username:</strong> <?= htmlspecialchars($user['social_username']) ?></p>
                         <?php endif; ?>
                         <p><strong>Account Created:</strong> <?= formatDateForUser($user['created_at']) ?></p>
                         
-                        <?php if ($user['contact_attempted'] && $user['contact_date']): ?>
+                        <?php if (isset($user['contact_attempted']) && $user['contact_attempted'] && isset($user['contact_date']) && $user['contact_date']): ?>
                         <p><strong>Last Contact:</strong> <?= formatDateForUser($user['contact_date']) ?></p>
                         <?php endif; ?>
                         
-                        <?php if ($user['approved_date']): ?>
-                        <p><strong>Approved:</strong> <?= formatDateForUser($user['approved_date']) ?>
-                        <?php if ($user['approved_by']): ?> by <?= htmlspecialchars($user['approved_by']) ?><?php endif; ?></p>
+                        <?php if (isset($user['approval_date']) && $user['approval_date']): ?>
+                        <p><strong>Approved:</strong> <?= formatDateForUser($user['approval_date']) ?>
+                        <?php if (isset($user['approved_by']) && $user['approved_by']): ?> by <?= htmlspecialchars($user['approved_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                         
-                        <?php if ($user['verified_date']): ?>
+                        <?php if (isset($user['verified_date']) && $user['verified_date']): ?>
                         <p><strong>Verified:</strong> <?= formatDateForUser($user['verified_date']) ?>
-                        <?php if ($user['verified_by']): ?> by <?= htmlspecialchars($user['verified_by']) ?><?php endif; ?></p>
+                        <?php if (isset($user['verified_by']) && $user['verified_by']): ?> by <?= htmlspecialchars($user['verified_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                         
-                        <?php if ($user['rejection_reason']): ?>
+                        <?php if (isset($user['rejection_reason']) && $user['rejection_reason']): ?>
                         <p><strong>Rejection Reason:</strong> <?= htmlspecialchars($user['rejection_reason']) ?></p>
-                        <p><strong>Rejected:</strong> <?= formatDateForUser($user['rejected_date']) ?>
-                        <?php if ($user['rejected_by']): ?> by <?= htmlspecialchars($user['rejected_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                         
-                        <?php if ($user['deactivation_reason']): ?>
+                        <?php if (isset($user['deactivation_reason']) && $user['deactivation_reason']): ?>
                         <p><strong>Deactivation Reason:</strong> <?= htmlspecialchars($user['deactivation_reason']) ?></p>
                         <p><strong>Deactivated:</strong> <?= formatDateForUser($user['deactivation_date']) ?>
-                        <?php if ($user['deactivated_by']): ?> by <?= htmlspecialchars($user['deactivated_by']) ?><?php endif; ?></p>
+                        <?php if (isset($user['deactivated_by']) && $user['deactivated_by']): ?> by <?= htmlspecialchars($user['deactivated_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -469,8 +470,12 @@ ob_start();
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     <?php endforeach; ?>
+    </div>
     
     <?php endif; ?>
 </div>
