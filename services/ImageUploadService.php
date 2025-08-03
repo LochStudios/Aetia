@@ -26,7 +26,7 @@ class ImageUploadService {
                 'version' => 'latest',
                 'region' => $this->region,
                 'endpoint' => $this->endpoint,
-                'use_path_style_endpoint' => false,
+                'use_path_style_endpoint' => true,
                 'credentials' => [
                     'key' => $this->getAccessKey(),
                     'secret' => $this->getSecretKey(),
@@ -95,7 +95,7 @@ class ImageUploadService {
                 return $aws_endpoint;
             }
         }
-        return 'https://aetia.au-mel-1.linodeobjects.com'; // Default endpoint
+        return 'https://au-mel-1.linodeobjects.com'; // Default endpoint without bucket name
     }
     
     /**
