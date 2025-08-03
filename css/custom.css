@@ -313,3 +313,231 @@ button[disabled], input[disabled] {
 .social-accounts .tag {
     margin-bottom: 0.25rem;
 }
+
+/* Email Logs Styling */
+.email-logs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.filters-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.stats-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.email-log-table {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.email-log-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.email-log-table th,
+.email-log-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ddd;
+}
+
+.email-log-table th {
+    background: rgba(0, 0, 0, 0.3);
+    font-weight: bold;
+    color: #fff;
+}
+
+.email-log-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.status-sent {
+    color: #48c78e;
+    font-weight: bold;
+}
+
+.status-failed {
+    color: #ff3b30;
+    font-weight: bold;
+}
+
+.status-queued {
+    color: #ffcc02;
+    font-weight: bold;
+}
+
+.email-type-badge {
+    background: rgba(72, 199, 142, 0.2);
+    color: #48c78e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.email-content-preview {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #48c78e;
+}
+
+.stat-label {
+    color: #ddd;
+    font-size: 14px;
+}
+
+/* Email Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #2c3e50;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.email-content-display {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    border: 1px solid #ddd;
+}
+
+.email-content-display h1,
+.email-content-display h2,
+.email-content-display h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.email-content-display p {
+    margin-bottom: 12px;
+    color: #444;
+}
+
+.email-content-display strong {
+    color: #2c3e50;
+}
+
+.email-content-display a {
+    color: #3498db;
+    text-decoration: underline;
+}
+
+.email-meta {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.email-meta p {
+    margin-bottom: 8px;
+    color: #ecf0f1;
+}
+
+.email-meta strong {
+    color: #48c78e;
+}
+
+/* Email Logs Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.pagination a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.pagination .current {
+    background: #48c78e;
+    color: #fff;
+    font-weight: bold;
+}

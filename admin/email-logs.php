@@ -166,183 +166,6 @@ while ($row = $statsResult->fetch_assoc()) {
 $pageTitle = 'Email Logs | Aetia Admin';
 ob_start();
 ?>
-
-<style>
-    .email-logs-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    
-    .filters-section {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    
-    .stats-section {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-    
-    .email-log-table {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 20px;
-    }
-    
-    .email-log-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .email-log-table th,
-    .email-log-table td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        color: #ddd;
-    }
-    
-    .email-log-table th {
-        background: rgba(0, 0, 0, 0.3);
-        font-weight: bold;
-        color: #fff;
-    }
-    
-    .email-log-table tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .status-sent {
-        color: #48c78e;
-        font-weight: bold;
-    }
-    
-    .status-failed {
-        color: #ff3b30;
-        font-weight: bold;
-    }
-    
-    .status-queued {
-        color: #ffcc02;
-        font-weight: bold;
-    }
-    
-    .email-type-badge {
-        background: rgba(72, 199, 142, 0.2);
-        color: #48c78e;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    
-    .email-content-preview {
-        max-width: 300px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    
-    .pagination a,
-    .pagination span {
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.1);
-        color: #ddd;
-        text-decoration: none;
-        border-radius: 4px;
-    }
-    
-    .pagination a:hover {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    
-    .pagination .current {
-        background: #48c78e;
-        color: #fff;
-        font-weight: bold;
-    }
-    
-    .filter-form {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        align-items: end;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-    }
-    
-    .stat-card {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 15px;
-        border-radius: 8px;
-        text-align: center;
-    }
-    
-    .stat-number {
-        font-size: 24px;
-        font-weight: bold;
-        color: #48c78e;
-    }
-    
-    .stat-label {
-        color: #ddd;
-        font-size: 14px;
-    }
-    
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-    }
-    
-    .modal-content {
-        background-color: #2c3e50;
-        margin: 5% auto;
-        padding: 20px;
-        border-radius: 8px;
-        width: 80%;
-        max-width: 800px;
-        max-height: 80vh;
-        overflow-y: auto;
-        color: #ddd;
-    }
-    
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    
-    .close:hover {
-        color: #fff;
-    }
-</style>
-
 <div class="email-logs-container">
     <h1 class="title has-text-light">Email Logs</h1>
     <p class="subtitle has-text-light">View and filter all sent emails</p>
@@ -562,17 +385,18 @@ function viewEmail(logId) {
     const content = document.getElementById('emailContent');
     
     content.innerHTML = `
-        <h2>Email Details</h2>
-        <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
-        <p><strong>To:</strong> ${log.recipient_email}</p>
-        <p><strong>Type:</strong> ${log.email_type.replace(/_/g, ' ')}</p>
-        <p><strong>Subject:</strong> ${log.subject}</p>
-        <p><strong>Status:</strong> <span class="status-${log.status}">${log.status}</span></p>
-        ${log.delivery_attempts > 1 ? `<p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>` : ''}
-        
-        <h3>Email Content</h3>
-        <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">
-            ${log.html_content || log.body_content.replace(/\\n/g, '<br>')}
+        <h2 style="color: #48c78e; margin-bottom: 20px;">Email Details</h2>
+        <div class="email-meta">
+            <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
+            <p><strong>To:</strong> ${log.recipient_email}</p>
+            <p><strong>Type:</strong> ${log.email_type.replace(/_/g, ' ')}</p>
+            <p><strong>Subject:</strong> ${log.subject}</p>
+            <p><strong>Status:</strong> <span class="status-${log.status}">${log.status}</span></p>
+            ${log.delivery_attempts > 1 ? `<p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>` : ''}
+        </div>
+        <h3 style="color: #48c78e; margin-bottom: 15px;">Email Content</h3>
+        <div class="email-content-display">
+            ${log.html_content || log.body_content.replace(/\n/g, '<br>')}
         </div>
     `;
     
@@ -587,16 +411,18 @@ function viewError(logId) {
     const content = document.getElementById('emailContent');
     
     content.innerHTML = `
-        <h2>Email Error Details</h2>
-        <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
-        <p><strong>To:</strong> ${log.recipient_email}</p>
-        <p><strong>Subject:</strong> ${log.subject}</p>
-        <p><strong>Status:</strong> <span class="status-failed">Failed</span></p>
-        <p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>
+        <h2 style="color: #ff3b30; margin-bottom: 20px;">Email Error Details</h2>
+        <div class="email-meta">
+            <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
+            <p><strong>To:</strong> ${log.recipient_email}</p>
+            <p><strong>Subject:</strong> ${log.subject}</p>
+            <p><strong>Status:</strong> <span class="status-failed">Failed</span></p>
+            <p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>
+        </div>
         
-        <h3>Error Message</h3>
-        <div style="background: rgba(255, 59, 48, 0.2); padding: 15px; border-radius: 5px; border-left: 4px solid #ff3b30;">
-            <code>${log.error_message || 'No error message available'}</code>
+        <h3 style="color: #ff3b30; margin-bottom: 15px;">Error Message</h3>
+        <div style="background: rgba(255, 59, 48, 0.15); color: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #ff3b30; font-family: 'Courier New', monospace;">
+            <code style="color: #fff; font-size: 14px; line-height: 1.4;">${log.error_message || 'No error message available'}</code>
         </div>
     `;
     
