@@ -6,6 +6,7 @@ session_start();
 require_once __DIR__ . '/includes/timezone.php';
 require_once __DIR__ . '/includes/FileUploader.php';
 require_once __DIR__ . '/includes/FormTokenManager.php';
+require_once __DIR__ . '/includes/LinkConverter.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -499,7 +500,7 @@ ob_start();
                 <!-- Original Message -->
                 <div class="content">
                     <div class="box has-background-grey-dark has-text-light">
-                        <?= nl2br(htmlspecialchars($currentMessage['message'])) ?>
+                        <?= LinkConverter::processMessageText($currentMessage['message']) ?>
                     </div>
                 </div>
                 
@@ -600,7 +601,7 @@ ob_start();
                                     </div>
                                     <div class="has-text-light">
                                         <?php if ($item['type'] === 'comment'): ?>
-                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                            <?= LinkConverter::processMessageText($item['comment']) ?>
                                         <?php elseif ($item['type'] === 'image'): ?>
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>
@@ -637,7 +638,7 @@ ob_start();
                                     </div>
                                     <div class="has-text-light">
                                         <?php if ($item['type'] === 'comment'): ?>
-                                            <?= nl2br(htmlspecialchars($item['comment'])) ?>
+                                            <?= LinkConverter::processMessageText($item['comment']) ?>
                                         <?php elseif ($item['type'] === 'image'): ?>
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>

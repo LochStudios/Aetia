@@ -158,6 +158,30 @@ h2.title.is-3.message-title {
     }
 }
 
+/* Message link styling */
+.message-link {
+    color: #209cee !important;
+    text-decoration: underline !important;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.message-link:hover {
+    color: #1a7bc4 !important;
+    text-decoration: none !important;
+}
+
+.message-email-link {
+    color: #209cee !important;
+    text-decoration: underline !important;
+    transition: color 0.2s ease;
+}
+
+.message-email-link:hover {
+    color: #1a7bc4 !important;
+    text-decoration: none !important;
+}
+
 
 
 /* Profile image styling */
