@@ -362,11 +362,11 @@ ob_start();
                         <div>
                             <h2 class="title is-3 message-title"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
                             <p class="subtitle is-6">
-                                To: <strong><?= $currentMessage['target_display_name'] === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($currentMessage['target_display_name']) ?></strong>
+                                To: <strong><?= $currentMessage['target_display_name'] === 'admin' ? 'Aetia Talent Agency' : htmlspecialchars($currentMessage['target_display_name']) ?></strong>
                                 <span class="ml-2">•</span>
                                 <span class="ml-2"><?= formatDateForUser($currentMessage['created_at']) ?></span>
                                 <span class="ml-2">•</span>
-                                <span class="ml-2">By: <?= htmlspecialchars($currentMessage['created_by_display_name']) ?></span>
+                                <span class="ml-2">By: <?= $currentMessage['created_by_display_name'] === 'admin' ? 'Aetia Talent Agency' : htmlspecialchars($currentMessage['created_by_display_name']) ?></span>
                             </p>
                         </div>
                     </div>
