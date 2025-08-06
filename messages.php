@@ -373,13 +373,11 @@ ob_start();
                             <i class="<?= $iconClass ?>"></i>
                         </span>
                         <div class="is-flex-grow-1">
-                            <div class="is-flex is-justify-content-space-between is-align-items-start">
-                                <div class="message-subject-container" style="flex: 1 1 auto; max-width: calc(100% - 120px); margin-right: 0.5rem;">
-                                    <strong class="message-list-subject <?= $msg['status'] === 'unread' ? 'has-text-weight-bold' : '' ?>">
-                                        <?= htmlspecialchars($msg['subject']) ?>
-                                    </strong>
-                                </div>
-                                <div class="tags" style="flex: 0 0 auto;">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center">
+                                <strong class="<?= $msg['status'] === 'unread' ? 'has-text-weight-bold' : '' ?>">
+                                    <?= htmlspecialchars($msg['subject']) ?>
+                                </strong>
+                                <div class="tags">
                                     <span class="tag is-small is-<?= match($msg['priority']) {
                                         'urgent' => 'danger',
                                         'high' => 'warning',
