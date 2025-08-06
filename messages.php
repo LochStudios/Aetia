@@ -374,7 +374,7 @@ ob_start();
                         </span>
                         <div class="is-flex-grow-1">
                             <div class="is-flex is-justify-content-space-between is-align-items-center">
-                                <strong class="<?= $msg['status'] === 'unread' ? 'has-text-weight-bold' : '' ?>">
+                                <strong class="message-list-subject <?= $msg['status'] === 'unread' ? 'has-text-weight-bold' : '' ?>">
                                     <?= htmlspecialchars($msg['subject']) ?>
                                 </strong>
                                 <div class="tags">
@@ -455,7 +455,7 @@ ob_start();
                 <div class="level mb-4">
                     <div class="level-left">
                         <div>
-                            <h2 class="title is-3"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
+                            <h2 class="title is-3 message-title"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
                             <p class="subtitle is-6">
                                 From: <strong><?= htmlspecialchars($currentMessage['created_by_display_name']) ?></strong>
                                 <span class="ml-2">•</span>

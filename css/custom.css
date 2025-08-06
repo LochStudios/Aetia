@@ -107,6 +107,28 @@
 
 /* Message system styling */
 
+/* Message title and subject text wrapping */
+.message-title,
+.title.is-3,
+.message-subject {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Message list subject text wrapping */
+.message-list-item strong,
+.message-list-subject {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    display: block;
+}
+
 /* Profile image styling */
 .profile-image {
     width: 48px;
