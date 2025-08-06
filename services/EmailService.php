@@ -391,6 +391,66 @@ class EmailService {
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'password_reset');
     }
     
+    /** Send new message notification email to user */
+    public function sendNewMessageNotification($userEmail, $userName, $messageSubject, $messagePriority = 'normal') {
+        $subject = "New Message: " . $messageSubject;
+        
+        // Set priority indicator
+        $priorityText = '';
+        $priorityClass = 'info';
+        switch ($messagePriority) {
+            case 'urgent':
+                $priorityText = '[URGENT] ';
+                $priorityClass = 'danger';
+                break;
+            case 'high':
+                $priorityText = '[HIGH PRIORITY] ';
+                $priorityClass = 'warning';
+                break;
+            case 'normal':
+                $priorityClass = 'info';
+                break;
+            case 'low':
+                $priorityClass = 'light';
+                break;
+        }
+        
+        $subject = $priorityText . $subject;
+        
+        $body = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color: #3273dc;'>You Have a New Message</h2>
+            
+            <div style='background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;'>
+                <p><strong>Hello " . htmlspecialchars($userName) . ",</strong></p>
+                <p>You have received a new message from <strong>Aetia Talent Agency</strong>.</p>
+                
+                <div style='margin: 15px 0;'>
+                    <p><strong>Subject:</strong> " . htmlspecialchars($messageSubject) . "</p>
+                    <p><strong>Priority:</strong> <span style='color: " . ($priorityClass === 'danger' ? '#ff3860' : ($priorityClass === 'warning' ? '#ffdd57' : '#3273dc')) . ";'>" . ucfirst($messagePriority) . "</span></p>
+                </div>
+            </div>
+            
+            <p><strong>To view and respond to this message:</strong></p>
+            <ol>
+                <li>Log in to your Aetia account</li>
+                <li>Go to your Messages section</li>
+                <li>Click on the new message to read and respond</li>
+            </ol>
+            
+            <div style='background-color: #209cee; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;'>
+                <a href='https://aetia.com/login.php' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>Log In to View Message</a>
+            </div>
+            
+            <p style='color: #666; font-size: 14px;'>
+                <strong>Note:</strong> This is an automated notification. Please do not reply to this email directly. 
+                Use the message system on the website to respond.
+            </p>
+        </div>";
+        
+        return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'new_message');
+    }
+    
     /** Send notification email to admins */
     public function sendAdminNotification($subject, $message, $adminEmails = []) {
         if (empty($adminEmails)) {

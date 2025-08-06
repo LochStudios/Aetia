@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $result = $messageModel->createMessage($userId, $subject, $messageText, $_SESSION['user_id'], $priority, $tags);
         if ($result['success']) {
-            $_SESSION['success_message'] = 'Message sent successfully!';
+            $_SESSION['success_message'] = 'Message sent successfully! The user has been notified by email.';
             header('Location: messages.php?id=' . $result['message_id']);
             exit;
         } else {

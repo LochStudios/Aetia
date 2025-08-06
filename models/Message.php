@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/User.php';
+require_once __DIR__ . '/../services/EmailService.php';
 
 class Message {
     private $database;
@@ -47,6 +48,10 @@ class Message {
             if ($result) {
                 $messageId = $this->mysqli->insert_id;
                 $stmt->close();
+                
+                // Send email notification to the user
+                $this->sendNewMessageNotification($userId, $subject, $priority, $createdBy);
+                
                 return ['success' => true, 'message_id' => $messageId];
             } else {
                 $stmt->close();
@@ -55,6 +60,49 @@ class Message {
         } catch (Exception $e) {
             error_log("Create message error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+    
+    // Send email notification when a new message is created
+    private function sendNewMessageNotification($userId, $messageSubject, $priority, $createdBy) {
+        try {
+            // Get user details
+            $userModel = $this->getUserModel();
+            $user = $userModel->getUserById($userId);
+            
+            if (!$user || empty($user['email'])) {
+                error_log("Cannot send message notification: User not found or no email address for user ID: $userId");
+                return false;
+            }
+            
+            // Prepare user display name
+            $userName = 'User';
+            if (!empty($user['first_name']) || !empty($user['last_name'])) {
+                $userName = trim($user['first_name'] . ' ' . $user['last_name']);
+            } else if (!empty($user['username'])) {
+                $userName = $user['username'];
+            }
+            
+            // Send the notification email
+            $emailService = new EmailService();
+            $emailSent = $emailService->sendNewMessageNotification(
+                $user['email'], 
+                $userName, 
+                $messageSubject, 
+                $priority
+            );
+            
+            if ($emailSent) {
+                error_log("New message notification sent successfully to user ID: $userId");
+            } else {
+                error_log("Failed to send new message notification to user ID: $userId");
+            }
+            
+            return $emailSent;
+            
+        } catch (Exception $e) {
+            error_log("Error sending new message notification: " . $e->getMessage());
+            return false;
         }
     }
     
