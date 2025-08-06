@@ -111,22 +111,52 @@
 .message-title,
 .title.is-3,
 .message-subject {
-    word-wrap: break-word;
-    word-break: break-word;
-    white-space: normal;
-    overflow-wrap: break-word;
-    hyphens: auto;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    max-width: 100% !important;
 }
 
 /* Message list subject text wrapping */
 .message-list-item strong,
 .message-list-subject {
-    word-wrap: break-word;
-    word-break: break-word;
-    white-space: normal;
-    overflow-wrap: break-word;
-    max-width: 100%;
-    display: block;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    max-width: 100% !important;
+    display: block !important;
+    flex: 1 1 auto !important;
+}
+
+/* Force text wrapping on flex containers containing message subjects */
+.is-flex .message-list-subject,
+.is-flex-grow-1 .message-list-subject,
+.is-flex-grow-1 strong {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    max-width: calc(100% - 100px) !important;
+    flex: 1 1 auto !important;
+}
+
+/* Message subject container styling */
+.message-subject-container {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+.message-subject-container strong {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    display: block !important;
 }
 
 /* Profile image styling */
