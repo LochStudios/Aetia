@@ -127,6 +127,37 @@ h2.title.is-3.message-title {
     overflow: visible !important;
 }
 
+/* Message header level layout fixes */
+.level.mb-4 {
+    display: flex !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+}
+
+.level.mb-4 .level-left {
+    flex: 1 1 auto !important;
+    max-width: calc(100% - 200px) !important;
+    margin-right: 1rem !important;
+}
+
+.level.mb-4 .level-right {
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+}
+
+/* Responsive behavior for smaller screens */
+@media screen and (max-width: 768px) {
+    .level.mb-4 .level-left {
+        max-width: 100% !important;
+        margin-right: 0 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .level.mb-4 .level-right {
+        width: 100% !important;
+    }
+}
+
 
 
 /* Profile image styling */
