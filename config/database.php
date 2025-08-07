@@ -486,6 +486,7 @@ class Database {
                 'archive_reason' => 'TEXT NULL'
             ];
             
+            // First, add all missing columns
             foreach ($columnsToAdd as $columnName => $columnDefinition) {
                 // Check if column exists
                 $checkColumn = "SHOW COLUMNS FROM messages LIKE '{$columnName}'";
@@ -496,35 +497,80 @@ class Database {
                     $alterQuery = "ALTER TABLE messages ADD COLUMN {$columnName} {$columnDefinition}";
                     if ($this->mysqli->query($alterQuery)) {
                         error_log("Added column '{$columnName}' to messages table");
-                        
-                        // Add index for tags column
-                        if ($columnName === 'tags') {
-                            $indexQuery = "ALTER TABLE messages ADD INDEX idx_tags (tags)";
-                            $this->mysqli->query($indexQuery);
-                        }
-                        
-                        // Add index for manual_review column
-                        if ($columnName === 'manual_review') {
-                            $indexQuery = "ALTER TABLE messages ADD INDEX idx_manual_review (manual_review, manual_review_at)";
-                            $this->mysqli->query($indexQuery);
-                        }
-                        
-                        // Add foreign key constraint for manual_review_by
-                        if ($columnName === 'manual_review_by') {
-                            $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (manual_review_by) REFERENCES users(id)";
-                            $this->mysqli->query($fkQuery);
-                        }
-                        
-                        // Add foreign key for archived_by column
-                        if ($columnName === 'archived_by') {
-                            $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (archived_by) REFERENCES users(id)";
-                            $this->mysqli->query($fkQuery);
-                        }
                     }
                 }
             }
+            
+            // After all columns are added, add indexes and foreign keys
+            $this->addMessageIndexesAndForeignKeys();
+            
         } catch (Exception $e) {
             error_log("Add missing message columns error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Add indexes and foreign keys for messages table after columns exist
+    private function addMessageIndexesAndForeignKeys() {
+        try {
+            // Add tags index if it doesn't exist
+            $checkTagsIndex = "SHOW INDEX FROM messages WHERE Key_name = 'idx_tags'";
+            $result = $this->mysqli->query($checkTagsIndex);
+            if ($result && $result->num_rows == 0) {
+                $indexQuery = "ALTER TABLE messages ADD INDEX idx_tags (tags)";
+                if ($this->mysqli->query($indexQuery)) {
+                    error_log("Added index 'idx_tags' to messages table");
+                }
+            }
+            
+            // Add manual review index if both columns exist and index doesn't exist
+            $checkManualReviewIndex = "SHOW INDEX FROM messages WHERE Key_name = 'idx_manual_review'";
+            $result = $this->mysqli->query($checkManualReviewIndex);
+            if ($result && $result->num_rows == 0) {
+                // Check if both manual_review columns exist
+                $checkManualReview = "SHOW COLUMNS FROM messages LIKE 'manual_review'";
+                $checkManualReviewAt = "SHOW COLUMNS FROM messages LIKE 'manual_review_at'";
+                $result1 = $this->mysqli->query($checkManualReview);
+                $result2 = $this->mysqli->query($checkManualReviewAt);
+                
+                if ($result1 && $result1->num_rows > 0 && $result2 && $result2->num_rows > 0) {
+                    $indexQuery = "ALTER TABLE messages ADD INDEX idx_manual_review (manual_review, manual_review_at)";
+                    if ($this->mysqli->query($indexQuery)) {
+                        error_log("Added index 'idx_manual_review' to messages table");
+                    }
+                }
+            }
+            
+            // Add foreign key for manual_review_by if column exists and FK doesn't exist
+            $checkManualReviewByFK = "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = 'messages' AND COLUMN_NAME = 'manual_review_by' AND REFERENCED_TABLE_NAME = 'users'";
+            $result = $this->mysqli->query($checkManualReviewByFK);
+            if ($result && $result->num_rows == 0) {
+                $checkColumn = "SHOW COLUMNS FROM messages LIKE 'manual_review_by'";
+                $columnResult = $this->mysqli->query($checkColumn);
+                if ($columnResult && $columnResult->num_rows > 0) {
+                    $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (manual_review_by) REFERENCES users(id)";
+                    if ($this->mysqli->query($fkQuery)) {
+                        error_log("Added foreign key 'manual_review_by' to messages table");
+                    }
+                }
+            }
+            
+            // Add foreign key for archived_by if column exists and FK doesn't exist
+            $checkArchivedByFK = "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = 'messages' AND COLUMN_NAME = 'archived_by' AND REFERENCED_TABLE_NAME = 'users'";
+            $result = $this->mysqli->query($checkArchivedByFK);
+            if ($result && $result->num_rows == 0) {
+                $checkColumn = "SHOW COLUMNS FROM messages LIKE 'archived_by'";
+                $columnResult = $this->mysqli->query($checkColumn);
+                if ($columnResult && $columnResult->num_rows > 0) {
+                    $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (archived_by) REFERENCES users(id)";
+                    if ($this->mysqli->query($fkQuery)) {
+                        error_log("Added foreign key 'archived_by' to messages table");
+                    }
+                }
+            }
+            
+        } catch (Exception $e) {
+            error_log("Add message indexes and foreign keys error: " . $e->getMessage());
             // Don't throw exception - continue normal operation
         }
     }
