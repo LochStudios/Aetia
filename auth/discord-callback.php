@@ -74,7 +74,7 @@ try {
         
         // Set success message based on user status
         if ($result['status'] === 'pending') {
-            $_SESSION['login_success'] = 'Discord login successful! Your account is pending approval. Aetia Talant Agency will contact you before you can access all features.';
+            $_SESSION['login_success'] = 'Discord login successful! Your account is pending approval. Aetia Talent Agency will contact you before you can access all features.';
         } elseif ($result['status'] === 'approved') {
             $_SESSION['login_success'] = 'Welcome back! Successfully logged in with Discord.';
         } else {
