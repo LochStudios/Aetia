@@ -258,6 +258,31 @@ class Database {
             
             $this->mysqli->query($createEmailLogsTable);
 
+            // Create user_documents table
+            $createUserDocumentsTable = "
+            CREATE TABLE IF NOT EXISTS user_documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                document_type VARCHAR(50) NOT NULL,
+                original_filename VARCHAR(255) NOT NULL,
+                s3_key VARCHAR(500) NOT NULL,
+                s3_url VARCHAR(500) NOT NULL,
+                file_size BIGINT NOT NULL,
+                mime_type VARCHAR(100) NOT NULL,
+                description TEXT DEFAULT NULL,
+                uploaded_by INT NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_user_id (user_id),
+                INDEX idx_document_type (document_type),
+                INDEX idx_uploaded_by (uploaded_by),
+                INDEX idx_uploaded_at (uploaded_at)
+            )";
+            
+            $this->mysqli->query($createUserDocumentsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();

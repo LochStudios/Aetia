@@ -597,6 +597,11 @@ ob_start();
                         <span>Edit Email</span>
                     </button>
                 </form>
+                <!-- View Documents Button -->
+                <a href="view-user-documents.php?user_id=<?= $user['id'] ?>" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-file-contract"></i></span>
+                    <span>View Documents</span>
+                </a>
                 </div>
             </div>
         </div>

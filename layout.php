@@ -97,6 +97,10 @@ if (!isset($content)) $content = '';
                         <span class="icon"><i class="fas fa-user-cog"></i></span>
                         <span>Profile Settings</span>
                       </a>
+                      <a href="../documents.php" class="dropdown-item">
+                        <span class="icon"><i class="fas fa-file-contract"></i></span>
+                        <span>My Documents</span>
+                      </a>
                       <a href="../logout.php" class="dropdown-item">
                         <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
                         <span>Logout</span>
