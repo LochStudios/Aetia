@@ -25,7 +25,7 @@ ob_start();
 <!-- Loading State -->
 <div id="loading-state" class="content">
     <div class="has-text-centered">
-        <span class="icon is-large has-text-black">
+        <span class="icon is-large has-text-white">
             <i class="fas fa-spinner fa-pulse fa-3x"></i>
         </span>
         <h3 class="title is-5 mt-3">Loading Your Documents...</h3>
