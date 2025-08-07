@@ -110,8 +110,6 @@ $allUsers = $userModel->getAllActiveUsers();
 // Get all contracts
 $allContracts = $contractService->getAllContracts();
 
-require_once __DIR__ . '/../layout.php';
-
 ob_start();
 ?>
 
@@ -353,7 +351,6 @@ function getStatusColor($status) {
     }
 }
 
-ob_start();
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -476,7 +473,6 @@ document.querySelectorAll('.modal-background').forEach(bg => {
 });
 </script>
 <?php
-$scripts = ob_get_clean();
-
-renderPage('Contract Management', $content, $scripts);
+$content = ob_get_clean();
+include '../layout.php';
 ?>
