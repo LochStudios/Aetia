@@ -24,8 +24,19 @@ if (!$user) {
 // Get user contracts
 $contracts = $contractService->getUserContracts($_SESSION['user_id']);
 
-require_once __DIR__ . '/layout.php';
+// Helper function for status colors
+function getContractStatusColor($status) {
+    switch ($status) {
+        case 'draft': return 'light';
+        case 'sent': return 'info';
+        case 'signed': return 'success';
+        case 'completed': return 'primary';
+        case 'cancelled': return 'danger';
+        default: return 'light';
+    }
+}
 
+$pageTitle = 'My Contracts | Aetia Talent Agency';
 ob_start();
 ?>
 
@@ -49,8 +60,8 @@ ob_start();
                                 Communications Services Agreement
                             </p>
                             <span class="card-header-icon">
-                                <span class="tag is-<?= getContractStatusColor($contract['contract_status']) ?>">
-                                    <?= ucfirst($contract['contract_status']) ?>
+                                <span class="tag is-<?= getContractStatusColor($contract['status']) ?>">
+                                    <?= ucfirst($contract['status']) ?>
                                 </span>
                             </span>
                         </header>
@@ -58,21 +69,15 @@ ob_start();
                             <div class="content">
                                 <div class="columns">
                                     <div class="column is-two-thirds">
-                                        <p><strong>Talent Name:</strong> <?= htmlspecialchars($contract['talent_name']) ?></p>
-                                        <?php if (!empty($contract['talent_address'])): ?>
-                                            <p><strong>Address:</strong> <?= nl2br(htmlspecialchars($contract['talent_address'])) ?></p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($contract['talent_abn'])): ?>
-                                            <p><strong>ABN/ACN:</strong> <?= htmlspecialchars($contract['talent_abn']) ?></p>
+                                        <p><strong>Client Name:</strong> <?= htmlspecialchars($contract['client_name']) ?></p>
+                                        <?php if (!empty($contract['client_address'])): ?>
+                                            <p><strong>Address:</strong> <?= nl2br(htmlspecialchars($contract['client_address'])) ?></p>
                                         <?php endif; ?>
                                     </div>
                                     <div class="column">
                                         <p><strong>Created:</strong> <?= date('F j, Y', strtotime($contract['created_at'])) ?></p>
-                                        <?php if ($contract['signed_at']): ?>
-                                            <p><strong>Signed:</strong> <?= date('F j, Y', strtotime($contract['signed_at'])) ?></p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($contract['signed_by'])): ?>
-                                            <p><strong>Signed by:</strong> <?= htmlspecialchars($contract['signed_by']) ?></p>
+                                        <?php if ($contract['signed_date']): ?>
+                                            <p><strong>Signed:</strong> <?= date('F j, Y', strtotime($contract['signed_date'])) ?></p>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -83,7 +88,7 @@ ob_start();
                                 <span class="icon"><i class="fas fa-eye"></i></span>
                                 <span>View Contract</span>
                             </button>
-                            <?php if ($contract['contract_status'] === 'sent' && empty($contract['signed_by'])): ?>
+                            <?php if ($contract['status'] === 'sent' && empty($contract['signed_date'])): ?>
                                 <button class="card-footer-item button is-white" onclick="signContract(<?= $contract['id'] ?>)">
                                     <span class="icon"><i class="fas fa-signature"></i></span>
                                     <span>Sign Contract</span>
@@ -158,19 +163,6 @@ ob_start();
 <?php
 $content = ob_get_clean();
 
-// Helper function for status colors
-function getContractStatusColor($status) {
-    switch ($status) {
-        case 'draft': return 'light';
-        case 'sent': return 'info';
-        case 'signed': return 'success';
-        case 'completed': return 'primary';
-        case 'cancelled': return 'danger';
-        default: return 'light';
-    }
-}
-
-ob_start();
 ?>
 <script>
 let currentContractId = null;
@@ -272,7 +264,6 @@ document.querySelectorAll('.modal-background').forEach(bg => {
 });
 </script>
 <?php
-$scripts = ob_get_clean();
-
-renderPage('My Contracts', $content, $scripts);
+$content = ob_get_clean();
+include 'layout.php';
 ?>
