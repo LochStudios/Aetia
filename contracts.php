@@ -163,6 +163,8 @@ ob_start();
 <?php
 $content = ob_get_clean();
 
+// Start output buffering for scripts
+ob_start();
 ?>
 <script>
 let currentContractId = null;
@@ -264,6 +266,6 @@ document.querySelectorAll('.modal-background').forEach(bg => {
 });
 </script>
 <?php
-$content = ob_get_clean();
+$scripts = ob_get_clean();
 include 'layout.php';
 ?>
