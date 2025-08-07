@@ -1,5 +1,5 @@
 <?php
-// layout.php - Main layout template for Aetia Talant Agency
+// layout.php - Main layout template for Aetia Talent Agency
 
 // Include timezone utilities
 require_once __DIR__ . '/includes/timezone.php';
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit; // Don't render the page for AJAX requests
 }
 
-if (!isset($pageTitle)) $pageTitle = 'Aetia Talant Agency';
+if (!isset($pageTitle)) $pageTitle = 'Aetia Talent Agency';
 if (!isset($content)) $content = '';
 ?>
 <!DOCTYPE html>
@@ -36,7 +36,7 @@ if (!isset($content)) $content = '';
     <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="index.php">
-          <img src="../img/logo.png" alt="Aetia Talant Agency Logo" style="max-height: 3rem;">
+          <img src="../img/logo.png" alt="Aetia Talent Agency Logo" style="max-height: 3rem;">
         </a>
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
           <span aria-hidden="true"></span>
@@ -138,16 +138,16 @@ if (!isset($content)) $content = '';
     <footer class="footer has-background-dark has-text-light mt-6" style="padding-top:2rem;padding-bottom:2rem;flex-shrink:0;">
       <div class="content has-text-centered">
         <p>
-          <img src="../img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;filter:brightness(0) invert(1);"> <strong class="has-text-light">Aetia Talant Agency</strong><br>
+          <img src="../img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;filter:brightness(0) invert(1);"> <strong class="has-text-light">Aetia Talent Agency</strong><br>
           <span class="icon-text">
             <span class="icon has-text-info"><i class="fas fa-envelope"></i></span>
-            <span><a href="mailto:talant@aetia.com.au" class="has-text-info">talant@aetia.com.au</a></span>
+            <span><a href="mailto:talent@aetia.com.au" class="has-text-info">talent@aetia.com.au</a></span>
           </span>
         </p>
-        <p class="is-size-7 has-text-grey-light">&copy; <?= date('Y') ?> Aetia Talant Agency. All rights reserved.</p>
+        <p class="is-size-7 has-text-grey-light">&copy; <?= date('Y') ?> Aetia Talent Agency. All rights reserved.</p>
         <hr class="my-2" style="background:rgba(255,255,255,0.08);height:1px;border:none;">
         <p class="is-size-7 has-text-grey-light mb-0">
-          Aetia Talant Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
+          Aetia Talent Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
         </p>
       </div>
     </footer>
