@@ -92,7 +92,8 @@ c) Not use the Services for any illegal, unethical, or unauthorised purpose.
 6.2. The User consents to the Provider having the ability to access, view, and manage these communications as necessary for the technical administration and maintenance of the Platform and Services. The Provider agrees to handle all data in accordance with its Privacy Policy.
 
 7. LIMITATION OF LIABILITY
-7.1. The Provider offers the Services on an \"as-is\" basis and does not guarantee uninterrupted or error-free operation. The Provider is not liable for any lost data, missed communications, or missed business opportunities resulting from the use or inability to use the Services.
+7.1. The Provider offers the Services on an \"as-is\" basis and does not guarantee uninterrupted or error-free operation. The Provider is not liable for any lost data or missed business opportunities resulting from the use or inability to use the Services.
+7.2. Message Processing Schedule: Incoming message communications are processed and added to the User's message platform between the hours of 12:00 PM - 1:00 PM AEST/AEDT Monday through Friday. Messages received outside these hours will be processed during the next scheduled processing window.
 
 8. GOVERNING LAW
 8.1. This Agreement shall be governed by and construed in accordance with the laws of the state of New South Wales, Australia.
