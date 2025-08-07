@@ -1250,6 +1250,50 @@ class User {
     }
     
     /**
+     * Update user's public email address
+     * @param int $userId The user ID
+     * @param string $publicEmail The new public email address
+     * @param string $adminName The name of the admin making the change
+     * @return bool Success status
+     */
+    public function updatePublicEmail($userId, $publicEmail, $adminName = 'Admin') {
+        try {
+            $this->ensureConnection();
+            // Validate input
+            if (empty($publicEmail)) {
+                error_log("Update public email error: Public email is required.");
+                return false;
+            }
+            // Basic email validation
+            if (!filter_var($publicEmail, FILTER_VALIDATE_EMAIL)) {
+                error_log("Update public email error: Invalid email format.");
+                return false;
+            }
+            // Update the user's public email
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET public_email = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $publicEmail, $userId);
+            $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+            if ($result && $affectedRows > 0) {
+                // Log the admin action
+                error_log("Admin action: {$adminName} updated public email for user ID {$userId} to {$publicEmail}");
+                return true;
+            } else {
+                error_log("Update public email error: Failed to update or user not found.");
+                return false;
+            }
+        } catch (Exception $e) {
+            error_log("Update public email error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Remove user's profile image
      * @param int $userId The user ID
      * @return array Success/failure result

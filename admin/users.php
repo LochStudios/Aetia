@@ -32,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $userId = intval($_POST['user_id']);
     $currentUser = $userModel->getUserWithAdminStatus($_SESSION['user_id']);
     $adminName = $currentUser['username'] ?? 'Admin';
-    
     switch ($_POST['action']) {
         case 'approve':
             if ($userModel->approveUser($userId, $adminName)) {
@@ -41,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error approving user.';
             }
             break;
-            
         case 'reject':
             $rejectionReason = trim($_POST['rejection_reason'] ?? 'No reason provided');
             if ($userModel->rejectUser($userId, $rejectionReason, $adminName)) {
@@ -50,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error rejecting user.';
             }
             break;
-            
         case 'mark_contact':
             $contactNotes = trim($_POST['contact_notes'] ?? '');
             if ($userModel->markContactAttempt($userId, $contactNotes)) {
@@ -59,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error marking contact attempt.';
             }
             break;
-            
         case 'mark_admin':
             if ($userModel->markUserAsAdmin($userId, $adminName)) {
                 $message = 'User marked as admin and approved successfully!';
@@ -67,7 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error marking user as admin.';
             }
             break;
-            
         case 'verify':
             if ($userModel->verifyUser($userId, $adminName)) {
                 $message = 'User verified successfully!';
@@ -75,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error verifying user.';
             }
             break;
-            
         case 'deactivate':
             $deactivationReason = trim($_POST['deactivation_reason'] ?? 'No reason provided');
             if ($userModel->deactivateUser($userId, $deactivationReason, $adminName)) {
@@ -84,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error deactivating user.';
             }
             break;
-            
         case 'make_admin':
             if ($userModel->makeUserAdmin($userId, $adminName)) {
                 $message = 'User granted admin privileges successfully!';
@@ -92,12 +85,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error granting admin privileges.';
             }
             break;
-            
         case 'remove_admin':
             if ($userModel->removeUserAdmin($userId, $adminName)) {
                 $message = 'Admin privileges removed successfully!';
             } else {
                 $message = 'Error removing admin privileges.';
+            }
+            break;
+        case 'update_email':
+            $newEmail = trim($_POST['new_email'] ?? '');
+            if ($userModel->updatePublicEmail($userId, $newEmail, $adminName)) {
+                $message = 'Public email updated successfully!';
+            } else {
+                $message = 'Error updating public email.';
             }
             break;
     }
@@ -405,7 +405,12 @@ ob_start();
                         <?php endif; ?>
                     </p>
                     <div class="content">
-                        <p><strong>Email:</strong> <?= htmlspecialchars($user['email']) ?></p>
+                        <p><strong>Email:</strong> 
+                        <?php 
+                        $displayEmail = $user['public_email'] ?? ($user['username'] . '@aetia.com.au');
+                        echo htmlspecialchars($displayEmail);
+                        ?>
+                        </p>
                         <?php if ($user['first_name'] || $user['last_name']): ?>
                         <p><strong>Name:</strong> <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?></p>
                         <?php endif; ?>
@@ -581,6 +586,16 @@ ob_start();
                         </button>
                     </form>
                 <?php endif; ?>
+                <!-- Edit Email Button -->
+                <form method="POST" style="display:inline;" id="email-form-<?= $user['id'] ?>">
+                    <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                    <input type="hidden" name="action" value="update_email">
+                    <input type="hidden" name="new_email" id="new-email-<?= $user['id'] ?>">
+                    <button class="button is-light is-small edit-email-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>" data-current-email="<?= htmlspecialchars($user['public_email'] ?? '') ?>">
+                        <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                        <span>Edit Email</span>
+                    </button>
+                </form>
                 </div>
             </div>
         </div>
@@ -603,12 +618,10 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username;
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
-            
             Swal.fire({
                 title: 'Mark Contact Attempt',
                 html: `Record contact attempt for <strong style="color: #333;">${decodedUsername}</strong>:<br><br>`,
@@ -632,18 +645,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
     // Handle Approve User buttons
     document.querySelectorAll('.approve-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username;
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
-            
             Swal.fire({
                 title: 'Approve User?',
                 html: `Are you sure you want to approve <strong style="color: #333;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
@@ -664,18 +674,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
     // Handle Mark as Admin buttons
     document.querySelectorAll('.admin-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username || 'Unknown User';
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
-            
             Swal.fire({
                 title: 'Mark as Admin?',
                 html: `Are you sure you want to mark <strong style="color: #333;">${decodedUsername}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
@@ -696,7 +703,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
     // Handle Make Admin buttons (for non-admin users)
     document.querySelectorAll('.make-admin-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -726,7 +732,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
     // Handle Remove Admin buttons (for admin users)
     document.querySelectorAll('.remove-admin-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -756,18 +761,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
     // Handle Reject User buttons
     document.querySelectorAll('.reject-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username;
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
-            
             Swal.fire({
                 title: 'Reject User?',
                 html: `Are you sure you want to reject <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for rejection:`,
@@ -796,18 +798,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
     // Handle Verify User buttons
     document.querySelectorAll('.verify-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username || 'Unknown User';
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
-            
             Swal.fire({
                 title: 'Verify User?',
                 html: `Are you sure you want to verify <strong style="color: #333;">${decodedUsername}</strong>?<br><br>This will mark their account as verified and trusted.`,
@@ -828,18 +827,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-    
     // Handle Deactivate User buttons
     document.querySelectorAll('.deactivate-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userId = this.dataset.userId;
             const username = this.dataset.username;
-            
             // Create a temporary element to decode HTML entities
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = username || 'Unknown User';
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
-            
             Swal.fire({
                 title: 'Deactivate User?',
                 html: `Are you sure you want to deactivate <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for deactivation:`,
@@ -864,6 +860,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     document.getElementById(`deactivation-reason-${userId}`).value = result.value;
                     document.getElementById(`deactivate-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    // Handle Edit Email buttons
+    document.querySelectorAll('.edit-email-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            const currentEmail = this.dataset.currentEmail;
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username || 'Unknown User';
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
+            // Default email if current is empty
+            const defaultEmail = currentEmail || `${decodedUsername}@aetia.com.au`;
+            Swal.fire({
+                title: 'Edit Public Email',
+                html: `Update public email for <strong style="color: #333;">${decodedUsername}</strong>:<br><br>`,
+                icon: 'info',
+                input: 'email',
+                inputValue: currentEmail,
+                inputPlaceholder: `${decodedUsername}@aetia.com.au`,
+                inputValidator: (value) => {
+                    if (!value || value.trim() === '') {
+                        return 'Email address is required!';
+                    }
+                    // Basic email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) {
+                        return 'Please enter a valid email address!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#3e8ed0',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-envelope-open-text"></i> Update Email',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-info',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`new-email-${userId}`).value = result.value;
+                    document.getElementById(`email-form-${userId}`).submit();
                 }
             });
         });
