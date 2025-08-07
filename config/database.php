@@ -542,9 +542,22 @@ class Database {
             }
             
             // Add foreign key for manual_review_by if column exists and FK doesn't exist
-            $checkManualReviewByFK = "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = 'messages' AND COLUMN_NAME = 'manual_review_by' AND REFERENCED_TABLE_NAME = 'users'";
+            $checkManualReviewByFK = "SELECT CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE TABLE_NAME = 'messages' AND CONSTRAINT_SCHEMA = DATABASE()";
             $result = $this->mysqli->query($checkManualReviewByFK);
-            if ($result && $result->num_rows == 0) {
+            $hasManualReviewFK = false;
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    // Check if this FK involves manual_review_by column
+                    $checkFKColumn = "SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_NAME = '{$row['CONSTRAINT_NAME']}' AND COLUMN_NAME = 'manual_review_by'";
+                    $fkColumnResult = $this->mysqli->query($checkFKColumn);
+                    if ($fkColumnResult && $fkColumnResult->num_rows > 0) {
+                        $hasManualReviewFK = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$hasManualReviewFK) {
                 $checkColumn = "SHOW COLUMNS FROM messages LIKE 'manual_review_by'";
                 $columnResult = $this->mysqli->query($checkColumn);
                 if ($columnResult && $columnResult->num_rows > 0) {
@@ -556,9 +569,22 @@ class Database {
             }
             
             // Add foreign key for archived_by if column exists and FK doesn't exist
-            $checkArchivedByFK = "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = 'messages' AND COLUMN_NAME = 'archived_by' AND REFERENCED_TABLE_NAME = 'users'";
+            $checkArchivedByFK = "SELECT CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE TABLE_NAME = 'messages' AND CONSTRAINT_SCHEMA = DATABASE()";
             $result = $this->mysqli->query($checkArchivedByFK);
-            if ($result && $result->num_rows == 0) {
+            $hasArchivedByFK = false;
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    // Check if this FK involves archived_by column
+                    $checkFKColumn = "SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_NAME = '{$row['CONSTRAINT_NAME']}' AND COLUMN_NAME = 'archived_by'";
+                    $fkColumnResult = $this->mysqli->query($checkFKColumn);
+                    if ($fkColumnResult && $fkColumnResult->num_rows > 0) {
+                        $hasArchivedByFK = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!$hasArchivedByFK) {
                 $checkColumn = "SHOW COLUMNS FROM messages LIKE 'archived_by'";
                 $columnResult = $this->mysqli->query($checkColumn);
                 if ($columnResult && $columnResult->num_rows > 0) {
