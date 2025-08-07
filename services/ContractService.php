@@ -905,208 +905,98 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     }
     
     /**
-     * Convert HTML to PDF using PDFlib or fallback method
+     * Convert HTML to PDF using mPDF
      */
     private function htmlToPdf($htmlFile, $outputFile) {
-        // First try PDFlib if available
-        if (extension_loaded('pdf')) {
-            return $this->htmlToPdfWithPDFlib($htmlFile, $outputFile);
-        }
-        
-        // Fallback: Create a simple text-based PDF using basic PHP
-        return $this->htmlToPdfFallback($htmlFile, $outputFile);
-    }
-    
-    /**
-     * Convert HTML to PDF using PDFlib
-     */
-    private function htmlToPdfWithPDFlib($htmlFile, $outputFile) {
         try {
-            // Read the HTML content and convert to plain text for PDF
-            $htmlContent = file_get_contents($htmlFile);
-            $textContent = $this->htmlToText($htmlContent);
+            error_log("Using mPDF for PDF generation");
             
-            if (empty(trim($textContent))) {
-                error_log("No content available for PDF generation");
-                return false;
-            }
-            
-            // Create PDF document
-            $pdf = pdf_new();
-            
-            if (!$pdf) {
-                error_log("Failed to create PDF object");
-                return false;
-            }
-            
-            // Set PDF options for proper output
-            pdf_set_parameter($pdf, "compatibility", "1.4");
-            pdf_set_parameter($pdf, "license", "");
-            
-            // Open PDF file for writing
-            if (pdf_begin_document($pdf, $outputFile, "") == 0) {
-                error_log("Failed to begin PDF document: " . pdf_get_errmsg($pdf));
-                pdf_delete($pdf);
-                return false;
-            }
-            
-            // Set document info
-            pdf_set_info($pdf, "Creator", "Aetia Talent Agency");
-            pdf_set_info($pdf, "Author", "LochStudios");
-            pdf_set_info($pdf, "Title", "Communications Services Agreement");
-            pdf_set_info($pdf, "Subject", "Professional Services Contract");
-            
-            // Begin page
-            pdf_begin_page_ext($pdf, 595, 842, ""); // A4 size in points
-            
-            // Load font (using proper PDFlib method)
-            $font = pdf_load_font($pdf, "Helvetica", "unicode", "");
-            if ($font == 0) {
-                $font = pdf_load_font($pdf, "Times-Roman", "unicode", "");
-            }
-            
-            if ($font == 0) {
-                error_log("Failed to load font: " . pdf_get_errmsg($pdf));
-                pdf_end_page_ext($pdf, "");
-                pdf_end_document($pdf, "");
-                pdf_delete($pdf);
-                return false;
-            }
-            
-            // Add content to PDF
-            $this->addTextToPdf($pdf, $font, $textContent);
-            
-            // Properly close the PDF document
-            pdf_end_page_ext($pdf, "");
-            pdf_end_document($pdf, "");
-            pdf_delete($pdf);
-            
-            // Validate the generated file
-            if (!file_exists($outputFile) || filesize($outputFile) == 0) {
-                error_log("PDF file was not created or is empty");
-                return false;
-            }
-            
-            // Validate PDF header
-            $handle = fopen($outputFile, 'rb');
-            if ($handle) {
-                $header = fread($handle, 4);
-                fclose($handle);
+            // Check if mPDF is available
+            if (!class_exists('Mpdf\\Mpdf')) {
+                // Load mPDF autoloader
+                $autoloadPath = '/home/aetiacom/vendors/mpdf/autoload.php';
                 
-                if ($header !== '%PDF') {
-                    error_log("Generated PDF file does not have correct header");
-                    unlink($outputFile);
+                if (file_exists($autoloadPath)) {
+                    require_once $autoloadPath;
+                    error_log("mPDF autoloader loaded from: " . $autoloadPath);
+                } else {
+                    error_log("mPDF not found at: " . $autoloadPath);
+                    return false;
+                }
+                
+                if (!class_exists('Mpdf\\Mpdf')) {
+                    error_log("mPDF class not available after loading autoloader");
                     return false;
                 }
             }
             
-            return true;
-            
-        } catch (Exception $e) {
-            error_log("PDFlib generation error: " . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Fallback PDF generation using basic PHP (creates a minimal but valid PDF)
-     */
-    private function htmlToPdfFallback($htmlFile, $outputFile) {
-        try {
-            error_log("Using fallback PDF generation (PDFlib not available)");
-            
-            // Read and convert HTML to plain text
+            // Read HTML content
             $htmlContent = file_get_contents($htmlFile);
-            $textContent = $this->htmlToText($htmlContent);
             
-            if (empty(trim($textContent))) {
-                error_log("No content available for PDF generation");
+            if (empty(trim($htmlContent))) {
+                error_log("No HTML content available for PDF generation");
                 return false;
             }
             
-            // Create a basic PDF structure
-            $pdfContent = $this->createBasicPDF($textContent);
+            // Configure mPDF
+            $config = [
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'default_font_size' => 11,
+                'default_font' => 'helvetica',
+                'margin_left' => 20,
+                'margin_right' => 20,
+                'margin_top' => 20,
+                'margin_bottom' => 20,
+                'margin_header' => 10,
+                'margin_footer' => 10,
+                'orientation' => 'P'
+            ];
             
-            // Write to file
-            if (file_put_contents($outputFile, $pdfContent) === false) {
-                error_log("Failed to write PDF file");
-                return false;
-            }
+            // Create mPDF instance
+            $mpdf = new \Mpdf\Mpdf($config);
             
-            // Validate file was created
+            // Set document properties
+            $mpdf->SetCreator('Aetia Talent Agency');
+            $mpdf->SetAuthor('LochStudios');
+            $mpdf->SetTitle('Communications Services Agreement');
+            $mpdf->SetSubject('Professional Services Contract');
+            
+            // Add basic CSS for better formatting
+            $css = '
+                body { font-family: helvetica, arial, sans-serif; font-size: 11pt; line-height: 1.4; }
+                h1, h2, h3 { color: #333; margin-top: 20px; margin-bottom: 10px; }
+                h1 { font-size: 18pt; }
+                h2 { font-size: 14pt; }
+                h3 { font-size: 12pt; }
+                p { margin-bottom: 10px; }
+                .contract-header { text-align: center; margin-bottom: 30px; }
+                .contract-section { margin-bottom: 20px; }
+                .signature-section { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                td, th { padding: 8px; border: 1px solid #ddd; }
+                th { background-color: #f5f5f5; font-weight: bold; }
+            ';
+            
+            $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+            $mpdf->WriteHTML($htmlContent, \Mpdf\HTMLParserMode::HTML_BODY);
+            
+            // Output PDF to file
+            $mpdf->Output($outputFile, \Mpdf\Output\Destination::FILE);
+            
+            // Validate the generated file
             if (!file_exists($outputFile) || filesize($outputFile) == 0) {
-                error_log("PDF file was not created or is empty");
+                error_log("mPDF file was not created or is empty");
                 return false;
             }
             
-            error_log("Fallback PDF generated successfully: " . filesize($outputFile) . " bytes");
+            error_log("mPDF generated successfully: " . filesize($outputFile) . " bytes");
             return true;
             
         } catch (Exception $e) {
-            error_log("Fallback PDF generation error: " . $e->getMessage());
+            error_log("mPDF generation error: " . $e->getMessage());
             return false;
         }
-    }
-    
-    /**
-     * Create a basic but valid PDF structure
-     */
-    private function createBasicPDF($content) {
-        // Escape content for PDF
-        $content = str_replace(['(', ')', '\\'], ['\\(', '\\)', '\\\\'], $content);
-        
-        // Calculate content length
-        $contentStream = "BT\n/F1 12 Tf\n72 720 Td\n";
-        
-        // Split content into lines and add to PDF
-        $lines = explode("\n", $content);
-        $yPosition = 720;
-        $lineHeight = 14;
-        
-        foreach ($lines as $line) {
-            if ($yPosition < 50) {
-                // Would need new page, but for simplicity we'll truncate
-                break;
-            }
-            
-            // Limit line length
-            $line = substr($line, 0, 80);
-            $contentStream .= "72 {$yPosition} Td\n({$line}) Tj\n";
-            $yPosition -= $lineHeight;
-        }
-        
-        $contentStream .= "ET\n";
-        
-        $contentLength = strlen($contentStream);
-        
-        // Basic PDF structure
-        $pdf = "%PDF-1.4\n";
-        
-        // Object 1: Catalog
-        $pdf .= "1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n\n";
-        
-        // Object 2: Pages
-        $pdf .= "2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n\n";
-        
-        // Object 3: Page
-        $pdf .= "3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n/Resources <<\n/Font <<\n/F1 5 0 R\n>>\n>>\n>>\nendobj\n\n";
-        
-        // Object 4: Content Stream
-        $pdf .= "4 0 obj\n<<\n/Length {$contentLength}\n>>\nstream\n{$contentStream}endstream\nendobj\n\n";
-        
-        // Object 5: Font
-        $pdf .= "5 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>\nendobj\n\n";
-        
-        // Cross-reference table
-        $pdf .= "xref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000274 00000 n \n";
-        $pdf .= sprintf("0000%06d 00000 n \n", strlen($pdf) + 50);
-        
-        // Trailer
-        $pdf .= "trailer\n<<\n/Size 6\n/Root 1 0 R\n>>\nstartxref\n";
-        $pdf .= strlen($pdf) + 20;
-        $pdf .= "\n%%EOF\n";
-        
-        return $pdf;
     }
     
     /**
@@ -1129,75 +1019,6 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
         $text = trim($text);
         
         return $text;
-    }
-    
-    /**
-     * Add text content to PDF with proper formatting
-     */
-    private function addTextToPdf($pdf, $font, $text) {
-        $fontSize = 11;
-        $lineHeight = 14;
-        $margin = 50;
-        $pageWidth = 595 - (2 * $margin); // A4 width minus margins
-        $pageHeight = 842 - (2 * $margin); // A4 height minus margins
-        $currentY = 792; // Start near top of page
-        
-        // Set font and size
-        pdf_setfont($pdf, $font, $fontSize);
-        
-        // Split text into paragraphs first
-        $paragraphs = explode("\n", $text);
-        
-        foreach ($paragraphs as $paragraph) {
-            if (trim($paragraph) === '') {
-                // Empty line - add some space
-                $currentY -= $lineHeight;
-                continue;
-            }
-            
-            // Split paragraph into words
-            $words = explode(' ', trim($paragraph));
-            $currentLine = '';
-            
-            foreach ($words as $word) {
-                $testLine = $currentLine . ($currentLine ? ' ' : '') . $word;
-                $textWidth = pdf_stringwidth($pdf, $testLine, $font, $fontSize);
-                
-                if ($textWidth > $pageWidth && $currentLine) {
-                    // Current line is full, write it and start new line
-                    pdf_show_xy($pdf, $currentLine, $margin, $currentY);
-                    $currentY -= $lineHeight;
-                    $currentLine = $word;
-                    
-                    // Check if we need a new page
-                    if ($currentY < $margin + 50) {
-                        pdf_end_page_ext($pdf, "");
-                        pdf_begin_page_ext($pdf, 595, 842, "");
-                        pdf_setfont($pdf, $font, $fontSize);
-                        $currentY = 792;
-                    }
-                } else {
-                    $currentLine = $testLine;
-                }
-            }
-            
-            // Write the last line of the paragraph if there is one
-            if ($currentLine) {
-                pdf_show_xy($pdf, $currentLine, $margin, $currentY);
-                $currentY -= $lineHeight;
-            }
-            
-            // Add extra space after paragraph
-            $currentY -= $lineHeight * 0.5;
-            
-            // Check if we need a new page
-            if ($currentY < $margin + 50) {
-                pdf_end_page_ext($pdf, "");
-                pdf_begin_page_ext($pdf, 595, 842, "");
-                pdf_setfont($pdf, $font, $fontSize);
-                $currentY = 792;
-            }
-        }
     }
     
     /**
