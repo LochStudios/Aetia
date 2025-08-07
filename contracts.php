@@ -27,12 +27,12 @@ $contracts = $contractService->getUserContracts($_SESSION['user_id']);
 // Helper function for status colors
 function getContractStatusColor($status) {
     switch ($status) {
-        case 'draft': return 'light';
+        case 'draft': return 'dark';
         case 'sent': return 'info';
         case 'signed': return 'success';
         case 'completed': return 'primary';
         case 'cancelled': return 'danger';
-        default: return 'light';
+        default: return 'dark';
     }
 }
 
