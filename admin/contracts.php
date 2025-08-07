@@ -214,7 +214,7 @@ ob_start();
                 <div class="column is-half">
                     <!-- Editable fields for incomplete data -->
                     <div id="profile-completion-fields" style="display: none;">
-                        <div class="field">
+                        <div class="field" id="completion-header" style="display: none;">
                             <label class="label">Complete User Profile</label>
                             <p class="is-size-7 has-text-info"><strong>Note:</strong> Completing the fields below will permanently update the user's profile information.</p>
                         </div>
@@ -491,20 +491,25 @@ function updateSelectedUserInfo() {
         }
         
         // Update notification appearance and show/hide completion fields
+        const completionHeader = document.getElementById('completion-header');
         if (isComplete) {
             notification.className = 'notification is-success is-light';
             incompleteNotice.style.display = 'none';
             completionDiv.style.display = 'none';
+            if (completionHeader) completionHeader.style.display = 'none';
         } else {
             notification.className = 'notification is-warning is-light';
             incompleteNotice.style.display = 'block';
             completionDiv.style.display = 'block';
+            if (completionHeader) completionHeader.style.display = 'block';
         }
         
         infoDiv.style.display = 'block';
     } else {
         infoDiv.style.display = 'none';
         completionDiv.style.display = 'none';
+        const completionHeader = document.getElementById('completion-header');
+        if (completionHeader) completionHeader.style.display = 'none';
     }
 }
 
