@@ -472,14 +472,18 @@ class Message {
             
             $query = "
                 SELECT m.id, m.subject, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                       m.manual_review, m.manual_review_at, m.manual_review_reason,
                        u.username as target_username, creator.username as created_by_username,
+                       reviewer.username as manual_review_by_username,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as target_display_name,
                        COALESCE(NULLIF(creator.social_username, ''), creator.username) as created_by_display_name,
+                       COALESCE(NULLIF(reviewer.social_username, ''), reviewer.username) as manual_review_by_display_name,
                        (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
                        (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
                 FROM messages m
                 LEFT JOIN users u ON m.user_id = u.id
                 LEFT JOIN users creator ON m.created_by = creator.id
+                LEFT JOIN users reviewer ON m.manual_review_by = reviewer.id
             ";
             
             $params = [];
@@ -933,6 +937,203 @@ class Message {
         } catch (Exception $e) {
             error_log("Get attachment error: " . $e->getMessage());
             return null;
+        }
+    }
+    
+    // Toggle manual review status for a message
+    public function toggleManualReview($messageId, $userId, $reason = null) {
+        try {
+            $this->ensureConnection();
+            
+            // First get current manual review status
+            $stmt = $this->mysqli->prepare("SELECT manual_review FROM messages WHERE id = ?");
+            $stmt->bind_param("i", $messageId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $currentStatus = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$currentStatus) {
+                return ['success' => false, 'message' => 'Message not found'];
+            }
+            
+            $newStatus = !$currentStatus['manual_review'];
+            
+            // Update manual review status
+            if ($newStatus) {
+                // Setting to manual review
+                $updateStmt = $this->mysqli->prepare("
+                    UPDATE messages 
+                    SET manual_review = 1, 
+                        manual_review_by = ?, 
+                        manual_review_at = CURRENT_TIMESTAMP,
+                        manual_review_reason = ?,
+                        updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?
+                ");
+                $updateStmt->bind_param("isi", $userId, $reason, $messageId);
+            } else {
+                // Removing manual review
+                $updateStmt = $this->mysqli->prepare("
+                    UPDATE messages 
+                    SET manual_review = 0, 
+                        manual_review_by = NULL, 
+                        manual_review_at = NULL,
+                        manual_review_reason = NULL,
+                        updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?
+                ");
+                $updateStmt->bind_param("i", $messageId);
+            }
+            
+            $result = $updateStmt->execute();
+            $updateStmt->close();
+            
+            if ($result) {
+                // Add a comment to track the change
+                $comment = $newStatus 
+                    ? "Message marked for manual review" . ($reason ? " - Reason: $reason" : "")
+                    : "Manual review status removed";
+                
+                $this->addComment($messageId, $userId, $comment, true);
+                
+                return [
+                    'success' => true, 
+                    'manual_review' => $newStatus,
+                    'message' => $newStatus ? 'Message marked for manual review' : 'Manual review status removed'
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update manual review status'];
+            }
+        } catch (Exception $e) {
+            error_log("Toggle manual review error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+    
+    // Get manual review status for a message
+    public function getManualReviewStatus($messageId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT manual_review, manual_review_by, manual_review_at, manual_review_reason,
+                       u.username as manual_review_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as manual_review_by_display_name
+                FROM messages m
+                LEFT JOIN users u ON m.manual_review_by = u.id
+                WHERE m.id = ?
+            ");
+            
+            $stmt->bind_param("i", $messageId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $data = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $data;
+        } catch (Exception $e) {
+            error_log("Get manual review status error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    // Get messages marked for manual review
+    public function getManualReviewMessages($limit = 50, $offset = 0) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT m.id, m.subject, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                       m.manual_review_at, m.manual_review_reason,
+                       u.username as target_username, creator.username as created_by_username,
+                       reviewer.username as manual_review_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as target_display_name,
+                       COALESCE(NULLIF(creator.social_username, ''), creator.username) as created_by_display_name,
+                       COALESCE(NULLIF(reviewer.social_username, ''), reviewer.username) as manual_review_by_display_name,
+                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
+                FROM messages m
+                LEFT JOIN users u ON m.user_id = u.id
+                LEFT JOIN users creator ON m.created_by = creator.id
+                LEFT JOIN users reviewer ON m.manual_review_by = reviewer.id
+                WHERE m.manual_review = 1
+                ORDER BY m.manual_review_at DESC
+                LIMIT ? OFFSET ?
+            ");
+            
+            $stmt->bind_param("ii", $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $messages = [];
+            while ($row = $result->fetch_assoc()) {
+                $messages[] = $row;
+            }
+            
+            $stmt->close();
+            return $messages;
+        } catch (Exception $e) {
+            error_log("Get manual review messages error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Get billing data with manual review fees for a specific period
+    public function getBillingDataWithManualReview($startDate, $endDate) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT 
+                    u.id as user_id,
+                    u.username,
+                    u.email,
+                    u.first_name,
+                    u.last_name,
+                    u.account_type,
+                    COUNT(m.id) as total_message_count,
+                    SUM(CASE WHEN m.manual_review = 1 THEN 1 ELSE 0 END) as manual_review_count,
+                    MIN(m.created_at) as first_message_date,
+                    MAX(m.created_at) as last_message_date,
+                    GROUP_CONCAT(
+                        CASE WHEN m.manual_review = 1 
+                        THEN CONCAT('MR: ', m.subject, ' (', DATE_FORMAT(m.created_at, '%Y-%m-%d'), ')')
+                        ELSE NULL END
+                        SEPARATOR '; '
+                    ) as manual_review_details
+                FROM messages m
+                INNER JOIN users u ON m.user_id = u.id
+                WHERE m.created_at >= ? AND m.created_at <= ?
+                AND u.is_active = 1
+                GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.account_type
+                HAVING total_message_count > 0
+                ORDER BY total_message_count DESC, u.username ASC
+            ");
+            
+            $stmt->bind_param("ss", $startDate, $endDate . ' 23:59:59');
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $billingData = [];
+            while ($row = $result->fetch_assoc()) {
+                // Calculate fees according to contract terms
+                $standardFee = $row['total_message_count'] * 1.00; // $1.00 per qualifying communication
+                $manualReviewFee = $row['manual_review_count'] * 1.00; // Additional $1.00 per manual review
+                $totalFee = $standardFee + $manualReviewFee;
+                
+                $row['standard_fee'] = $standardFee;
+                $row['manual_review_fee'] = $manualReviewFee;
+                $row['total_fee'] = $totalFee;
+                
+                $billingData[] = $row;
+            }
+            
+            $stmt->close();
+            return $billingData;
+        } catch (Exception $e) {
+            error_log("Get billing data with manual review error: " . $e->getMessage());
+            return [];
         }
     }
 }

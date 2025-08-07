@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageText = trim($_POST['message']);
         $priority = $_POST['priority'];
         $tags = trim($_POST['tags'] ?? '');
+        $manualReview = isset($_POST['manual_review']) ? true : false;
+        $manualReviewReason = $manualReview ? trim($_POST['manual_review_reason'] ?? '') : null;
         
         if (empty($subject) || empty($messageText) || empty($userId)) {
             $error = 'All fields are required';
@@ -53,6 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = $messageModel->createMessage($userId, $subject, $messageText, $_SESSION['user_id'], $priority, $tags);
             if ($result['success']) {
                 $messageId = $result['message_id'];
+                
+                // Mark for manual review if requested
+                if ($manualReview) {
+                    $reviewResult = $messageModel->toggleManualReview($messageId, $_SESSION['user_id'], $manualReviewReason);
+                    if (!$reviewResult['success']) {
+                        error_log("Failed to mark message for manual review: " . $reviewResult['message']);
+                    }
+                }
                 
                 // Handle file uploads if any
                 $uploadErrors = [];
@@ -131,6 +141,7 @@ ob_start();
             <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
             <li><a href="archived-messages.php"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived Messages</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>Create Message</span></a></li>
+            <li><a href="manual-review.php"><span class="icon is-small"><i class="fas fa-dollar-sign"></i></span><span>Manual Review</span></a></li>
             <li><a href="send-emails.php"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
             <li><a href="email-logs.php"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
             <li><a href="contact-form.php"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
@@ -240,6 +251,34 @@ ob_start();
                         </div>
                         <p class="help">
                             <span class="has-text-grey">Optional:</span> Comma-separated tags for categorizing messages (e.g., "Internal, Support")
+                        </p>
+                    </div>
+
+                    <!-- Manual Review -->
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" name="manual_review" value="1" <?= isset($_POST['manual_review']) ? 'checked' : '' ?>>
+                                <span class="icon has-text-warning"><i class="fas fa-dollar-sign"></i></span>
+                                <strong>Mark for Manual Review</strong> <span class="tag is-warning is-small">+$1.00</span>
+                            </label>
+                        </div>
+                        <p class="help">
+                            <span class="has-text-warning">Optional:</span> Mark this message for manual review outside standard processing hours. 
+                            This will incur an additional $1.00 fee as per contract terms (Section 5.6).
+                        </p>
+                    </div>
+
+                    <!-- Manual Review Reason -->
+                    <div class="field" id="manual-review-reason-field" style="display: none;">
+                        <label class="label">Manual Review Reason</label>
+                        <div class="control">
+                            <input class="input" type="text" name="manual_review_reason" 
+                                   value="<?= htmlspecialchars($_POST['manual_review_reason'] ?? '') ?>"
+                                   placeholder="e.g., Complex case requiring special attention, After-hours processing">
+                        </div>
+                        <p class="help">
+                            <span class="has-text-grey">Optional:</span> Provide a reason for marking this message for manual review.
                         </p>
                     </div>
 
@@ -356,7 +395,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedUserId = document.getElementById('selected-user-id');
     const selectedUserDiv = document.getElementById('selected-user');
     const selectedUserName = document.getElementById('selected-user-name');
+    const manualReviewCheckbox = document.querySelector('input[name="manual_review"]');
+    const manualReviewReasonField = document.getElementById('manual-review-reason-field');
     let searchTimeout;
+
+    // Manual review checkbox toggle
+    if (manualReviewCheckbox && manualReviewReasonField) {
+        function toggleManualReviewReason() {
+            if (manualReviewCheckbox.checked) {
+                manualReviewReasonField.style.display = 'block';
+            } else {
+                manualReviewReasonField.style.display = 'none';
+                // Clear the reason field when unchecked
+                const reasonInput = manualReviewReasonField.querySelector('input[name="manual_review_reason"]');
+                if (reasonInput) reasonInput.value = '';
+            }
+        }
+        
+        // Set initial state
+        toggleManualReviewReason();
+        
+        // Add event listener
+        manualReviewCheckbox.addEventListener('change', toggleManualReviewReason);
+    }
 
     // User search functionality
     userSearch.addEventListener('input', function() {

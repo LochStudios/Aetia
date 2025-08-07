@@ -56,46 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     throw new Exception('Database connection failed');
                 }
                 
-                // Query to get all messages from the selected month with user details
-                $stmt = $mysqli->prepare("
-                    SELECT 
-                        u.id as user_id,
-                        u.username,
-                        u.email,
-                        u.first_name,
-                        u.last_name,
-                        u.account_type,
-                        COUNT(m.id) as message_count,
-                        MIN(m.created_at) as first_message_date,
-                        MAX(m.created_at) as last_message_date,
-                        GROUP_CONCAT(
-                            CONCAT(
-                                DATE_FORMAT(m.created_at, '%Y-%m-%d %H:%i'), 
-                                ' - ', 
-                                SUBSTRING(m.subject, 1, 50),
-                                CASE WHEN LENGTH(m.subject) > 50 THEN '...' ELSE '' END
-                            ) 
-                            ORDER BY m.created_at 
-                            SEPARATOR '; '
-                        ) as message_details
-                    FROM messages m
-                    INNER JOIN users u ON m.user_id = u.id
-                    WHERE m.created_at >= ? AND m.created_at <= ?
-                    AND u.is_active = 1
-                    GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.account_type
-                    HAVING message_count > 0
-                    ORDER BY message_count DESC, u.username ASC
-                ");
-                
-                $stmt->bind_param("ss", $firstDay, $lastDay . ' 23:59:59');
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $billData[] = $row;
-                }
-                
-                $stmt->close();
+                // Use the new billing method that includes manual review fees
+                $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
                 
                 if (empty($billData)) {
                     $error = 'No client activity found for ' . date('F Y', strtotime($firstDay));
@@ -136,6 +98,7 @@ ob_start();
             <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
             <li><a href="archived-messages.php"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived Messages</span></a></li>
             <li><a href="create-message.php"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>New Message</span></a></li>
+            <li><a href="manual-review.php"><span class="icon is-small"><i class="fas fa-dollar-sign"></i></span><span>Manual Review</span></a></li>
             <li><a href="send-emails.php"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
             <li><a href="email-logs.php"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
             <li><a href="contact-form.php"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
@@ -257,7 +220,31 @@ ob_start();
                     <div class="level-item">
                         <div>
                             <p class="heading">Total Messages</p>
-                            <p class="title"><?= array_sum(array_column($billData, 'message_count')) ?></p>
+                            <p class="title"><?= array_sum(array_column($billData, 'total_message_count')) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
+                            <p class="heading">Manual Reviews</p>
+                            <p class="title has-text-warning"><?= array_sum(array_column($billData, 'manual_review_count')) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
+                            <p class="heading">Service Fees</p>
+                            <p class="title has-text-info">$<?= number_format(array_sum(array_column($billData, 'standard_fee')), 2) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
+                            <p class="heading">Review Fees</p>
+                            <p class="title has-text-warning">$<?= number_format(array_sum(array_column($billData, 'manual_review_fee')), 2) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
+                            <p class="heading">Total Revenue</p>
+                            <p class="title has-text-success">$<?= number_format(array_sum(array_column($billData, 'total_fee')), 2) ?></p>
                         </div>
                     </div>
                     <div class="level-item">
@@ -291,6 +278,10 @@ ob_start();
                             <th>Email</th>
                             <th>Account Type</th>
                             <th><abbr title="Number of Messages">Messages</abbr></th>
+                            <th><abbr title="Manual Reviews">Manual Reviews</abbr></th>
+                            <th><abbr title="Service Fee">Service Fee</abbr></th>
+                            <th><abbr title="Manual Review Fee">Review Fee</abbr></th>
+                            <th><abbr title="Total Fee">Total Fee</abbr></th>
                             <th>First Message</th>
                             <th>Last Message</th>
                             <th>Message Details</th>
@@ -326,7 +317,36 @@ ob_start();
                                 </td>
                                 <td>
                                     <span class="tag is-success is-large">
-                                        <?= $client['message_count'] ?>
+                                        <?= $client['total_message_count'] ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if ($client['manual_review_count'] > 0): ?>
+                                        <span class="tag is-warning is-medium" title="Manual Review Messages">
+                                            <span class="icon"><i class="fas fa-dollar-sign"></i></span>
+                                            <span><?= $client['manual_review_count'] ?></span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">0</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="tag is-info is-medium">
+                                        $<?= number_format($client['standard_fee'], 2) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if ($client['manual_review_fee'] > 0): ?>
+                                        <span class="tag is-warning is-medium">
+                                            $<?= number_format($client['manual_review_fee'], 2) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">$0.00</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="tag is-success is-large">
+                                        <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
                                     </span>
                                 </td>
                                 <td>
@@ -342,21 +362,48 @@ ob_start();
                                 <td class="message-details">
                                     <details>
                                         <summary class="button is-small is-light">
-                                            View Details (<?= $client['message_count'] ?> messages)
+                                            View Details (<?= $client['total_message_count'] ?> messages<?= $client['manual_review_count'] > 0 ? ', ' . $client['manual_review_count'] . ' manual review' : '' ?>)
                                         </summary>
                                         <div class="content mt-2 p-2" style="background: #f5f5f5; border-radius: 4px; max-height: 200px; overflow-y: auto;">
-                                            <?php 
-                                            if (!empty($client['message_details'])) {
-                                                $details = explode('; ', $client['message_details']);
-                                                foreach ($details as $detail): 
-                                            ?>
-                                                <p class="is-size-7 mb-1">• <?= htmlspecialchars($detail) ?></p>
-                                            <?php 
+                                            <?php if ($client['manual_review_count'] > 0 && !empty($client['manual_review_details'])): ?>
+                                                <h6 class="title is-6 has-text-warning mb-2">
+                                                    <span class="icon"><i class="fas fa-dollar-sign"></i></span>
+                                                    Manual Review Messages (<?= $client['manual_review_count'] ?>):
+                                                </h6>
+                                                <?php 
+                                                $manualReviewDetails = explode('; ', $client['manual_review_details']);
+                                                foreach ($manualReviewDetails as $detail): 
+                                                    if (!empty(trim($detail))):
+                                                ?>
+                                                    <p class="is-size-7 mb-1 has-text-warning">• <?= htmlspecialchars($detail) ?> <strong>[+$1.00]</strong></p>
+                                                <?php 
+                                                    endif;
                                                 endforeach;
-                                            } else {
-                                                echo '<p class="is-size-7 has-text-grey">No message details available</p>';
-                                            }
+                                                ?>
+                                                <hr class="my-2">
+                                            <?php endif; ?>
+                                            
+                                            <h6 class="title is-6 mb-2">All Messages:</h6>
+                                            <?php 
+                                            // For now, show summary since we changed the data structure
                                             ?>
+                                            <p class="is-size-7 mb-1">
+                                                <strong>Period:</strong> <?= date('M j, Y', strtotime($client['first_message_date'])) ?> - <?= date('M j, Y', strtotime($client['last_message_date'])) ?>
+                                            </p>
+                                            <p class="is-size-7 mb-1">
+                                                <strong>Total Messages:</strong> <?= $client['total_message_count'] ?>
+                                            </p>
+                                            <p class="is-size-7 mb-1">
+                                                <strong>Service Fee:</strong> $<?= number_format($client['standard_fee'], 2) ?> (<?= $client['total_message_count'] ?> × $1.00)
+                                            </p>
+                                            <?php if ($client['manual_review_count'] > 0): ?>
+                                            <p class="is-size-7 mb-1">
+                                                <strong>Manual Review Fee:</strong> $<?= number_format($client['manual_review_fee'], 2) ?> (<?= $client['manual_review_count'] ?> × $1.00)
+                                            </p>
+                                            <?php endif; ?>
+                                            <p class="is-size-7 mb-1">
+                                                <strong>Total Amount Due:</strong> <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
+                                            </p>
                                         </div>
                                     </details>
                                 </td>
@@ -378,12 +425,17 @@ ob_start();
             <ul>
                 <li><strong>Period Selection:</strong> Choose any month and year to analyze client activity</li>
                 <li><strong>Message Analysis:</strong> The system looks at all messages where clients are the recipients (user_id) during the selected period</li>
+                <li><strong>Service Fee:</strong> $1.00 per qualifying communication (email conversation thread)</li>
+                <li><strong>Manual Review Fee:</strong> Additional $1.00 per email marked for manual review outside standard processing hours</li>
                 <li><strong>Client Identification:</strong> Clients are identified using their user_id and matched to the users table for complete information</li>
-                <li><strong>Activity Summary:</strong> Shows message count and detailed breakdown for each client</li>
+                <li><strong>Fee Calculation:</strong> Shows service fees, manual review fees, and total amount due for each client</li>
                 <li><strong>Export Options:</strong> Generate CSV reports or print the summary for billing purposes</li>
             </ul>
+            <div class="notification is-warning is-light">
+                <strong>Manual Review Fees:</strong> Messages marked with the manual review flag incur an additional $1.00 fee as per Section 5.6 of the service contract. These are processed outside standard hours and require additional handling.
+            </div>
             <div class="notification is-info is-light">
-                <strong>Note:</strong> Only active clients (is_active = 1) with message activity during the selected period are included in the billing report.
+                <strong>Note:</strong> Only active clients (is_active = 1) with message activity during the selected period are included in the billing report. All fees are in USD as per contract terms.
             </div>
         </div>
     </div>
