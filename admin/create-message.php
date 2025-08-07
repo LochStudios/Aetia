@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../includes/FileUploader.php';
+require_once __DIR__ . '/../includes/FormTokenManager.php';
 
 $messageModel = new Message();
 $userModel = new User();
@@ -28,22 +30,81 @@ $error = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userId = intval($_POST['user_id']);
-    $subject = trim($_POST['subject']);
-    $messageText = trim($_POST['message']);
-    $priority = $_POST['priority'];
-    $tags = trim($_POST['tags'] ?? '');
+    // Validate form token
+    $formName = $_POST['form_name'] ?? '';
+    $formToken = $_POST['form_token'] ?? '';
     
-    if (empty($subject) || empty($messageText) || empty($userId)) {
-        $error = 'All fields are required';
+    if (empty($formName) || empty($formToken)) {
+        $error = 'Invalid form submission. Please refresh the page and try again.';
+    } elseif (!FormTokenManager::validateToken($formName, $formToken)) {
+        $error = 'This form has already been submitted or has expired. Please refresh the page and try again.';
+    } elseif (FormTokenManager::isRecentSubmission($formName)) {
+        $error = 'Please wait a moment before submitting again.';
     } else {
-        $result = $messageModel->createMessage($userId, $subject, $messageText, $_SESSION['user_id'], $priority, $tags);
-        if ($result['success']) {
-            $_SESSION['success_message'] = 'Message sent successfully! The user has been notified by email.';
-            header('Location: messages.php?id=' . $result['message_id']);
-            exit;
+        $userId = intval($_POST['user_id']);
+        $subject = trim($_POST['subject']);
+        $messageText = trim($_POST['message']);
+        $priority = $_POST['priority'];
+        $tags = trim($_POST['tags'] ?? '');
+        
+        if (empty($subject) || empty($messageText) || empty($userId)) {
+            $error = 'All fields are required';
         } else {
-            $error = $result['message'] ?? 'Failed to send message';
+            $result = $messageModel->createMessage($userId, $subject, $messageText, $_SESSION['user_id'], $priority, $tags);
+            if ($result['success']) {
+                $messageId = $result['message_id'];
+                
+                // Handle file uploads if any
+                $uploadErrors = [];
+                if (!empty($_FILES['attachments']['name'][0])) {
+                    $fileUploader = new FileUploader();
+                    
+                    // Process multiple files
+                    $fileCount = count($_FILES['attachments']['name']);
+                    for ($i = 0; $i < $fileCount; $i++) {
+                        if ($_FILES['attachments']['error'][$i] === UPLOAD_ERR_OK) {
+                            $file = [
+                                'name' => $_FILES['attachments']['name'][$i],
+                                'type' => $_FILES['attachments']['type'][$i],
+                                'tmp_name' => $_FILES['attachments']['tmp_name'][$i],
+                                'error' => $_FILES['attachments']['error'][$i],
+                                'size' => $_FILES['attachments']['size'][$i]
+                            ];
+                            
+                            $uploadResult = $fileUploader->uploadMessageAttachment($file, $_SESSION['user_id'], $messageId);
+                            if ($uploadResult['success']) {
+                                // Save attachment record to database
+                                $attachResult = $messageModel->addAttachment(
+                                    $messageId,
+                                    $_SESSION['user_id'],
+                                    $uploadResult['filename'],
+                                    $uploadResult['original_filename'],
+                                    $uploadResult['file_size'],
+                                    $uploadResult['mime_type'],
+                                    $uploadResult['file_path']
+                                );
+                                
+                                if (!$attachResult['success']) {
+                                    $uploadErrors[] = "Failed to save attachment: " . $uploadResult['original_filename'];
+                                }
+                            } else {
+                                $uploadErrors[] = $uploadResult['original_filename'] . ": " . $uploadResult['message'];
+                            }
+                        }
+                    }
+                }
+                
+                if (!empty($uploadErrors)) {
+                    $_SESSION['success_message'] = 'Message sent successfully! Some attachments failed: ' . implode(', ', $uploadErrors);
+                } else {
+                    $_SESSION['success_message'] = 'Message sent successfully! The user has been notified by email.';
+                }
+                
+                header('Location: messages.php?id=' . $messageId);
+                exit;
+            } else {
+                $error = $result['message'] ?? 'Failed to send message';
+            }
         }
     }
 }
@@ -100,9 +161,10 @@ ob_start();
     </div>
 
     <div class="columns">
-        <div class="column is-8 is-offset-2">
+        <div class="column">
             <div class="box">
-                <form method="POST" id="message-form">
+                <form method="POST" enctype="multipart/form-data" id="message-form">
+                    <?= FormTokenManager::getTokenField('create_message') ?>
                     <!-- User Selection -->
                     <div class="field">
                         <label class="label">Send To</label>
@@ -194,6 +256,55 @@ ob_start();
                         <p class="help">You can use line breaks to format your message. The user will be able to respond to this message.</p>
                     </div>
 
+                    <!-- Attachments -->
+                    <div class="field">
+                        <label class="label">Attachments</label>
+                        <div class="control">
+                            <div class="file is-boxed">
+                                <label class="file-label">
+                                    <input class="file-input" type="file" name="attachments[]" multiple 
+                                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.mp4,.avi,.mov,.wmv,.mp3,.wav,.ogg"
+                                           onchange="updateFileList(this)">
+                                    <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Choose files…
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div id="file-list" class="mt-2"></div>
+                            <div id="upload-progress" class="mt-3 upload-progress-hidden">
+                                <div class="notification is-info">
+                                    <div class="is-flex is-align-items-center">
+                                        <span class="icon mr-3">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </span>
+                                        <div class="is-flex-grow-1">
+                                            <div class="is-flex is-justify-content-space-between mb-2">
+                                                <span id="upload-status">Uploading files...</span>
+                                                <span id="upload-percentage">0%</span>
+                                            </div>
+                                            <progress id="upload-progress-bar" class="progress is-primary" value="0" max="100">0%</progress>
+                                            <div class="is-size-7 has-text-grey-dark mt-1">
+                                                <span id="upload-speed"></span> • 
+                                                <span id="upload-eta"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="help">
+                            <strong>Optional:</strong> Attach images, documents, or other files to this message.<br>
+                            <span class="has-text-info">Images</span> will display inline in the conversation.<br>
+                            <span class="has-text-warning">Documents</span> will be available for download and stored as email documents.<br>
+                            Maximum file size: 1GB per file. Supported formats: Images, PDFs, Documents, Videos, Audio files, and Archives.
+                        </p>
+                    </div>
+
                     <!-- Submit Button -->
                     <div class="field">
                         <div class="control">
@@ -215,6 +326,28 @@ $content = ob_get_clean();
 // Start output buffering for scripts
 ob_start();
 ?>
+<style>
+.upload-progress-hidden {
+    display: none !important;
+}
+
+.attachment-card {
+    margin-bottom: 0.5rem;
+}
+
+.attachment-filename {
+    word-break: break-word;
+}
+
+.file-list .tag {
+    margin-bottom: 0.25rem;
+}
+
+.file-list .field.is-grouped.is-grouped-multiline .control {
+    margin-bottom: 0.5rem;
+}
+</style>
+<script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const userSearch = document.getElementById('user-search');
@@ -321,8 +454,113 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonText: 'OK'
             });
             userSearch.focus();
+            return false;
+        }
+        
+        // Show upload progress if files are selected
+        const fileInput = this.querySelector('input[type="file"]');
+        const files = fileInput ? fileInput.files : [];
+        
+        if (files.length > 0) {
+            const uploadProgress = document.getElementById('upload-progress');
+            const submitButton = this.querySelector('button[type="submit"]');
+            
+            if (uploadProgress) uploadProgress.classList.remove('upload-progress-hidden');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-spin"></i></span><span>Uploading & Sending...</span>';
+            }
         }
     });
+
+    // File upload functions
+    window.updateFileList = function(input) {
+        const fileList = document.getElementById('file-list');
+        fileList.innerHTML = '';
+        
+        if (input.files.length > 0) {
+            const container = document.createElement('div');
+            container.className = 'field is-grouped is-grouped-multiline';
+            
+            Array.from(input.files).forEach((file, index) => {
+                const control = document.createElement('div');
+                control.className = 'control';
+                
+                // Determine file type icon
+                let iconClass = 'fas fa-file';
+                let iconColor = 'has-text-grey';
+                const extension = file.name.split('.').pop().toLowerCase();
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension);
+                
+                if (isImage) {
+                    iconClass = 'fas fa-image';
+                    iconColor = 'has-text-info';
+                } else if (extension === 'pdf') {
+                    iconClass = 'fas fa-file-pdf';
+                    iconColor = 'has-text-danger';
+                } else if (['doc', 'docx'].includes(extension)) {
+                    iconClass = 'fas fa-file-word';
+                    iconColor = 'has-text-info';
+                } else if (['xls', 'xlsx'].includes(extension)) {
+                    iconClass = 'fas fa-file-excel';
+                    iconColor = 'has-text-success';
+                } else if (['mp4', 'avi', 'mov', 'wmv'].includes(extension)) {
+                    iconClass = 'fas fa-video';
+                    iconColor = 'has-text-primary';
+                } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
+                    iconClass = 'fas fa-music';
+                    iconColor = 'has-text-warning';
+                } else if (extension === 'zip') {
+                    iconClass = 'fas fa-file-archive';
+                    iconColor = 'has-text-grey';
+                }
+                
+                const tag = document.createElement('span');
+                tag.className = `tag ${isImage ? 'is-info' : 'is-light'} is-medium`;
+                tag.innerHTML = `
+                    <span class="icon">
+                        <i class="${iconClass} ${iconColor}"></i>
+                    </span>
+                    <span>${escapeHtml(file.name)} (${formatFileSize(file.size)})</span>
+                    <button class="delete is-small" type="button" onclick="removeFile(${index})"></button>
+                `;
+                
+                control.appendChild(tag);
+                container.appendChild(control);
+            });
+            
+            fileList.appendChild(container);
+        }
+    };
+
+    window.removeFile = function(index) {
+        const input = document.querySelector('input[name="attachments[]"]');
+        if (!input) return;
+        
+        const dt = new DataTransfer();
+        
+        Array.from(input.files).forEach((file, i) => {
+            if (i !== index) {
+                dt.items.add(file);
+            }
+        });
+        
+        input.files = dt.files;
+        updateFileList(input);
+    };
+
+    window.formatFileSize = function(bytes) {
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+        
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        
+        return Math.round(size * 100) / 100 + ' ' + units[unitIndex];
+    };
 });
 </script>
 <?php
