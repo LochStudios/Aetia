@@ -251,20 +251,6 @@ ob_start();
                         </div>
                     </div>
                 </div>
-                
-                <div class="column is-half">
-                    <div class="notification is-light">
-                        <p class="has-text-centered">
-                            <span class="icon is-large">
-                                <i class="fas fa-info-circle fa-2x"></i>
-                            </span>
-                        </p>
-                        <p class="has-text-centered">
-                            <strong>Automatic Contract Generation</strong><br>
-                            All contract information (name, address, ABN/ACN) will be automatically pulled from the user's profile.
-                        </p>
-                    </div>
-                </div>
             </div>            <div class="field is-grouped">
                 <div class="control">
                     <button type="submit" class="button is-primary">
