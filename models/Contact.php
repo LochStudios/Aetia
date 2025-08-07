@@ -1,5 +1,5 @@
 <?php
-// models/Contact.php - Contact model for Aetia Talant Agency
+// models/Contact.php - Contact model for Aetia Talent Agency
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../services/EmailService.php';
