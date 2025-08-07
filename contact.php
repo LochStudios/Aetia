@@ -1,5 +1,5 @@
 <?php
-// contact.php - Contact page for Aetia Talant Agency
+// contact.php - Contact page for Aetia Talent Agency
 session_start();
 
 require_once __DIR__ . '/models/Contact.php';
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Contact | Aetia Talant Agency';
+$pageTitle = 'Contact | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="card mt-6" style="width:100%;max-width:none;">
