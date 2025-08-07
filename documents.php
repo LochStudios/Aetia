@@ -314,19 +314,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     iconClass = 'fa-file';
                     iconColor = 'has-text-grey';
             }
-            
             const tagColor = doc.document_type === 'contract' ? 'success' : 
-                           (doc.document_type === 'invoice' ? 'warning' : 
-                           (doc.document_type === 'agreement' ? 'info' : 'light'));
-            
+                            (doc.document_type === 'invoice' ? 'warning' : 
+                            (doc.document_type === 'agreement' ? 'info' : 
+                            (doc.document_type === 'identification' ? 'link' :
+                            (doc.document_type === 'tax_document' ? 'primary' :
+                            (doc.document_type === 'payment_info' ? 'dark' : 'info')))));
             const archivedTag = doc.archived ? 
                 `<span class="tag is-dark">
                     <span class="icon"><i class="fas fa-archive"></i></span>
                     <span>Archived</span>
                 </span>` : '';
-            
             const archivedClass = doc.archived ? 'has-background-grey-lighter' : '';
-            
             const previewButton = ['jpg', 'jpeg', 'png'].includes(extension) ? 
                 `<div class="control">
                     <button class="button is-info preview-btn" data-id="${doc.id}" data-filename="${doc.original_filename}">
@@ -351,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="tag is-${tagColor}">
                                             ${doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1).replace('_', ' ')}
                                         </span>
-                                        <span class="tag">
+                                        <span class="tag is-light">
                                             ${(doc.file_size / 1024).toFixed(1)} KB
                                         </span>
                                         ${archivedTag}

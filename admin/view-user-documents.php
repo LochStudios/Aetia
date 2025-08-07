@@ -316,7 +316,13 @@ document.addEventListener('DOMContentLoaded', function() {
             tbody.innerHTML = documents.map(doc => {
                 const extension = doc.original_filename.split('.').pop().toLowerCase();
                 let iconClass, iconColor;
-                
+                // Determine document type color for better readability
+                const tagColor = doc.document_type === 'contract' ? 'success' : 
+                                (doc.document_type === 'invoice' ? 'warning' : 
+                                (doc.document_type === 'agreement' ? 'info' : 
+                                (doc.document_type === 'identification' ? 'link' :
+                                (doc.document_type === 'tax_document' ? 'primary' :
+                                (doc.document_type === 'payment_info' ? 'dark' : 'info')))));
                 switch (extension) {
                     case 'pdf':
                         iconClass = 'fa-file-pdf';
@@ -349,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </span>
                         </td>
                         <td>
-                            <span class="tag is-light">
+                            <span class="tag is-${tagColor}">
                                 ${doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1).replace('_', ' ')}
                             </span>
                         </td>
