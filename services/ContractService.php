@@ -1127,6 +1127,17 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 return ['success' => false, 'message' => 'Contract not found.'];
             }
             
+            // Fix any template issues in the stored contract content
+            $fixedContent = $this->fixContractTemplateIssues($contract['contract_content']);
+            // Update the database with the fixed content
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_contracts 
+                SET contract_content = ?, updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $fixedContent, $contractId);
+            $stmt->execute();
+            
             // Delete any existing PDF documents for this contract (since we're fixing issues)
             $this->deleteContractDocuments($contract['user_id']);
             
@@ -1150,6 +1161,19 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             error_log("Regenerate contract PDF error: " . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred while regenerating the contract PDF.'];
         }
+    }
+    
+    /**
+     * Fix template issues in existing contract content
+     */
+    private function fixContractTemplateIssues($contractContent) {
+        // Fix the USER_ACCEPTANCE_DATE template issue
+        $fixedContent = str_replace(
+            '{{USER_ACCEPTANCE_DATE}}', 
+            '_____________________', 
+            $contractContent
+        );
+        return $fixedContent;
     }
     
     /**
