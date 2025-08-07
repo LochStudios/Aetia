@@ -110,6 +110,19 @@ $allUsers = $userModel->getAllActiveUsers();
 // Get all contracts
 $allContracts = $contractService->getAllContracts();
 
+// Helper function for status colors
+function getStatusColor($status) {
+    switch ($status) {
+        case 'draft': return 'light';
+        case 'sent': return 'info';
+        case 'signed': return 'success';
+        case 'completed': return 'primary';
+        case 'cancelled': return 'danger';
+        default: return 'light';
+    }
+}
+
+$pageTitle = 'Contract Management | Aetia Admin';
 ob_start();
 ?>
 
@@ -214,10 +227,10 @@ ob_start();
                                     <strong><?= htmlspecialchars($contract['user_username']) ?></strong><br>
                                     <small><?= htmlspecialchars($contract['user_email']) ?></small>
                                 </td>
-                                <td><?= htmlspecialchars($contract['talent_name']) ?></td>
+                                <td><?= htmlspecialchars($contract['client_name']) ?></td>
                                 <td>
-                                    <span class="tag is-<?= getStatusColor($contract['contract_status']) ?>">
-                                        <?= ucfirst($contract['contract_status']) ?>
+                                    <span class="tag is-<?= getStatusColor($contract['status']) ?>">
+                                        <?= ucfirst($contract['status']) ?>
                                     </span>
                                 </td>
                                 <td><?= date('M j, Y', strtotime($contract['created_at'])) ?></td>
@@ -336,22 +349,6 @@ ob_start();
     </div>
 </div>
 
-<?php
-$content = ob_get_clean();
-
-// Helper function for status colors
-function getStatusColor($status) {
-    switch ($status) {
-        case 'draft': return 'light';
-        case 'sent': return 'info';
-        case 'signed': return 'success';
-        case 'completed': return 'primary';
-        case 'cancelled': return 'danger';
-        default: return 'light';
-    }
-}
-
-?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-close notifications
@@ -394,11 +391,11 @@ async function editContract(contractId) {
         if (data.success) {
             const contract = data.contract;
             document.getElementById('edit-contract-id').value = contract.id;
-            document.getElementById('edit-talent-name').value = contract.talent_name;
-            document.getElementById('edit-talent-address').value = contract.talent_address || '';
-            document.getElementById('edit-talent-abn').value = contract.talent_abn || '';
+            document.getElementById('edit-talent-name').value = contract.client_name;
+            document.getElementById('edit-talent-address').value = contract.client_address || '';
+            document.getElementById('edit-talent-abn').value = '';
             document.getElementById('edit-contract-content').value = contract.contract_content;
-            document.getElementById('edit-status').value = contract.contract_status;
+            document.getElementById('edit-status').value = contract.status;
             document.getElementById('edit-modal').classList.add('is-active');
         } else {
             alert('Failed to load contract: ' + data.error);

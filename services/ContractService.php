@@ -139,20 +139,19 @@ Date of Acceptance:";
             // Store in database
             $stmt = $this->mysqli->prepare("
                 INSERT INTO user_contracts (
-                    user_id, talent_name, talent_address, talent_abn, 
-                    contract_content, contract_status, created_by, created_at
-                ) VALUES (?, ?, ?, ?, ?, 'draft', ?, NOW())
+                    user_id, client_name, client_address, contract_content, 
+                    status, generated_by, created_at
+                ) VALUES (?, ?, ?, ?, 'draft', ?, NOW())
             ");
             
             $status = 'draft';
             $createdBy = $_SESSION['user_id'] ?? 1; // Default to admin
             
             $stmt->bind_param(
-                "issssi",
+                "isssi",
                 $userId,
                 $talentName,
                 $talentAddress,
-                $talentAbn,
                 $personalizedContract,
                 $createdBy
             );
@@ -190,9 +189,9 @@ Date of Acceptance:";
             $stmt = $this->mysqli->prepare("
                 SELECT 
                     c.*,
-                    u.username as created_by_username
+                    u.username as generated_by_username
                 FROM user_contracts c
-                LEFT JOIN users u ON c.created_by = u.id
+                LEFT JOIN users u ON c.generated_by = u.id
                 WHERE c.user_id = ?
                 ORDER BY c.created_at DESC
             ");
@@ -225,11 +224,11 @@ Date of Acceptance:";
             $stmt = $this->mysqli->prepare("
                 SELECT 
                     c.*,
-                    u.username as created_by_username,
+                    u.username as generated_by_username,
                     user.username as user_username,
                     user.email as user_email
                 FROM user_contracts c
-                LEFT JOIN users u ON c.created_by = u.id
+                LEFT JOIN users u ON c.generated_by = u.id
                 LEFT JOIN users user ON c.user_id = user.id
                 WHERE c.id = ?
             ");
@@ -257,13 +256,13 @@ Date of Acceptance:";
             
             $stmt = $this->mysqli->prepare("
                 UPDATE user_contracts 
-                SET contract_content = ?, talent_name = COALESCE(?, talent_name), 
-                    talent_address = COALESCE(?, talent_address), talent_abn = COALESCE(?, talent_abn),
+                SET contract_content = ?, client_name = COALESCE(?, client_name), 
+                    client_address = COALESCE(?, client_address),
                     updated_at = NOW()
                 WHERE id = ?
             ");
             
-            $stmt->bind_param("ssssi", $contractContent, $talentName, $talentAddress, $talentAbn, $contractId);
+            $stmt->bind_param("sssi", $contractContent, $talentName, $talentAddress, $contractId);
             $result = $stmt->execute();
             $stmt->close();
             
@@ -293,12 +292,12 @@ Date of Acceptance:";
             
             $stmt = $this->mysqli->prepare("
                 UPDATE user_contracts 
-                SET contract_status = ?, signed_by = ?, signed_at = CASE WHEN ? = 'signed' THEN NOW() ELSE signed_at END,
+                SET status = ?, signed_date = CASE WHEN ? = 'signed' THEN NOW() ELSE signed_date END,
                     updated_at = NOW()
                 WHERE id = ?
             ");
             
-            $stmt->bind_param("sssi", $status, $signedBy, $status, $contractId);
+            $stmt->bind_param("ssi", $status, $status, $contractId);
             $result = $stmt->execute();
             $stmt->close();
             
@@ -607,11 +606,11 @@ Date of Acceptance:";
             $stmt = $this->mysqli->prepare("
                 SELECT 
                     c.*,
-                    u.username as created_by_username,
+                    u.username as generated_by_username,
                     user.username as user_username,
                     user.email as user_email
                 FROM user_contracts c
-                LEFT JOIN users u ON c.created_by = u.id
+                LEFT JOIN users u ON c.generated_by = u.id
                 LEFT JOIN users user ON c.user_id = user.id
                 ORDER BY c.created_at DESC
             ");
