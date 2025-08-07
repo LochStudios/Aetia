@@ -69,8 +69,15 @@ ob_start();
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
             <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="users.php"><span class="icon is-small"><i class="fas fa-users-cog"></i></span><span>Users</span></a></li>
             <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
-            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived</span></a></li>
+            <li><a href="create-message.php"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>New Message</span></a></li>
+            <li><a href="send-emails.php"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
+            <li><a href="email-logs.php"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
+            <li><a href="contact-form.php"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
+            <li><a href="contracts.php"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>Contracts</span></a></li>
+            <li><a href="generate-bills.php"><span class="icon is-small"><i class="fas fa-receipt"></i></span><span>Generate Bills</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived Messages</span></a></li>
         </ul>
     </nav>
     
@@ -92,34 +99,6 @@ ob_start();
                 <span class="icon"><i class="fas fa-archive"></i></span>
                 Archived Messages
             </h2>
-        </div>
-        <div class="level-right">
-            <div class="buttons">
-                <a href="messages.php" class="button is-primary">
-                    <span class="icon"><i class="fas fa-envelope"></i></span>
-                    <span>Active Messages</span>
-                </a>
-                <a href="send-emails.php" class="button is-success is-small">
-                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                    <span>Send Emails</span>
-                </a>
-                <a href="contact-form.php" class="button is-info is-small">
-                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span>Contact Forms</span>
-                </a>
-                <a href="create-message.php" class="button is-info is-small">
-                    <span class="icon"><i class="fas fa-plus"></i></span>
-                    <span>New Message</span>
-                </a>
-                <a href="users.php" class="button is-info is-small">
-                    <span class="icon"><i class="fas fa-users-cog"></i></span>
-                    <span>User Management</span>
-                </a>
-                <a href="email-logs.php" class="button is-success is-small">
-                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span>Email History</span>
-                </a>
-            </div>
         </div>
     </div>
 

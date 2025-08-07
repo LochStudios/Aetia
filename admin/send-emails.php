@@ -227,38 +227,20 @@ ob_start();
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
             <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="users.php"><span class="icon is-small"><i class="fas fa-users-cog"></i></span><span>Users</span></a></li>
+            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
+            <li><a href="create-message.php"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>New Message</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
+            <li><a href="email-logs.php"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
+            <li><a href="contact-form.php"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
+            <li><a href="contracts.php"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>Contracts</span></a></li>
+            <li><a href="generate-bills.php"><span class="icon is-small"><i class="fas fa-receipt"></i></span><span>Generate Bills</span></a></li>
+            <li><a href="archived-messages.php"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived Messages</span></a></li>
         </ul>
     </nav>
     
     <h1 class="title has-text-light">Send Emails to Clients</h1>
     <p class="subtitle has-text-light">Send custom emails and newsletters to your users</p>
-    
-    <!-- Navigation -->
-    <div class="field is-grouped" style="margin-bottom: 30px;">
-        <div class="control">
-            <a href="email-logs.php" class="button is-info">
-                <span class="icon"><i class="fas fa-list"></i></span>
-                <span>View Email Logs</span>
-            </a>
-        </div>
-        <div class="control">
-            <a href="messages.php" class="button is-light">
-                <span class="icon"><i class="fas fa-comments"></i></span>
-                <span>Back to Messages</span>
-            </a>
-        </div>
-        <div class="control">
-            <form method="POST" style="display: inline;">
-                <button type="submit" name="test_connection" class="button is-warning">
-                    <span class="icon">
-                        <i class="fas fa-plug"></i>
-                    </span>
-                    <span>Test SMTP Connection</span>
-                </button>
-            </form>
-        </div>
-    </div>
     
     <?php if ($message): ?>
         <div class="status-message status-success">
