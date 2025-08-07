@@ -156,8 +156,8 @@ Date of Acceptance:";
             
             // Handle ABN/ACN section dynamically
             if (empty($userAbn)) {
-                // Remove the entire ABN/ACN line if user doesn't have one
-                $template = preg_replace('/\s*ABN\/ACN \(if applicable\):\s*\[Talent\'s ABN\/ACN\]\s*\n?/', '', $template);
+                // Remove the entire ABN/ACN line if user doesn't have one, but keep proper spacing
+                $template = preg_replace('/\s*ABN\/ACN \(if applicable\):\s*\[Talent\'s ABN\/ACN\]\s*\n/', "\n", $template);
             }
             
             // Replace placeholders
