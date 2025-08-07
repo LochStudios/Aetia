@@ -179,6 +179,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             }
             break;
+            
+        case 'regenerate_pdf':
+            $contractId = intval($_POST['contract_id'] ?? 0);
+            
+            if ($contractId > 0) {
+                $result = $contractService->regenerateContractPDF($contractId);
+                $message = $result['message'];
+                $messageType = $result['success'] ? 'success' : 'error';
+            } else {
+                $message = 'Invalid contract ID.';
+                $messageType = 'error';
+            }
+            break;
     }
 }
 
@@ -398,6 +411,10 @@ ob_start();
                                         <button class="button is-small is-success" onclick="generatePDF(<?= $contract['id'] ?>)" title="Download PDF copy">
                                             <span class="icon"><i class="fas fa-download"></i></span>
                                             <span>Download PDF</span>
+                                        </button>
+                                        <button class="button is-small is-info" onclick="regeneratePDF(<?= $contract['id'] ?>)" title="Regenerate PDF file (archives old version)">
+                                            <span class="icon"><i class="fas fa-redo"></i></span>
+                                            <span>Regenerate PDF</span>
                                         </button>
                                         <?php endif; ?>
                                         <button class="button is-small is-danger" onclick="deleteContract(<?= $contract['id'] ?>)">
@@ -710,6 +727,27 @@ async function editContract(contractId) {
 // Save contract
 function saveContract() {
     document.getElementById('edit-contract-form').submit();
+}
+
+// Regenerate PDF
+async function regeneratePDF(contractId) {
+    if (confirm('Regenerate the PDF for this contract? This will archive the current PDF and create a new one with the latest contract content.')) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'regenerate_pdf');
+            formData.append('contract_id', contractId);
+            
+            const response = await fetch('', {
+                method: 'POST',
+                body: formData
+            });
+            
+            location.reload(); // Reload to see the updated status
+        } catch (error) {
+            console.error('Error regenerating PDF:', error);
+            alert('Failed to regenerate PDF');
+        }
+    }
 }
 
 // Generate PDF
