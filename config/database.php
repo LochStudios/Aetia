@@ -1,5 +1,5 @@
 <?php
-// config/database.php - Database configuration for Aetia Talant Agency
+// config/database.php - Database configuration for Aetia Talent Agency
 
 class Database {
     private $host;
