@@ -15,7 +15,7 @@ ob_start();
 <!-- Loading State -->
 <div id="loading-state" class="content">
     <div class="has-text-centered">
-        <span class="icon is-large has-text-info">
+        <span class="icon is-large has-text-black">
             <i class="fas fa-spinner fa-pulse fa-3x"></i>
         </span>
         <h3 class="title is-5 mt-3">Loading Your Documents...</h3>
@@ -50,7 +50,7 @@ ob_start();
     
     <div class="level">
         <div class="level-left">
-            <h2 class="title is-2 has-text-info">
+            <h2 class="title is-2 has-text-black">
                 <span class="icon"><i class="fas fa-file-contract"></i></span>
                 My Documents
             </h2>
@@ -91,7 +91,7 @@ ob_start();
         <div class="card-content">
             <div id="no-documents" class="notification is-info" style="display: none;">
                 <div class="has-text-centered">
-                    <span class="icon is-large has-text-info">
+                    <span class="icon is-large has-text-black">
                         <i class="fa-solid fa-folder-open fa-3x"></i>
                     </span>
                     <h3 class="title is-5 mt-3">No Documents Yet</h3>
@@ -150,7 +150,7 @@ ob_start();
             <!-- No documents message for filtered views -->
             <div id="no-filtered-documents" class="notification is-info" style="display: none;">
                 <div class="has-text-centered">
-                    <span class="icon is-large has-text-info">
+                    <span class="icon is-large has-text-black">
                         <i class="fas fa-search fa-2x"></i>
                     </span>
                     <h3 class="title is-5 mt-3">No Documents Found</h3>
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         documentStats.innerHTML = `
             <div class="column is-3">
                 <div class="box has-text-centered">
-                    <p class="title is-4 has-text-info">${stats.total}</p>
+                    <p class="title is-4 has-text-black">${stats.total}</p>
                     <p class="subtitle is-6">Total Documents</p>
                 </div>
             </div>
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'doc':
                 case 'docx':
                     iconClass = 'fa-file-word';
-                    iconColor = 'has-text-info';
+                    iconColor = 'has-text-black';
                     break;
                 case 'jpg':
                 case 'jpeg':
