@@ -295,7 +295,7 @@ ob_start();
                     <div class="field" id="selected-user-info" style="display: none;">
                         <label class="label">Contract Information</label>
                         <div class="control">
-                            <div class="notification is-info is-light" id="user-info-notification">
+                            <div class="notification is-info is-dark" id="user-info-notification">
                                 <p><strong>User Profile Status:</strong></p>
                                 <div id="profile-status">
                                     <p><span id="name-status">✓</span> <strong>Legal Name:</strong> <span id="user-legal-name">-</span></p>
@@ -430,7 +430,7 @@ ob_start();
                                             <span><?= date('M j, Y', strtotime($contract['user_accepted_date'])) ?></span>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">
+                                        <span class="tag is-dark">
                                             <span class="icon"><i class="fas fa-clock"></i></span>
                                             <span>Pending</span>
                                         </span>
@@ -515,7 +515,7 @@ ob_start();
                         <div class="field">
                             <label class="label">Legal Name (From User Profile)</label>
                             <div class="control">
-                                <div class="notification is-info is-light">
+                                <div class="notification is-info is-dark">
                                     <p id="edit-legal-name-display">-</p>
                                     <p class="is-size-7">This information comes from the user's profile and cannot be changed here.</p>
                                 </div>
@@ -525,7 +525,7 @@ ob_start();
                         <div class="field">
                             <label class="label">Address (From User Profile)</label>
                             <div class="control">
-                                <div class="notification is-info is-light">
+                                <div class="notification is-info is-dark">
                                     <p id="edit-address-display">-</p>
                                     <p class="is-size-7">This address comes from the user's profile and cannot be changed here.</p>
                                 </div>
@@ -707,12 +707,12 @@ function updateSelectedUserInfo() {
         // Update notification appearance and show/hide completion fields
         const completionHeader = document.getElementById('completion-header');
         if (isComplete) {
-            notification.className = 'notification is-success is-light';
+            notification.className = 'notification is-success is-dark';
             incompleteNotice.style.display = 'none';
             completionDiv.style.display = 'none';
             if (completionHeader) completionHeader.style.display = 'none';
         } else {
-            notification.className = 'notification is-warning is-light';
+            notification.className = 'notification is-warning is-dark';
             incompleteNotice.style.display = 'block';
             completionDiv.style.display = 'block';
             if (completionHeader) completionHeader.style.display = 'block';
