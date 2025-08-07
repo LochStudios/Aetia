@@ -103,7 +103,7 @@ if (!isset($content)) $content = '';
                       </a>
                       <?php if ($showAdminLink): ?>
                       <hr class="dropdown-divider">
-                      <a href="../admin/users.php" class="dropdown-item">
+                      <a href="../admin/" class="dropdown-item">
                         <span class="icon"><i class="fas fa-users-cog"></i></span>
                         <span>Admin Panel</span>
                       </a>
