@@ -387,7 +387,6 @@ ob_start();
 }
 </style>
 <script>
-<script>
 document.addEventListener('DOMContentLoaded', function() {
     const userSearch = document.getElementById('user-search');
     const userDropdown = document.getElementById('user-dropdown');
