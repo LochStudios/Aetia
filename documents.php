@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="tag is-${tagColor}">
                                             ${doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1).replace('_', ' ')}
                                         </span>
-                                        <span class="tag is-light">
+                                        <span class="tag is-dark">
                                             ${(doc.file_size / 1024).toFixed(1)} KB
                                         </span>
                                         ${archivedTag}
