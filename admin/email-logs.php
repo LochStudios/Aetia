@@ -2,24 +2,17 @@
 // admin/email-logs.php - Admin interface for viewing email logs
 session_start();
 
-// Include timezone utilities
-require_once __DIR__ . '/../includes/timezone    <!-- Breadcrumbs -->
-    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
-        <ul>
-            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
-            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
-        </ul>
-    </nav>
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
     header('Location: ../login.php');
     exit;
 }
 
+// Include user utilities
 require_once __DIR__ . '/../models/User.php';
-
 $userModel = new User();
+// Include timezone utilities
+require_once __DIR__ . '/../includes/timezone.php';
 
 // Check if current user is admin
 $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
@@ -94,16 +87,29 @@ $countQuery = "
     {$whereClause}
 ";
 
-if (!empty($params)) {
-    $countStmt = $mysqli->prepare($countQuery);
-    $countStmt->bind_param($types, ...$params);
-    $countStmt->execute();
-    $countResult = $countStmt->get_result();
-    $totalRecords = $countResult->fetch_assoc()['total'];
-    $countStmt->close();
-} else {
-    $countResult = $mysqli->query($countQuery);
-    $totalRecords = $countResult->fetch_assoc()['total'];
+try {
+    if (!empty($params)) {
+        $countStmt = $mysqli->prepare($countQuery);
+        if ($countStmt) {
+            $countStmt->bind_param($types, ...$params);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $totalRecords = $countResult->fetch_assoc()['total'];
+            $countStmt->close();
+        } else {
+            throw new Exception("Failed to prepare count query: " . $mysqli->error);
+        }
+    } else {
+        $countResult = $mysqli->query($countQuery);
+        if ($countResult) {
+            $totalRecords = $countResult->fetch_assoc()['total'];
+        } else {
+            throw new Exception("Failed to execute count query: " . $mysqli->error);
+        }
+    }
+} catch (Exception $e) {
+    error_log("Email logs count query error: " . $e->getMessage());
+    $totalRecords = 0;
 }
 
 $totalPages = ceil($totalRecords / $perPage);
@@ -139,18 +145,26 @@ $params[] = $perPage;
 $params[] = $offset;
 $types .= "ii";
 
-$stmt = $mysqli->prepare($query);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
+try {
+    $stmt = $mysqli->prepare($query);
+    if ($stmt) {
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $emailLogs = [];
+        while ($row = $result->fetch_assoc()) {
+            $emailLogs[] = $row;
+        }
+        $stmt->close();
+    } else {
+        throw new Exception("Failed to prepare email logs query: " . $mysqli->error);
+    }
+} catch (Exception $e) {
+    error_log("Email logs query error: " . $e->getMessage());
+    $emailLogs = [];
 }
-$stmt->execute();
-$result = $stmt->get_result();
-$emailLogs = [];
-
-while ($row = $result->fetch_assoc()) {
-    $emailLogs[] = $row;
-}
-$stmt->close();
 
 // Get email type statistics
 $statsQuery = "
@@ -163,10 +177,20 @@ $statsQuery = "
     GROUP BY email_type 
     ORDER BY count DESC
 ";
-$statsResult = $mysqli->query($statsQuery);
-$emailStats = [];
-while ($row = $statsResult->fetch_assoc()) {
-    $emailStats[] = $row;
+
+try {
+    $statsResult = $mysqli->query($statsQuery);
+    $emailStats = [];
+    if ($statsResult) {
+        while ($row = $statsResult->fetch_assoc()) {
+            $emailStats[] = $row;
+        }
+    } else {
+        throw new Exception("Failed to execute stats query: " . $mysqli->error);
+    }
+} catch (Exception $e) {
+    error_log("Email stats query error: " . $e->getMessage());
+    $emailStats = [];
 }
 
 $pageTitle = 'Email Logs | Aetia Admin';
@@ -177,36 +201,39 @@ ob_start();
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li><a href="users.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Email Logs</span></a></li>
         </ul>
     </nav>
-    
     <h1 class="title has-text-light">Email Logs</h1>
     <p class="subtitle has-text-light">View and filter all sent emails</p>
-    
     <!-- Navigation -->
     <div class="field is-grouped" style="margin-bottom: 30px;">
         <div class="control">
-            <a href="../admin/messages.php" class="button is-info">
+            <a href="messages.php" class="button is-info">
                 <span class="icon"><i class="fas fa-comments"></i></span>
                 <span>Messages</span>
             </a>
         </div>
         <div class="control">
-            <a href="../admin/send-emails.php" class="button is-primary">
+            <a href="contact-form.php" class="button is-primary">
+                <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span>Contact Forms</span>
+            </a>
+        </div>
+        <div class="control">
+            <a href="send-emails.php" class="button is-success">
                 <span class="icon"><i class="fas fa-paper-plane"></i></span>
                 <span>Send Emails</span>
             </a>
         </div>
         <div class="control">
-            <a href="../admin/users.php" class="button is-light">
+            <a href="users.php" class="button is-light">
                 <span class="icon"><i class="fas fa-users"></i></span>
                 <span>Users</span>
             </a>
         </div>
     </div>
-    
     <!-- Statistics Section -->
     <div class="stats-section">
         <h2 class="subtitle has-text-light">Email Statistics</h2>
@@ -312,7 +339,7 @@ ob_start();
                 <?php else: ?>
                 <?php foreach ($emailLogs as $log): ?>
                 <tr>
-                    <td><?= date('M j, Y g:i A', strtotime($log['sent_at'])) ?></td>
+                    <td><?= convertToUserTimezone($log['sent_at']) ?></td>
                     <td>
                         <div>
                             <strong><?= htmlspecialchars($log['recipient_email']) ?></strong>
@@ -354,23 +381,27 @@ ob_start();
     <!-- Pagination -->
     <?php if ($totalPages > 1): ?>
     <div class="pagination">
+        <?php 
+        // Create base query without page parameter
+        $queryParams = $_GET;
+        unset($queryParams['page']);
+        $baseQuery = http_build_query($queryParams);
+        $baseQuery = $baseQuery ? '&' . $baseQuery : '';
+        ?>
         <?php if ($page > 1): ?>
-        <a href="?page=<?= $page - 1 ?>&<?= http_build_query($_GET) ?>">&laquo; Previous</a>
+        <a href="?page=<?= $page - 1 ?><?= $baseQuery ?>">&laquo; Previous</a>
         <?php endif; ?>
-        
         <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
         <?php if ($i == $page): ?>
         <span class="current"><?= $i ?></span>
         <?php else: ?>
-        <a href="?page=<?= $i ?>&<?= http_build_query($_GET) ?>"><?= $i ?></a>
+        <a href="?page=<?= $i ?><?= $baseQuery ?>"><?= $i ?></a>
         <?php endif; ?>
         <?php endfor; ?>
-        
         <?php if ($page < $totalPages): ?>
-        <a href="?page=<?= $page + 1 ?>&<?= http_build_query($_GET) ?>">Next &raquo;</a>
+        <a href="?page=<?= $page + 1 ?><?= $baseQuery ?>">Next &raquo;</a>
         <?php endif; ?>
     </div>
-    
     <div style="text-align: center; margin-top: 10px; color: #ddd;">
         Showing <?= count($emailLogs) ?> of <?= number_format($totalRecords) ?> emails
         (Page <?= $page ?> of <?= $totalPages ?>)
@@ -390,57 +421,53 @@ ob_start();
 
 <script>
 // Email logs stored in JavaScript for modal viewing
-const emailLogs = <?= json_encode($emailLogs) ?>;
+const emailLogs = <?= json_encode(array_map(function($log) {
+    $log['sent_at_formatted'] = convertToUserTimezone($log['sent_at']);
+    return $log;
+}, $emailLogs)) ?>;
 
 function viewEmail(logId) {
     const log = emailLogs.find(l => l.id == logId);
     if (!log) return;
-    
     const modal = document.getElementById('emailModal');
     const content = document.getElementById('emailContent');
-    
     content.innerHTML = `
         <h2 style="color: #48c78e; margin-bottom: 20px;">Email Details</h2>
         <div class="email-meta">
-            <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
-            <p><strong>To:</strong> ${log.recipient_email}</p>
-            <p><strong>Type:</strong> ${log.email_type.replace(/_/g, ' ')}</p>
-            <p><strong>Subject:</strong> ${log.subject}</p>
+            <p><strong>Date:</strong> ${log.sent_at_formatted}</p>
+            <p><strong>To:</strong> ${log.recipient_email.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+            <p><strong>Type:</strong> ${log.email_type.replace(/_/g, ' ').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+            <p><strong>Subject:</strong> ${log.subject.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
             <p><strong>Status:</strong> <span class="status-${log.status}">${log.status}</span></p>
             ${log.delivery_attempts > 1 ? `<p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>` : ''}
         </div>
         <h3 style="color: #48c78e; margin-bottom: 15px;">Email Content</h3>
         <div class="email-content-display">
-            ${log.html_content || log.body_content.replace(/\n/g, '<br>')}
+            ${log.html_content ? log.html_content : log.body_content.replace(/\n/g, '<br>').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
         </div>
     `;
-    
     modal.style.display = 'block';
 }
 
 function viewError(logId) {
     const log = emailLogs.find(l => l.id == logId);
     if (!log) return;
-    
     const modal = document.getElementById('emailModal');
     const content = document.getElementById('emailContent');
-    
     content.innerHTML = `
         <h2 style="color: #ff3b30; margin-bottom: 20px;">Email Error Details</h2>
         <div class="email-meta">
-            <p><strong>Date:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
-            <p><strong>To:</strong> ${log.recipient_email}</p>
-            <p><strong>Subject:</strong> ${log.subject}</p>
+            <p><strong>Date:</strong> ${log.sent_at_formatted}</p>
+            <p><strong>To:</strong> ${log.recipient_email.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+            <p><strong>Subject:</strong> ${log.subject.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
             <p><strong>Status:</strong> <span class="status-failed">Failed</span></p>
             <p><strong>Delivery Attempts:</strong> ${log.delivery_attempts}</p>
         </div>
-        
         <h3 style="color: #ff3b30; margin-bottom: 15px;">Error Message</h3>
         <div style="background: rgba(255, 59, 48, 0.15); color: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #ff3b30; font-family: 'Courier New', monospace;">
-            <code style="color: #fff; font-size: 14px; line-height: 1.4;">${log.error_message || 'No error message available'}</code>
+            <code style="color: #fff; font-size: 14px; line-height: 1.4;">${(log.error_message || 'No error message available').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>
         </div>
     `;
-    
     modal.style.display = 'block';
 }
 
