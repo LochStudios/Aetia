@@ -35,4 +35,9 @@ function formatDateForUser($dateString, $format = 'M j, Y g:i A') {
         return date($format, strtotime($dateString));
     }
 }
+
+// Alias function for backward compatibility
+function convertToUserTimezone($dateString, $format = 'M j, Y g:i A') {
+    return formatDateForUser($dateString, $format);
+}
 ?>
