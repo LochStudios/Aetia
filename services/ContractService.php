@@ -398,25 +398,110 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             </body>
             </html>";
             
-            // Simple HTML to PDF conversion using DOMPdf (if available) or basic file writing
-            if (class_exists('Dompdf\Dompdf')) {
-                // Use DOMPdf if available
-                $dompdf = new \Dompdf\Dompdf();
-                $dompdf->loadHtml($htmlContent);
-                $dompdf->setPaper('A4', 'portrait');
-                $dompdf->render();
-                file_put_contents($tempFile, $dompdf->output());
-            } else {
-                // Fallback: Create a simple text file with contract content
-                file_put_contents($tempFile, $contractContent);
+            // Generate PDF using PDFlib
+            $tempPdfFile = tempnam(sys_get_temp_dir(), 'contract_') . '.pdf';
+            
+            // Generate PDF using PDFlib - this is the only option now
+            if (!extension_loaded('pdf')) {
+                error_log("PDFlib extension not loaded");
+                return ['success' => false, 'message' => 'PDF generation service not available.'];
             }
+            
+            try {
+                // Create PDF document
+                $pdf = pdf_new();
+                
+                if (!$pdf) {
+                    error_log("PDFlib: Failed to create PDF object");
+                    return ['success' => false, 'message' => 'Failed to initialize PDF generator.'];
+                }
+                
+                // Set PDF options for proper output
+                pdf_set_parameter($pdf, "compatibility", "1.4");
+                pdf_set_parameter($pdf, "license", "");
+                
+                // Begin PDF document
+                if (pdf_begin_document($pdf, $tempPdfFile, "") == 0) {
+                    error_log("PDFlib: Failed to begin document - " . pdf_get_errmsg($pdf));
+                    pdf_delete($pdf);
+                    return ['success' => false, 'message' => 'Failed to create PDF document.'];
+                }
+                
+                // Set document info
+                pdf_set_info($pdf, "Creator", "Aetia Talent Agency");
+                pdf_set_info($pdf, "Author", "LochStudios");
+                pdf_set_info($pdf, "Title", "Communications Services Agreement");
+                pdf_set_info($pdf, "Subject", "Professional Services Contract");
+                
+                // Begin page
+                pdf_begin_page_ext($pdf, 595, 842, ""); // A4 size
+                
+                // Load font
+                $font = pdf_load_font($pdf, "Helvetica", "unicode", "");
+                if ($font == 0) {
+                    error_log("PDFlib: Failed to load font - " . pdf_get_errmsg($pdf));
+                    pdf_end_page_ext($pdf, "");
+                    pdf_end_document($pdf, "");
+                    pdf_delete($pdf);
+                    return ['success' => false, 'message' => 'Failed to load PDF font.'];
+                }
+                
+                // Convert HTML content to plain text
+                $textContent = $this->htmlToText($contractContent);
+                
+                // Ensure we have content to add
+                if (empty(trim($textContent))) {
+                    error_log("PDFlib: No content to add to PDF");
+                    pdf_end_page_ext($pdf, "");
+                    pdf_end_document($pdf, "");
+                    pdf_delete($pdf);
+                    return ['success' => false, 'message' => 'No contract content available to generate PDF.'];
+                }
+                
+                // Add content to PDF
+                $this->addTextToPdf($pdf, $font, $textContent);
+                
+                // Close PDF properly
+                pdf_end_page_ext($pdf, "");
+                pdf_end_document($pdf, "");
+                pdf_delete($pdf);
+                
+                // Validate that the file was created and has content
+                if (!file_exists($tempPdfFile) || filesize($tempPdfFile) == 0) {
+                    error_log("PDF file was not created or is empty");
+                    return ['success' => false, 'message' => 'PDF generation failed - no output file created.'];
+                }
+                
+                // Validate PDF header
+                $handle = fopen($tempPdfFile, 'rb');
+                if ($handle) {
+                    $header = fread($handle, 4);
+                    fclose($handle);
+                    
+                    if ($header !== '%PDF') {
+                        error_log("Generated PDF file does not have correct header: " . bin2hex($header));
+                        unlink($tempPdfFile);
+                        return ['success' => false, 'message' => 'Generated PDF file is corrupted.'];
+                    }
+                } else {
+                    return ['success' => false, 'message' => 'Cannot validate generated PDF file.'];
+                }
+                
+                error_log("PDFlib: Successfully generated and validated PDF for contract");
+                
+            } catch (Exception $e) {
+                error_log("PDFlib generation error: " . $e->getMessage());
+                return ['success' => false, 'message' => 'PDF generation failed: ' . $e->getMessage()];
+            }
+            
+            $tempFile = $tempPdfFile;
             
             // Get user info for filename
             $user = $this->userModel->getUserById($userId);
             $userName = $user ? ($user['first_name'] . '_' . $user['last_name']) : 'User_' . $userId;
             $userName = preg_replace('/[^a-zA-Z0-9_]/', '', $userName);
             
-            // Create filename
+            // Create filename - always PDF now
             $timestamp = date('Y-m-d_H-i-s');
             $filename = "Contract_{$userName}_{$timestamp}.pdf";
             
@@ -711,14 +796,15 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             // Create temporary PDF file
             $tempPdfFile = tempnam(sys_get_temp_dir(), 'contract_') . '.pdf';
             
-            // Convert HTML to PDF using wkhtmltopdf (if available) or create a simple text-based PDF
+            // Convert HTML to PDF using PDFlib (if available) or create a simple text-based PDF
             $pdfGenerated = $this->htmlToPdf($tempHtmlFile, $tempPdfFile);
             
             if (!$pdfGenerated) {
-                // Fallback: create a simple text file if PDF generation fails
-                $tempPdfFile = tempnam(sys_get_temp_dir(), 'contract_') . '.txt';
-                file_put_contents($tempPdfFile, $contract['contract_content']);
-                $filename = str_replace('.pdf', '.txt', $filename);
+                // Clean up temp files on failure
+                if (file_exists($tempHtmlFile)) unlink($tempHtmlFile);
+                if (file_exists($tempPdfFile)) unlink($tempPdfFile);
+                
+                return ['success' => false, 'message' => 'Failed to generate PDF. Please check server configuration.'];
             }
             
             // Create a mock $_FILES array for DocumentService
@@ -726,7 +812,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 'name' => $filename,
                 'tmp_name' => $tempPdfFile,
                 'size' => filesize($tempPdfFile),
-                'type' => $pdfGenerated ? 'application/pdf' : 'text/plain',
+                'type' => 'application/pdf',
                 'error' => UPLOAD_ERR_OK
             ];
             
@@ -816,19 +902,24 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     }
     
     /**
-     * Convert HTML to PDF using native PHP PDF functions
+     * Convert HTML to PDF using PDFlib
      */
     private function htmlToPdf($htmlFile, $outputFile) {
         try {
             // Check if PDF extension is loaded
             if (!extension_loaded('pdf')) {
-                error_log("PDF extension not loaded");
+                error_log("PDFlib extension not loaded");
                 return false;
             }
             
             // Read the HTML content and convert to plain text for PDF
             $htmlContent = file_get_contents($htmlFile);
             $textContent = $this->htmlToText($htmlContent);
+            
+            if (empty(trim($textContent))) {
+                error_log("No content available for PDF generation");
+                return false;
+            }
             
             // Create PDF document
             $pdf = pdf_new();
@@ -838,9 +929,13 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 return false;
             }
             
+            // Set PDF options for proper output
+            pdf_set_parameter($pdf, "compatibility", "1.4");
+            pdf_set_parameter($pdf, "license", "");
+            
             // Open PDF file for writing
-            if (pdf_open_file($pdf, $outputFile) == 0) {
-                error_log("Failed to open PDF file for writing: " . pdf_get_errmsg($pdf));
+            if (pdf_begin_document($pdf, $outputFile, "") == 0) {
+                error_log("Failed to begin PDF document: " . pdf_get_errmsg($pdf));
                 pdf_delete($pdf);
                 return false;
             }
@@ -852,18 +947,18 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             pdf_set_info($pdf, "Subject", "Professional Services Contract");
             
             // Begin page
-            pdf_begin_page($pdf, 595, 842); // A4 size in points
+            pdf_begin_page_ext($pdf, 595, 842, ""); // A4 size in points
             
-            // Set font
-            $font = pdf_findfont($pdf, "Helvetica", "host", 0);
+            // Load font (using proper PDFlib method)
+            $font = pdf_load_font($pdf, "Helvetica", "unicode", "");
             if ($font == 0) {
-                $font = pdf_findfont($pdf, "Times-Roman", "host", 0);
+                $font = pdf_load_font($pdf, "Times-Roman", "unicode", "");
             }
             
             if ($font == 0) {
-                error_log("Failed to find suitable font");
-                pdf_end_page($pdf);
-                pdf_close($pdf);
+                error_log("Failed to load font: " . pdf_get_errmsg($pdf));
+                pdf_end_page_ext($pdf, "");
+                pdf_end_document($pdf, "");
                 pdf_delete($pdf);
                 return false;
             }
@@ -871,12 +966,31 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             // Add content to PDF
             $this->addTextToPdf($pdf, $font, $textContent);
             
-            // End page and close document
-            pdf_end_page($pdf);
-            pdf_close($pdf);
+            // Properly close the PDF document
+            pdf_end_page_ext($pdf, "");
+            pdf_end_document($pdf, "");
             pdf_delete($pdf);
             
-            return file_exists($outputFile) && filesize($outputFile) > 0;
+            // Validate the generated file
+            if (!file_exists($outputFile) || filesize($outputFile) == 0) {
+                error_log("PDF file was not created or is empty");
+                return false;
+            }
+            
+            // Validate PDF header
+            $handle = fopen($outputFile, 'rb');
+            if ($handle) {
+                $header = fread($handle, 4);
+                fclose($handle);
+                
+                if ($header !== '%PDF') {
+                    error_log("Generated PDF file does not have correct header");
+                    unlink($outputFile);
+                    return false;
+                }
+            }
+            
+            return true;
             
         } catch (Exception $e) {
             error_log("PDF generation error: " . $e->getMessage());
@@ -888,14 +1002,19 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
      * Convert HTML content to plain text
      */
     private function htmlToText($html) {
-        // Remove HTML tags
-        $text = strip_tags($html);
+        // First handle line breaks and paragraphs
+        $text = str_replace(['<br>', '<br/>', '<br />'], "\n", $html);
+        $text = str_replace(['</p>', '</div>', '</h1>', '</h2>', '</h3>'], "\n\n", $text);
+        
+        // Remove all other HTML tags
+        $text = strip_tags($text);
         
         // Convert HTML entities
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
         
-        // Clean up whitespace
-        $text = preg_replace('/\s+/', ' ', $text);
+        // Clean up excessive whitespace while preserving line breaks
+        $text = preg_replace('/[ \t]+/', ' ', $text); // Replace multiple spaces/tabs with single space
+        $text = preg_replace('/\n\s*\n\s*\n/', "\n\n", $text); // Replace multiple line breaks with double line break
         $text = trim($text);
         
         return $text;
@@ -912,41 +1031,124 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
         $pageHeight = 842 - (2 * $margin); // A4 height minus margins
         $currentY = 792; // Start near top of page
         
-        // Set font
+        // Set font and size
         pdf_setfont($pdf, $font, $fontSize);
         
-        // Split text into lines that fit the page width
-        $words = explode(' ', $text);
-        $currentLine = '';
+        // Split text into paragraphs first
+        $paragraphs = explode("\n", $text);
         
-        foreach ($words as $word) {
-            $testLine = $currentLine . ($currentLine ? ' ' : '') . $word;
-            $textWidth = pdf_stringwidth($pdf, $testLine, $font, $fontSize);
+        foreach ($paragraphs as $paragraph) {
+            if (trim($paragraph) === '') {
+                // Empty line - add some space
+                $currentY -= $lineHeight;
+                continue;
+            }
             
-            if ($textWidth > $pageWidth && $currentLine) {
-                // Current line is full, write it and start new line
+            // Split paragraph into words
+            $words = explode(' ', trim($paragraph));
+            $currentLine = '';
+            
+            foreach ($words as $word) {
+                $testLine = $currentLine . ($currentLine ? ' ' : '') . $word;
+                $textWidth = pdf_stringwidth($pdf, $testLine, $font, $fontSize);
+                
+                if ($textWidth > $pageWidth && $currentLine) {
+                    // Current line is full, write it and start new line
+                    pdf_show_xy($pdf, $currentLine, $margin, $currentY);
+                    $currentY -= $lineHeight;
+                    $currentLine = $word;
+                    
+                    // Check if we need a new page
+                    if ($currentY < $margin + 50) {
+                        pdf_end_page_ext($pdf, "");
+                        pdf_begin_page_ext($pdf, 595, 842, "");
+                        pdf_setfont($pdf, $font, $fontSize);
+                        $currentY = 792;
+                    }
+                } else {
+                    $currentLine = $testLine;
+                }
+            }
+            
+            // Write the last line of the paragraph if there is one
+            if ($currentLine) {
                 pdf_show_xy($pdf, $currentLine, $margin, $currentY);
                 $currentY -= $lineHeight;
-                $currentLine = $word;
-                
-                // Check if we need a new page
-                if ($currentY < $margin) {
-                    pdf_end_page($pdf);
-                    pdf_begin_page($pdf, 595, 842);
-                    pdf_setfont($pdf, $font, $fontSize);
-                    $currentY = 792;
-                }
-            } else {
-                $currentLine = $testLine;
             }
-        }
-        
-        // Write the last line if there is one
-        if ($currentLine) {
-            pdf_show_xy($pdf, $currentLine, $margin, $currentY);
+            
+            // Add extra space after paragraph
+            $currentY -= $lineHeight * 0.5;
+            
+            // Check if we need a new page
+            if ($currentY < $margin + 50) {
+                pdf_end_page_ext($pdf, "");
+                pdf_begin_page_ext($pdf, 595, 842, "");
+                pdf_setfont($pdf, $font, $fontSize);
+                $currentY = 792;
+            }
         }
     }
     
+    /**
+     * Regenerate PDF for an existing contract
+     */
+    public function regenerateContractPDF($contractId) {
+        try {
+            $contract = $this->getContract($contractId);
+            if (!$contract) {
+                return ['success' => false, 'message' => 'Contract not found.'];
+            }
+            
+            // First, archive any existing PDF documents for this contract
+            $this->archiveContractDocuments($contract['user_id'], 'PDF regenerated on ' . date('Y-m-d H:i:s'));
+            
+            // Generate new PDF using the same logic as generateContractPDF
+            $result = $this->generateContractPDF($contractId);
+            
+            if ($result['success']) {
+                return [
+                    'success' => true,
+                    'message' => 'PDF regenerated successfully and previous versions archived.',
+                    'document_id' => $result['document_id'] ?? null
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to regenerate PDF: ' . $result['message']
+                ];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Regenerate contract PDF error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while regenerating the contract PDF.'];
+        }
+    }
+    
+    /**
+     * Archive existing contract documents
+     */
+    private function archiveContractDocuments($userId, $reason) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_documents 
+                SET archived = TRUE, archived_reason = ?, archived_at = NOW() 
+                WHERE user_id = ? AND document_type = 'contract' AND archived = FALSE
+            ");
+            $stmt->bind_param("si", $reason, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                error_log("Archived existing contract documents for user $userId");
+            }
+            
+        } catch (Exception $e) {
+            error_log("Archive contract documents error: " . $e->getMessage());
+        }
+    }
+
     /**
      * Delete a contract
      */
