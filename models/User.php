@@ -1411,7 +1411,7 @@ class User {
             $this->ensureConnection();
             
             $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, first_name, last_name, profile_image, 
+                SELECT id, username, email, public_email, first_name, last_name, profile_image, 
                        account_type, social_id, social_username, social_data, approval_status, 
                        approval_date, approved_by, rejection_reason, contact_attempted, contact_date, 
                        contact_notes, is_admin, is_verified, is_active, created_at, updated_at, 
