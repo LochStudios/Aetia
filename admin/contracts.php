@@ -30,16 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'generate_contract':
             $userId = intval($_POST['user_id'] ?? 0);
-            $talentName = trim($_POST['talent_name'] ?? '');
             $talentAddress = trim($_POST['talent_address'] ?? '');
             $talentAbn = trim($_POST['talent_abn'] ?? '');
             
-            if ($userId > 0 && !empty($talentName)) {
-                $result = $contractService->generatePersonalizedContract($userId, $talentName, $talentAddress, $talentAbn);
+            if ($userId > 0) {
+                $result = $contractService->generatePersonalizedContract($userId, $talentAddress, $talentAbn);
                 $message = $result['message'];
                 $messageType = $result['success'] ? 'success' : 'error';
             } else {
-                $message = 'Please select a user and provide talent name.';
+                $message = 'Please select a user.';
                 $messageType = 'error';
             }
             break;
@@ -47,12 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'update_contract':
             $contractId = intval($_POST['contract_id'] ?? 0);
             $contractContent = trim($_POST['contract_content'] ?? '');
-            $talentName = trim($_POST['talent_name'] ?? '');
             $talentAddress = trim($_POST['talent_address'] ?? '');
             $talentAbn = trim($_POST['talent_abn'] ?? '');
             
             if ($contractId > 0 && !empty($contractContent)) {
-                $result = $contractService->updateContract($contractId, $contractContent, $talentName, $talentAddress, $talentAbn);
+                $result = $contractService->updateContract($contractId, $contractContent, null, $talentAddress, $talentAbn);
                 $message = $result['message'];
                 $messageType = $result['success'] ? 'success' : 'error';
             } else {
@@ -149,10 +147,13 @@ ob_start();
                         <label class="label">Select User</label>
                         <div class="control">
                             <div class="select is-fullwidth">
-                                <select name="user_id" required>
+                                <select name="user_id" required onchange="updateSelectedUserInfo()">
                                     <option value="">Choose a user...</option>
                                     <?php foreach ($allUsers as $user): ?>
-                                        <option value="<?= $user['id'] ?>">
+                                        <option value="<?= $user['id'] ?>" 
+                                                data-first-name="<?= htmlspecialchars($user['first_name'] ?? '') ?>"
+                                                data-last-name="<?= htmlspecialchars($user['last_name'] ?? '') ?>"
+                                                data-email="<?= htmlspecialchars($user['email']) ?>">
                                             <?= htmlspecialchars($user['username']) ?> 
                                             (<?= htmlspecialchars($user['email']) ?>)
                                         </option>
@@ -162,10 +163,13 @@ ob_start();
                         </div>
                     </div>
                     
-                    <div class="field">
-                        <label class="label">Talent's Full Legal Name</label>
+                    <div class="field" id="selected-user-info" style="display: none;">
+                        <label class="label">Contract Legal Name</label>
                         <div class="control">
-                            <input class="input" type="text" name="talent_name" required placeholder="Enter full legal name">
+                            <div class="notification is-info is-light">
+                                <p><strong>Legal Name:</strong> <span id="user-legal-name">-</span></p>
+                                <p class="is-size-7">This name will be used in the contract. If the user's first/last name is not complete, the contract cannot be generated.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -295,9 +299,12 @@ ob_start();
                 <div class="columns">
                     <div class="column is-one-third">
                         <div class="field">
-                            <label class="label">Talent Name</label>
+                            <label class="label">Legal Name (From User Profile)</label>
                             <div class="control">
-                                <input class="input" type="text" name="talent_name" id="edit-talent-name">
+                                <div class="notification is-info is-light">
+                                    <p id="edit-legal-name-display">-</p>
+                                    <p class="is-size-7">This name comes from the user's profile and cannot be changed here.</p>
+                                </div>
                             </div>
                         </div>
                         
@@ -359,6 +366,32 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Update selected user info display
+function updateSelectedUserInfo() {
+    const select = document.querySelector('select[name="user_id"]');
+    const selectedOption = select.options[select.selectedIndex];
+    const infoDiv = document.getElementById('selected-user-info');
+    const legalNameSpan = document.getElementById('user-legal-name');
+    
+    if (select.value && selectedOption) {
+        const firstName = selectedOption.getAttribute('data-first-name') || '';
+        const lastName = selectedOption.getAttribute('data-last-name') || '';
+        const fullName = (firstName + ' ' + lastName).trim();
+        
+        if (fullName) {
+            legalNameSpan.textContent = fullName;
+            legalNameSpan.parentElement.parentElement.className = 'notification is-success is-light';
+        } else {
+            legalNameSpan.textContent = 'Incomplete - User must complete their profile';
+            legalNameSpan.parentElement.parentElement.className = 'notification is-warning is-light';
+        }
+        
+        infoDiv.style.display = 'block';
+    } else {
+        infoDiv.style.display = 'none';
+    }
+}
+
 // View contract
 async function viewContract(contractId) {
     try {
@@ -391,7 +424,7 @@ async function editContract(contractId) {
         if (data.success) {
             const contract = data.contract;
             document.getElementById('edit-contract-id').value = contract.id;
-            document.getElementById('edit-talent-name').value = contract.client_name;
+            document.getElementById('edit-legal-name-display').textContent = contract.client_name || 'Not specified';
             document.getElementById('edit-talent-address').value = contract.client_address || '';
             document.getElementById('edit-talent-abn').value = '';
             document.getElementById('edit-contract-content').value = contract.contract_content;

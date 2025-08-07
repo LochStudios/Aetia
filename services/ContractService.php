@@ -116,7 +116,7 @@ Date of Acceptance:";
     /**
      * Create a personalized contract for a user
      */
-    public function generatePersonalizedContract($userId, $talentName, $talentAddress, $talentAbn = '', $customTemplate = null) {
+    public function generatePersonalizedContract($userId, $talentAddress, $talentAbn = '', $customTemplate = null) {
         try {
             $this->ensureConnection();
             
@@ -125,6 +125,17 @@ Date of Acceptance:";
             if (!$user) {
                 return ['success' => false, 'message' => 'User not found.'];
             }
+            
+            // Validate that user has first name and last name
+            if (empty($user['first_name']) || empty($user['last_name'])) {
+                return [
+                    'success' => false, 
+                    'message' => 'Cannot generate contract: User must have both first name and last name filled out in their profile. Please ask the user to complete their profile first.'
+                ];
+            }
+            
+            // Build full legal name from database
+            $talentName = trim($user['first_name'] . ' ' . $user['last_name']);
             
             // Use custom template or default
             $template = $customTemplate ?? $this->getDefaultContractTemplate();
