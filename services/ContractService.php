@@ -86,6 +86,7 @@ c) Not use the Services for any illegal, unethical, or unauthorised purpose.
 5.4. Invoicing: On or around the first (1st) day of each month, the Provider will issue an itemised invoice to the User for all Qualifying Communications from the preceding month.
 5.5. Payment Terms: The User agrees to pay the full invoice amount within fourteen (14) days of the invoice date.
 5.6. Currency: All fees are denominated in United States Dollars (USD). Payments may be made in any currency equivalent to the USD amount due at the time of payment, using prevailing exchange rates.
+5.7. Manual Review Fee: Manual review services requested outside standard processing hours incur an additional fee of One United States Dollar (US$1.00) per email processed. These fees will be included in the monthly invoice along with standard service fees.
 
 6. DATA ACCESS AND PRIVACY
 6.1. The User acknowledges and agrees that all communications sent to the provided email address will pass through and be stored on the Provider's Platform.
@@ -94,7 +95,7 @@ c) Not use the Services for any illegal, unethical, or unauthorised purpose.
 7. LIMITATION OF LIABILITY
 7.1. The Provider offers the Services on an \"as-is\" basis and does not guarantee uninterrupted or error-free operation. The Provider is not liable for any lost data or missed business opportunities resulting from the use or inability to use the Services.
 7.2. Message Processing Schedule: Incoming message communications are processed and added to the User's message platform between the hours of 12:00 PM - 1:00 PM AEST/AEDT Monday through Friday. Messages received outside these hours will be processed during the next scheduled processing window.
-7.3. Manual Review Service: The User may request a manual review of messages if they are expecting an incoming message outside the standard processing hours. This service incurs an additional fee of One United States Dollar (US$1.00) per email processed outside of the standard schedule.
+7.3. Manual Review Service: The User may request a manual review of messages if they are expecting an incoming message outside the standard processing hours. This service incurs an additional fee of One United States Dollar (US$1.00) per email processed outside of the standard schedule (see clause 5.7 for billing details).
 
 8. GOVERNING LAW
 8.1. This Agreement shall be governed by and construed in accordance with the laws of the state of New South Wales, Australia.
