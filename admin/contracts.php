@@ -209,7 +209,9 @@ ob_start();
                             </div>
                         </div>
                     </div>
-                    
+                </div>
+                
+                <div class="column is-half">
                     <!-- Editable fields for incomplete data -->
                     <div id="profile-completion-fields" style="display: none;">
                         <div class="field">
