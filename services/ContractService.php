@@ -950,9 +950,9 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             $line = trim($line);
             if (strlen($line) > 0) {
                 // Wrap long lines
-                while (strlen($line) > 75) {
-                    $contentLines[] = substr($line, 0, 75);
-                    $line = substr($line, 75);
+                while (strlen($line) > 70) {
+                    $contentLines[] = substr($line, 0, 70);
+                    $line = substr($line, 70);
                 }
                 if (strlen($line) > 0) {
                     $contentLines[] = $line;
@@ -962,26 +962,25 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
         }
         
-        // Build content stream
+        // Build content stream with proper positioning
         $yPosition = 750;
-        $stream = "BT\n/F1 11 Tf\n14 TL\n";
+        $stream = "BT\n/F1 11 Tf\n50 {$yPosition} Td\n";
         
         foreach ($contentLines as $line) {
             if ($yPosition < 50) {
-                // Start new page
-                $stream .= "ET\nendstream\nendobj\n\n";
-                // Would need to implement multi-page support here
-                break;
+                break; // Stop if we run out of page space
             }
             
             if (empty($line)) {
+                // Empty line - just move down
+                $stream .= "0 -14 Td\n";
                 $yPosition -= 14;
                 continue;
             }
             
             // Escape PDF special characters
             $line = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line);
-            $stream .= "50 {$yPosition} Td ({$line}) Tj T*\n";
+            $stream .= "({$line}) Tj\n0 -14 Td\n";
             $yPosition -= 14;
         }
         
