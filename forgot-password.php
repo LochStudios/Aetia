@@ -1,5 +1,5 @@
 <?php
-// forgot-password.php - Password reset request page for Aetia Talant Agency
+// forgot-password.php - Password reset request page for Aetia Talent Agency
 session_start();
 
 // Redirect if already logged in
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Forgot Password | Aetia Talant Agency';
+$pageTitle = 'Forgot Password | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="columns is-centered">
