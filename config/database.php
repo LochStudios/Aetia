@@ -283,6 +283,44 @@ class Database {
             
             $this->mysqli->query($createUserDocumentsTable);
 
+            // Create user_contracts table
+            $createUserContractsTable = "
+            CREATE TABLE IF NOT EXISTS user_contracts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                contract_type VARCHAR(100) NOT NULL DEFAULT 'Communications Services Agreement',
+                contract_title VARCHAR(255) NOT NULL,
+                client_name VARCHAR(255) NOT NULL,
+                client_email VARCHAR(255) NOT NULL,
+                client_phone VARCHAR(50),
+                client_address TEXT,
+                service_description TEXT NOT NULL,
+                contract_duration VARCHAR(100),
+                monthly_fee DECIMAL(10,2),
+                setup_fee DECIMAL(10,2) DEFAULT 0.00,
+                additional_terms TEXT,
+                contract_content LONGTEXT NOT NULL,
+                pdf_s3_key VARCHAR(500),
+                pdf_url VARCHAR(500),
+                status ENUM('draft', 'sent', 'signed', 'completed', 'cancelled') DEFAULT 'draft',
+                generated_by INT NOT NULL,
+                signed_date TIMESTAMP NULL,
+                signature_data TEXT,
+                signature_ip VARCHAR(45),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (generated_by) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_user_id (user_id),
+                INDEX idx_status (status),
+                INDEX idx_contract_type (contract_type),
+                INDEX idx_generated_by (generated_by),
+                INDEX idx_created_at (created_at)
+            )";
+            
+            $this->mysqli->query($createUserContractsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();

@@ -185,6 +185,11 @@ ob_start();
             <div class="action-title">Email Logs</div>
             <div class="action-desc">Monitor email delivery and statistics</div>
         </a>
+        <a href="contracts.php" class="action-card">
+            <div class="action-icon"><i class="fas fa-file-contract"></i></div>
+            <div class="action-title">Contract Management</div>
+            <div class="action-desc">Generate and manage user contracts</div>
+        </a>
         <a href="archived-messages.php" class="action-card">
             <div class="action-icon"><i class="fas fa-archive"></i></div>
             <div class="action-title">Archive</div>
