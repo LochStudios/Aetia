@@ -127,6 +127,14 @@ ob_start();
         </div>
         <div class="level-right">
             <div class="buttons">
+                <a href="messages.php" class="button is-info is-small">
+                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span>Messages</span>
+                </a>
+                <a href="send-emails.php" class="button is-primary is-small">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send Emails</span>
+                </a>
                 <a href="contact-form.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
                     <span>Contact Forms</span>
@@ -134,10 +142,6 @@ ob_start();
                 <a href="email-logs.php" class="button is-success is-small">
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
                     <span>Email History</span>
-                </a>
-                <a href="messages.php" class="button is-info is-small">
-                    <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span>Messages</span>
                 </a>
             </div>
         </div>

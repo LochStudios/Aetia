@@ -170,6 +170,28 @@ ob_start();
     <h1 class="title has-text-light">Email Logs</h1>
     <p class="subtitle has-text-light">View and filter all sent emails</p>
     
+    <!-- Navigation -->
+    <div class="field is-grouped" style="margin-bottom: 30px;">
+        <div class="control">
+            <a href="../admin/messages.php" class="button is-info">
+                <span class="icon"><i class="fas fa-comments"></i></span>
+                <span>Messages</span>
+            </a>
+        </div>
+        <div class="control">
+            <a href="../admin/send-emails.php" class="button is-primary">
+                <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                <span>Send Emails</span>
+            </a>
+        </div>
+        <div class="control">
+            <a href="../admin/users.php" class="button is-light">
+                <span class="icon"><i class="fas fa-users"></i></span>
+                <span>Users</span>
+            </a>
+        </div>
+    </div>
+    
     <!-- Statistics Section -->
     <div class="stats-section">
         <h2 class="subtitle has-text-light">Email Statistics</h2>
@@ -339,28 +361,6 @@ ob_start();
         (Page <?= $page ?> of <?= $totalPages ?>)
     </div>
     <?php endif; ?>
-    
-    <!-- Navigation -->
-    <div class="field is-grouped" style="margin-top: 30px;">
-        <div class="control">
-            <a href="../admin/messages.php" class="button is-info">
-                <span class="icon"><i class="fas fa-comments"></i></span>
-                <span>Messages</span>
-            </a>
-        </div>
-        <div class="control">
-            <a href="../admin/send-emails.php" class="button is-primary">
-                <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                <span>Send Emails</span>
-            </a>
-        </div>
-        <div class="control">
-            <a href="../admin/users.php" class="button is-light">
-                <span class="icon"><i class="fas fa-users"></i></span>
-                <span>Users</span>
-            </a>
-        </div>
-    </div>
 </div>
 
 <!-- Email Content Modal -->

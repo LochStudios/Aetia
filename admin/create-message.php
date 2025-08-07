@@ -88,13 +88,17 @@ ob_start();
                     <span class="icon"><i class="fas fa-arrow-left"></i></span>
                     <span>Back to Messages</span>
                 </a>
+                <a href="send-emails.php" class="button is-primary is-small">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send Emails</span>
+                </a>
                 <a href="contact-form.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
                     <span>Contact Forms</span>
                 </a>
-                <a href="../index.php" class="button is-light is-small">
-                    <span class="icon"><i class="fas fa-home"></i></span>
-                    <span>Back to Website</span>
+                <a href="users.php" class="button is-light is-small">
+                    <span class="icon"><i class="fas fa-users"></i></span>
+                    <span>Users</span>
                 </a>
             </div>
         </div>

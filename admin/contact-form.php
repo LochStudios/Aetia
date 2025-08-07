@@ -159,6 +159,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-comments"></i></span>
                     <span>User Messages</span>
                 </a>
+                <a href="send-emails.php" class="button is-primary is-small">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send Emails</span>
+                </a>
                 <a href="users.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-users-cog"></i></span>
                     <span>User Management</span>

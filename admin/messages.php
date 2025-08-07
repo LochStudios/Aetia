@@ -215,6 +215,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-plus"></i></span>
                     <span>New Message</span>
                 </a>
+                <a href="send-emails.php" class="button is-success is-small">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send Emails</span>
+                </a>
                 <a href="contact-form.php" class="button is-info is-small">
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
                     <span>Contact Forms</span>
