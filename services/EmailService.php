@@ -237,7 +237,7 @@ class EmailService {
     }
     
     /** Wrap email content in dark mode template */
-    private function wrapInDarkTemplate($title, $content) {
+    public function wrapInDarkTemplate($title, $content) {
         $styles = $this->getDarkModeStyles();
         
         return "

@@ -55,10 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($selectedUsers as $userId) {
                     $user = $userModel->getUserById($userId);
                     if ($user && !empty($user['email'])) {
+                        // Use the dark mode template wrapper for consistency
+                        $formattedBody = $emailService->wrapInDarkTemplate($emailSubject, $emailBody);
+                        
                         $result = $emailService->sendEmail(
                             $user['email'],
                             $emailSubject,
-                            $emailBody,
+                            $formattedBody,
                             strip_tags($emailBody),
                             [],
                             null,
@@ -100,10 +103,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 foreach ($activeUsers as $user) {
                     if (!empty($user['email'])) {
+                        // Use the dark mode template wrapper for consistency
+                        $formattedBody = $emailService->wrapInDarkTemplate($newsletterSubject, $newsletterBody);
+                        
                         $result = $emailService->sendEmail(
                             $user['email'],
                             $newsletterSubject,
-                            $newsletterBody,
+                            $formattedBody,
                             strip_tags($newsletterBody),
                             [],
                             null,
@@ -218,6 +224,22 @@ ob_start();
 <div class="email-container">
     <h1 class="title has-text-light">Send Emails to Clients</h1>
     <p class="subtitle has-text-light">Send custom emails and newsletters to your users</p>
+    
+    <!-- Navigation -->
+    <div class="field is-grouped" style="margin-bottom: 30px;">
+        <div class="control">
+            <a href="email-logs.php" class="button is-info">
+                <span class="icon"><i class="fas fa-list"></i></span>
+                <span>View Email Logs</span>
+            </a>
+        </div>
+        <div class="control">
+            <a href="messages.php" class="button is-light">
+                <span class="icon"><i class="fas fa-comments"></i></span>
+                <span>Back to Messages</span>
+            </a>
+        </div>
+    </div>
     
     <?php if ($message): ?>
         <div class="status-message status-success">
@@ -388,22 +410,6 @@ ob_start();
             </div>
         </div>
     </div>
-    
-    <!-- Navigation -->
-    <div class="field is-grouped">
-        <div class="control">
-            <a href="email-logs.php" class="button is-info">
-                <span class="icon"><i class="fas fa-list"></i></span>
-                <span>View Email Logs</span>
-            </a>
-        </div>
-        <div class="control">
-            <a href="messages.php" class="button is-light">
-                <span class="icon"><i class="fas fa-comments"></i></span>
-                <span>Back to Messages</span>
-            </a>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -432,64 +438,130 @@ function loadTemplate(type) {
         welcome: {
             subject: 'Welcome to Aetia Talent Agency!',
             body: `<h2>Welcome to Aetia Talent Agency!</h2>
-<p>Dear Valued Client,</p>
-<p>We're thrilled to have you join our community at Aetia Talent Agency. Our platform is designed to connect talented individuals with exciting opportunities.</p>
-<p>Here's what you can expect:</p>
-<ul>
-<li>Access to exclusive talent opportunities</li>
-<li>Professional networking with industry professionals</li>
-<li>Regular updates on new opportunities</li>
-<li>Dedicated support from our team</li>
-</ul>
-<p>If you have any questions, please don't hesitate to reach out to our support team.</p>
-<p>Best regards,<br>The Aetia Team</p>`
+<p>Dear Valued Talent,</p>
+<p>We're thrilled to have you join our community at Aetia Talent Agency. Our platform is designed to connect talented individuals with exciting opportunities in the entertainment and creative industries.</p>
+
+<div class='highlight-box'>
+    <h3 style='color: #209cee; margin-top: 0;'>What You Can Expect:</h3>
+    <ul>
+        <li>Access to exclusive talent opportunities and casting calls</li>
+        <li>Professional networking with industry professionals</li>
+        <li>Direct communication with talent agents and casting directors</li>
+        <li>Portfolio and profile management tools</li>
+        <li>Regular updates on new opportunities that match your skills</li>
+        <li>Dedicated support from our experienced team</li>
+    </ul>
+</div>
+
+<p>To get started, please ensure your profile is complete and up-to-date. Upload your best photos, videos, and resume to showcase your talents.</p>
+
+<p>If you have any questions about our platform or need assistance setting up your profile, please don't hesitate to contact us at <a href='mailto:talent@aetia.com.au'>talent@aetia.com.au</a></p>
+
+<p>Best regards,<br>The Aetia Talent Agency Team</p>`
         },
         update: {
-            subject: 'System Update - Aetia Platform',
-            body: `<h2>System Update Notification</h2>
-<p>Dear Users,</p>
-<p>We're excited to announce some new updates to the Aetia platform:</p>
-<ul>
-<li>Improved user interface</li>
-<li>Enhanced security features</li>
-<li>Better mobile experience</li>
-<li>New messaging capabilities</li>
-</ul>
-<p>These updates are now live and ready for you to explore. Please log in to your account to see the improvements.</p>
-<p>Thank you for your continued support!</p>
-<p>Best regards,<br>The Aetia Team</p>`
+            subject: 'Platform Updates - New Features Available',
+            body: `<h2>Exciting Platform Updates Available Now!</h2>
+<p>Dear Aetia Community,</p>
+<p>We're excited to announce some significant improvements to the Aetia Talent Agency platform based on your feedback:</p>
+
+<div class='highlight-box'>
+    <h3 style='color: #209cee; margin-top: 0;'>New Features & Improvements:</h3>
+    <ul>
+        <li>Enhanced messaging system for better communication</li>
+        <li>Improved profile management with new media upload options</li>
+        <li>Advanced search and filtering for opportunities</li>
+        <li>Mobile-optimized interface for better mobile experience</li>
+        <li>New notification system to keep you updated</li>
+        <li>Enhanced security and privacy features</li>
+    </ul>
+</div>
+
+<p style='text-align: center; margin: 30px 0;'>
+    <a href='https://aetia.com/login.php' class='button-primary'>Log In to Explore New Features</a>
+</p>
+
+<p>These updates are now live and ready for you to explore. We encourage you to log in and familiarize yourself with the new features.</p>
+
+<p>Thank you for your continued trust in Aetia Talent Agency!</p>
+
+<p>Best regards,<br>The Aetia Development Team</p>`
         },
         promotion: {
-            subject: 'Special Promotion - Limited Time Offer',
-            body: `<h2>Special Promotion Just for You!</h2>
-<p>Dear Valued Client,</p>
-<p>We're excited to offer you an exclusive promotion on our premium services.</p>
-<p><strong>Limited Time Offer:</strong></p>
-<ul>
-<li>Enhanced profile visibility</li>
-<li>Priority application processing</li>
-<li>Dedicated talent consultant</li>
-<li>Exclusive event invitations</li>
-</ul>
-<p>This offer is valid for a limited time only. Don't miss out on this opportunity to advance your career!</p>
-<p>Contact us today to learn more about this exclusive offer.</p>
-<p>Best regards,<br>The Aetia Team</p>`
+            subject: 'Exclusive Opportunity - Premium Talent Showcase',
+            body: `<h2>Exclusive Talent Showcase Opportunity!</h2>
+<p>Dear Valued Talent,</p>
+<p>We're excited to announce an exclusive opportunity for selected talent to participate in our Premium Talent Showcase event.</p>
+
+<div class='highlight-box'>
+    <h3 style='color: #209cee; margin-top: 0;'>Showcase Benefits:</h3>
+    <ul>
+        <li>Direct access to leading casting directors and agents</li>
+        <li>Professional networking opportunities</li>
+        <li>Priority consideration for upcoming projects</li>
+        <li>Professional portfolio review and feedback</li>
+        <li>Industry insights and career guidance</li>
+        <li>Potential for immediate casting opportunities</li>
+    </ul>
+</div>
+
+<div class='highlight-box' style='border-left-color: #ffdd57;'>
+    <p><strong>Event Details:</strong></p>
+    <ul>
+        <li><strong>Date:</strong> [To be confirmed based on applications]</li>
+        <li><strong>Location:</strong> Sydney/Melbourne (Multiple venues)</li>
+        <li><strong>Application Deadline:</strong> [Insert Date]</li>
+        <li><strong>Participation:</strong> By invitation and application only</li>
+    </ul>
+</div>
+
+<p>This is a unique opportunity to advance your career and connect with industry professionals. Spaces are limited and selection is competitive.</p>
+
+<p>To apply or learn more about this exclusive showcase, please contact us at <a href='mailto:showcase@aetia.com.au'>showcase@aetia.com.au</a></p>
+
+<p>Best regards,<br>The Aetia Talent Agency Team</p>`
         },
         maintenance: {
-            subject: 'Scheduled Maintenance - Aetia Platform',
-            body: `<h2>Scheduled Maintenance Notice</h2>
-<p>Dear Users,</p>
-<p>We will be performing scheduled maintenance on the Aetia platform to improve our services.</p>
-<p><strong>Maintenance Details:</strong></p>
+            subject: 'Scheduled Platform Maintenance - Brief Service Interruption',
+            body: `<h2>Scheduled Platform Maintenance Notice</h2>
+<p>Dear Aetia Community,</p>
+<p>We will be performing scheduled maintenance on the Aetia Talent Agency platform to improve performance, security, and add new features.</p>
+
+<div class='highlight-box'>
+    <h3 style='color: #209cee; margin-top: 0;'>Maintenance Schedule:</h3>
+    <ul>
+        <li><strong>Date:</strong> [Insert Specific Date]</li>
+        <li><strong>Start Time:</strong> [Insert Start Time] AEST</li>
+        <li><strong>Expected Duration:</strong> Approximately 2-3 hours</li>
+        <li><strong>End Time:</strong> [Insert End Time] AEST (estimated)</li>
+    </ul>
+</div>
+
+<div class='highlight-box' style='border-left-color: #ffdd57;'>
+    <h3 style='color: #ffdd57; margin-top: 0;'>During Maintenance:</h3>
+    <ul>
+        <li>The platform will be temporarily unavailable</li>
+        <li>You will not be able to log in or access your account</li>
+        <li>Messaging and notification services will be paused</li>
+        <li>Mobile app functionality will be limited</li>
+    </ul>
+</div>
+
+<p><strong>What's Being Improved:</strong></p>
 <ul>
-<li><strong>Date:</strong> [Insert Date]</li>
-<li><strong>Time:</strong> [Insert Time]</li>
-<li><strong>Duration:</strong> Approximately 2 hours</li>
-<li><strong>Impact:</strong> Platform will be temporarily unavailable</li>
+    <li>Enhanced platform security</li>
+    <li>Improved server performance</li>
+    <li>Database optimizations</li>
+    <li>New feature implementations</li>
 </ul>
-<p>During this time, you may experience limited access to certain features. We apologize for any inconvenience this may cause.</p>
-<p>Thank you for your patience and understanding.</p>
-<p>Best regards,<br>The Aetia Team</p>`
+
+<p>We apologize for any inconvenience this may cause and appreciate your patience as we work to improve your experience on our platform.</p>
+
+<p>For urgent matters during the maintenance window, please email us at <a href='mailto:support@aetia.com.au'>support@aetia.com.au</a></p>
+
+<p>Thank you for your understanding and continued support.</p>
+
+<p>Best regards,<br>The Aetia Technical Team</p>`
         }
     };
     
