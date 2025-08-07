@@ -60,8 +60,8 @@ C. This Agreement sets out the terms and conditions upon which the Provider will
 AGREED TERMS
 1. SERVICES
 1.1. The Provider agrees to supply the User with the following services (\"the Services\"):
-a) One (1) professional email address in a format determined by the Provider (e.g., [user.name]@aetia.com). This email address is intended for public-facing business and company communications.
-b) Access credentials to the Provider's custom-built management system (\"the Platform\").
+a) One (1) professional email address in a format determined by the Provider (e.g., [user.name]@aetia.com.au). This email address is intended for public-facing business and company communications.
+b) Access credentials to the Provider's custom-built management system (\"the Platform\") via manual login or via social connections including but not limited to Twitch, Discord, and any other OAuth system Aetia Talent Agency wishes to use.
 c) The ability for the User to view messages sent to their provided email address via the Platform.
 
 2. TERM AND TERMINATION
