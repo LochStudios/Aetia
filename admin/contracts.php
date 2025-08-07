@@ -372,14 +372,14 @@ ob_start();
                                             <span class="icon"><i class="fas fa-edit"></i></span>
                                             <span>Edit</span>
                                         </button>
-                                        <button class="button is-small is-success" onclick="generatePDF(<?= $contract['id'] ?>)">
+                                        <button class="button is-small is-success" onclick="generatePDF(<?= $contract['id'] ?>)" title="Generate preview PDF for review (does not send to user)">
                                             <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                                            <span>PDF</span>
+                                            <span>Preview PDF</span>
                                         </button>
                                         <?php if ($contract['status'] === 'draft' && empty($contract['company_accepted_date'])): ?>
-                                        <button class="button is-small is-link" onclick="sendContract(<?= $contract['id'] ?>)" title="Mark as accepted by company and send to user">
+                                        <button class="button is-small is-primary" onclick="sendContract(<?= $contract['id'] ?>)" title="Send contract to user (marks company acceptance and generates official PDF)">
                                             <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                                            <span>Send</span>
+                                            <span>Send Contract</span>
                                         </button>
                                         <?php endif; ?>
                                         <button class="button is-small is-danger" onclick="deleteContract(<?= $contract['id'] ?>)">
@@ -759,7 +759,48 @@ async function refreshContract(contractId) {
 
 // Send contract (mark as company accepted)
 async function sendContract(contractId) {
-    if (confirm('Send this contract to the user? This will mark the contract as accepted by the company and change the status to "sent". The user will then be able to accept the contract on their end.')) {
+    // Create a custom modal instead of browser confirm
+    const modal = document.createElement('div');
+    modal.className = 'modal is-active';
+    modal.innerHTML = `
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    Send Contract to User
+                </p>
+            </header>
+            <section class="modal-card-body">
+                <div class="content">
+                    <p><strong>This action will:</strong></p>
+                    <ul>
+                        <li>Mark the contract as <strong>accepted by the company</strong></li>
+                        <li>Generate an official PDF document</li>
+                        <li>Change the contract status to <strong>"sent"</strong></li>
+                        <li>Allow the user to view and accept the contract</li>
+                    </ul>
+                    <div class="notification is-info">
+                        <p><strong>Note:</strong> Once sent, the user will see an "I Accept" button on their contracts page.</p>
+                    </div>
+                </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-primary" id="confirm-send">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send Contract</span>
+                </button>
+                <button class="button" id="cancel-send">Cancel</button>
+            </footer>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle confirm
+    document.getElementById('confirm-send').addEventListener('click', async () => {
+        document.body.removeChild(modal);
+        
         try {
             const formData = new FormData();
             formData.append('action', 'send_contract');
@@ -775,7 +816,17 @@ async function sendContract(contractId) {
             console.error('Error sending contract:', error);
             alert('Failed to send contract');
         }
-    }
+    });
+    
+    // Handle cancel
+    document.getElementById('cancel-send').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Handle background click
+    modal.querySelector('.modal-background').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
 }
 
 // Close modals
