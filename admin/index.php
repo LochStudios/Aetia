@@ -146,7 +146,7 @@ $pageTitle = 'Admin Dashboard | Aetia Talent Agency';
 ob_start();
 ?>
 
-<div class="dashboard-container">
+<div class="content">
     <!-- Breadcrumbs -->
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
