@@ -47,14 +47,15 @@ if (file_exists($document['s3_url'])) {
         header('Content-Type: ' . $document['mime_type']);
         header('Content-Disposition: inline; filename="' . $document['original_filename'] . '"');
     } else {
-        // For download, force attachment
-        header('Content-Type: application/octet-stream');
+        // For download, force attachment - use generic MIME type to force download
+        header('Content-Type: application/force-download');
         header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+        header('Content-Transfer-Encoding: binary');
     }
     
     header('Content-Length: ' . filesize($document['s3_url']));
-    header('Cache-Control: no-cache');
-    header('Pragma: no-cache');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    header('Pragma: public');
     header('Expires: 0');
     
     // Log the download
