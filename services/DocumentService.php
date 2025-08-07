@@ -213,12 +213,14 @@ class DocumentService {
                     d.file_size,
                     d.mime_type,
                     d.description,
+                    d.archived,
+                    d.archived_reason,
                     d.uploaded_at,
                     u.username as uploaded_by_username
                 FROM user_documents d
                 LEFT JOIN users u ON d.uploaded_by = u.id
                 WHERE d.user_id = ?
-                ORDER BY d.uploaded_at DESC
+                ORDER BY d.archived ASC, d.uploaded_at DESC
             ");
             
             $stmt->bind_param("i", $userId);

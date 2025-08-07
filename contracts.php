@@ -88,10 +88,10 @@ ob_start();
                                 <span class="icon"><i class="fas fa-eye"></i></span>
                                 <span>View Contract</span>
                             </button>
-                            <?php if ($contract['status'] === 'sent' && empty($contract['signed_date'])): ?>
-                                <button class="card-footer-item button is-white" onclick="signContract(<?= $contract['id'] ?>)">
-                                    <span class="icon"><i class="fas fa-signature"></i></span>
-                                    <span>Sign Contract</span>
+                            <?php if ($contract['status'] === 'sent' && !empty($contract['company_accepted_date']) && empty($contract['user_accepted_date'])): ?>
+                                <button class="card-footer-item button is-primary" onclick="acceptContract(<?= $contract['id'] ?>)">
+                                    <span class="icon"><i class="fas fa-check"></i></span>
+                                    <span>I Accept</span>
                                 </button>
                             <?php endif; ?>
                         </footer>
@@ -204,16 +204,40 @@ async function viewContract(contractId) {
     }
 }
 
-// Sign contract
-function signContract(contractId) {
-    currentContractId = contractId;
-    document.getElementById('signature-name').value = '';
-    document.getElementById('signature-confirm').checked = false;
-    document.getElementById('sign-button').disabled = true;
-    document.getElementById('signing-modal').classList.add('is-active');
+// Accept contract
+async function acceptContract(contractId) {
+    if (confirm('Do you accept this Communications Services Agreement? This action cannot be undone.')) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'user_accept');
+            formData.append('contract_id', contractId);
+            
+            const response = await fetch('api/contracts.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Contract accepted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error accepting contract:', error);
+            alert('Failed to accept contract');
+        }
+    }
 }
 
-// Submit signature
+// Legacy function - keeping for compatibility but updating to call acceptContract
+function signContract(contractId) {
+    acceptContract(contractId);
+}
+
+// Submit signature (legacy function - keeping for compatibility)
 async function submitSignature() {
     const signatureName = document.getElementById('signature-name').value.trim();
     const confirmed = document.getElementById('signature-confirm').checked;

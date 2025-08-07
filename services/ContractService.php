@@ -108,12 +108,12 @@ SIGNED for and on behalf of LochStudios (trading as Aetia Talent Agency):
 
 Name: Lachlan Murdoch
 Position: CEO/Founder LochStudios and subsidiaries
-Date of Acceptance:
+Date of Acceptance: {{COMPANY_ACCEPTANCE_DATE}}
 
 ACCEPTED AND AGREED TO by the User:
 
 Name: [User's Full Legal Name]
-Date of Acceptance:";
+Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     }
     
     /**
@@ -165,8 +165,8 @@ Date of Acceptance:";
             
             // Replace placeholders
             $personalizedContract = str_replace(
-                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]', '[User\'s Full Legal Name]'],
-                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName],
+                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]', '[User\'s Full Legal Name]', '{{COMPANY_ACCEPTANCE_DATE}}', '{{USER_ACCEPTANCE_DATE}}'],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName, '', ''],
                 $template
             );
             
@@ -210,6 +210,270 @@ Date of Acceptance:";
         } catch (Exception $e) {
             error_log("Contract generation error: " . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred while generating the contract.'];
+        }
+    }
+    
+    /**
+     * Mark contract as accepted by company and update PDF
+     */
+    public function markCompanyAccepted($contractId) {
+        try {
+            $this->ensureConnection();
+            
+            // Get the contract
+            $stmt = $this->mysqli->prepare("SELECT * FROM user_contracts WHERE id = ?");
+            $stmt->bind_param("i", $contractId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $contract = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$contract) {
+                return ['success' => false, 'message' => 'Contract not found.'];
+            }
+            
+            // Update contract with company acceptance date
+            $companyAcceptanceDate = date('F j, Y');
+            $updatedContent = str_replace(
+                '{{COMPANY_ACCEPTANCE_DATE}}',
+                $companyAcceptanceDate,
+                $contract['contract_content']
+            );
+            
+            // Update database
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_contracts 
+                SET contract_content = ?, company_accepted_date = NOW(), status = 'sent', updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $updatedContent, $contractId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                // Generate and store PDF document
+                $pdfResult = $this->generateAndStoreContractPDF(
+                    $contractId, 
+                    $contract['user_id'], 
+                    $updatedContent, 
+                    'contract'
+                );
+                
+                if (!$pdfResult['success']) {
+                    error_log("Failed to generate company accepted PDF: " . $pdfResult['message']);
+                }
+                
+                return ['success' => true, 'message' => 'Contract marked as accepted by company and PDF generated.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update contract.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Company acceptance error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while processing company acceptance.'];
+        }
+    }
+    
+    /**
+     * Mark contract as accepted by user and update PDF
+     */
+    public function markUserAccepted($contractId, $userId) {
+        try {
+            $this->ensureConnection();
+            
+            // Get the contract and verify user ownership
+            $stmt = $this->mysqli->prepare("SELECT * FROM user_contracts WHERE id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $contractId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $contract = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$contract) {
+                return ['success' => false, 'message' => 'Contract not found or access denied.'];
+            }
+            
+            // Check if company has already accepted
+            if (empty($contract['company_accepted_date'])) {
+                return ['success' => false, 'message' => 'Contract must be accepted by company first.'];
+            }
+            
+            // Check if user already accepted
+            if (!empty($contract['user_accepted_date'])) {
+                return ['success' => false, 'message' => 'Contract has already been accepted by user.'];
+            }
+            
+            // Update contract with user acceptance date
+            $userAcceptanceDate = date('F j, Y');
+            $updatedContent = str_replace(
+                '{{USER_ACCEPTANCE_DATE}}',
+                $userAcceptanceDate,
+                $contract['contract_content']
+            );
+            
+            // Update database
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_contracts 
+                SET contract_content = ?, user_accepted_date = NOW(), status = 'signed', updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("si", $updatedContent, $contractId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                // Generate and store PDF document, archiving the previous one
+                $pdfResult = $this->generateAndStoreContractPDF(
+                    $contractId, 
+                    $userId, 
+                    $updatedContent, 
+                    'contract',
+                    'User signed contract - superseded by fully executed version'
+                );
+                
+                if (!$pdfResult['success']) {
+                    error_log("Failed to generate user accepted PDF: " . $pdfResult['message']);
+                }
+                
+                return ['success' => true, 'message' => 'Contract accepted successfully and PDF generated.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update contract.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("User acceptance error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while processing user acceptance.'];
+        }
+    }
+    
+    /**
+     * Generate PDF from contract content and store as document
+     */
+    private function generateAndStoreContractPDF($contractId, $userId, $contractContent, $documentType = 'contract', $archiveReason = null) {
+        try {
+            // Create a temporary file for the PDF
+            $tempFile = tempnam(sys_get_temp_dir(), 'contract_');
+            
+            // Generate PDF content using basic HTML to PDF conversion
+            $htmlContent = "
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <title>Contract</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        line-height: 1.6; 
+                        margin: 40px; 
+                        color: #333;
+                    }
+                    h1, h2, h3 { 
+                        color: #2c3e50; 
+                        page-break-after: avoid;
+                    }
+                    h1 { 
+                        text-align: center; 
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #3498db;
+                        padding-bottom: 10px;
+                    }
+                    p { 
+                        margin-bottom: 15px; 
+                        text-align: justify;
+                    }
+                    .signature-section {
+                        margin-top: 40px;
+                        border-top: 1px solid #bdc3c7;
+                        padding-top: 20px;
+                    }
+                    .page-break { 
+                        page-break-before: always; 
+                    }
+                </style>
+            </head>
+            <body>
+                " . nl2br(htmlspecialchars($contractContent)) . "
+            </body>
+            </html>";
+            
+            // Simple HTML to PDF conversion using DOMPdf (if available) or basic file writing
+            if (class_exists('Dompdf\Dompdf')) {
+                // Use DOMPdf if available
+                $dompdf = new \Dompdf\Dompdf();
+                $dompdf->loadHtml($htmlContent);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+                file_put_contents($tempFile, $dompdf->output());
+            } else {
+                // Fallback: Create a simple text file with contract content
+                file_put_contents($tempFile, $contractContent);
+            }
+            
+            // Get user info for filename
+            $user = $this->userModel->getUserById($userId);
+            $userName = $user ? ($user['first_name'] . '_' . $user['last_name']) : 'User_' . $userId;
+            $userName = preg_replace('/[^a-zA-Z0-9_]/', '', $userName);
+            
+            // Create filename
+            $timestamp = date('Y-m-d_H-i-s');
+            $filename = "Contract_{$userName}_{$timestamp}.pdf";
+            
+            // Create file array for document service
+            $fileArray = [
+                'name' => $filename,
+                'tmp_name' => $tempFile,
+                'size' => filesize($tempFile),
+                'type' => 'application/pdf',
+                'error' => UPLOAD_ERR_OK
+            ];
+            
+            // Upload to document service
+            $description = $documentType === 'contract' ? 'Company accepted contract' : 'Fully signed contract';
+            $result = $this->documentService->uploadUserDocument(
+                $userId, 
+                $fileArray, 
+                $documentType, 
+                $description,
+                $_SESSION['user_id'] ?? 1
+            );
+            
+            // Archive previous contract document if this is a user acceptance
+            if ($result['success'] && $archiveReason) {
+                $this->archivePreviousContractDocuments($userId, $archiveReason);
+            }
+            
+            // Clean up temp file
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+            
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("PDF generation error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to generate contract PDF.'];
+        }
+    }
+    
+    /**
+     * Archive previous contract documents
+     */
+    private function archivePreviousContractDocuments($userId, $reason) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_documents 
+                SET archived = TRUE, archived_reason = ? 
+                WHERE user_id = ? AND document_type = 'contract' AND archived = FALSE
+            ");
+            $stmt->bind_param("si", $reason, $userId);
+            $stmt->execute();
+            $stmt->close();
+            
+        } catch (Exception $e) {
+            error_log("Archive documents error: " . $e->getMessage());
         }
     }
     

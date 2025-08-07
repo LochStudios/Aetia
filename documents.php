@@ -319,6 +319,14 @@ document.addEventListener('DOMContentLoaded', function() {
                            (doc.document_type === 'invoice' ? 'warning' : 
                            (doc.document_type === 'agreement' ? 'info' : 'light'));
             
+            const archivedTag = doc.archived ? 
+                `<span class="tag is-dark">
+                    <span class="icon"><i class="fas fa-archive"></i></span>
+                    <span>Archived</span>
+                </span>` : '';
+            
+            const archivedClass = doc.archived ? 'has-background-grey-lighter' : '';
+            
             const previewButton = ['jpg', 'jpeg', 'png'].includes(extension) ? 
                 `<div class="control">
                     <button class="button is-info preview-btn" data-id="${doc.id}" data-filename="${doc.original_filename}">
@@ -329,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             return `
                 <div class="column is-half document-item" data-type="${doc.document_type}">
-                    <div class="card">
+                    <div class="card ${archivedClass}">
                         <div class="card-content">
                             <div class="media">
                                 <div class="media-left">
@@ -346,12 +354,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="tag">
                                             ${(doc.file_size / 1024).toFixed(1)} KB
                                         </span>
+                                        ${archivedTag}
                                     </p>
                                 </div>
                             </div>
                             
                             <div class="content">
                                 ${doc.description ? `<p><strong>Description:</strong> ${doc.description}</p>` : ''}
+                                ${doc.archived && doc.archived_reason ? `<p><strong>Archive Reason:</strong> ${doc.archived_reason}</p>` : ''}
                                 <p><strong>Uploaded:</strong> ${new Date(doc.uploaded_at).toLocaleDateString()}</p>
                                 ${doc.uploaded_by_username ? `<p><strong>Uploaded by:</strong> ${doc.uploaded_by_username}</p>` : ''}
                             </div>

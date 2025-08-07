@@ -25,8 +25,8 @@ $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
 $action = $_GET['action'] ?? 'list';
 
 // Check permissions based on action
-if ($action === 'list' || $action === 'get') {
-    // Users can view their own contracts, admins can view all
+if ($action === 'list' || $action === 'get' || $action === 'user_accept') {
+    // Users can view their own contracts and accept their own contracts, admins can view all
     // Permission check will be done within each case
 } else {
     // All other actions require admin privileges
@@ -104,6 +104,48 @@ try {
                 'success' => true,
                 'template' => $template
             ]);
+            break;
+            
+        case 'company_accept':
+            // Mark contract as accepted by company (Admin only)
+            if (!$isAdmin) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Admin privileges required']);
+                exit;
+            }
+            
+            $contractId = intval($_POST['contract_id'] ?? 0);
+            if ($contractId <= 0) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid contract ID']);
+                exit;
+            }
+            
+            $result = $contractService->markCompanyAccepted($contractId);
+            if ($result['success']) {
+                echo json_encode($result);
+            } else {
+                http_response_code(400);
+                echo json_encode($result);
+            }
+            break;
+            
+        case 'user_accept':
+            // Mark contract as accepted by user
+            $contractId = intval($_POST['contract_id'] ?? 0);
+            if ($contractId <= 0) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid contract ID']);
+                exit;
+            }
+            
+            $result = $contractService->markUserAccepted($contractId, $_SESSION['user_id']);
+            if ($result['success']) {
+                echo json_encode($result);
+            } else {
+                http_response_code(400);
+                echo json_encode($result);
+            }
             break;
             
         default:

@@ -166,6 +166,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             }
             break;
+            
+        case 'send_contract':
+            $contractId = intval($_POST['contract_id'] ?? 0);
+            
+            if ($contractId > 0) {
+                $result = $contractService->markCompanyAccepted($contractId);
+                $message = $result['message'];
+                $messageType = $result['success'] ? 'success' : 'error';
+            } else {
+                $message = 'Invalid contract ID.';
+                $messageType = 'error';
+            }
+            break;
     }
 }
 
@@ -363,6 +376,12 @@ ob_start();
                                             <span class="icon"><i class="fas fa-file-pdf"></i></span>
                                             <span>PDF</span>
                                         </button>
+                                        <?php if ($contract['status'] === 'draft' && empty($contract['company_accepted_date'])): ?>
+                                        <button class="button is-small is-link" onclick="sendContract(<?= $contract['id'] ?>)" title="Mark as accepted by company and send to user">
+                                            <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                                            <span>Send</span>
+                                        </button>
+                                        <?php endif; ?>
                                         <button class="button is-small is-danger" onclick="deleteContract(<?= $contract['id'] ?>)">
                                             <span class="icon"><i class="fas fa-trash"></i></span>
                                         </button>
@@ -734,6 +753,27 @@ async function refreshContract(contractId) {
         } catch (error) {
             console.error('Error refreshing contract:', error);
             alert('Failed to refresh contract');
+        }
+    }
+}
+
+// Send contract (mark as company accepted)
+async function sendContract(contractId) {
+    if (confirm('Send this contract to the user? This will mark the contract as accepted by the company and change the status to "sent". The user will then be able to accept the contract on their end.')) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'send_contract');
+            formData.append('contract_id', contractId);
+            
+            const response = await fetch('', {
+                method: 'POST',
+                body: formData
+            });
+            
+            location.reload(); // Reload to see the changes
+        } catch (error) {
+            console.error('Error sending contract:', error);
+            alert('Failed to send contract');
         }
     }
 }

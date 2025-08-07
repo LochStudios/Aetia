@@ -273,6 +273,8 @@ class Database {
                 file_size BIGINT NOT NULL,
                 mime_type VARCHAR(100) NOT NULL,
                 description TEXT DEFAULT NULL,
+                archived BOOLEAN DEFAULT FALSE,
+                archived_reason VARCHAR(255) DEFAULT NULL,
                 uploaded_by INT NOT NULL,
                 uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -307,6 +309,8 @@ class Database {
                 pdf_url VARCHAR(500),
                 status ENUM('draft', 'sent', 'signed', 'completed', 'cancelled') DEFAULT 'draft',
                 generated_by INT NOT NULL,
+                company_accepted_date TIMESTAMP NULL,
+                user_accepted_date TIMESTAMP NULL,
                 signed_date TIMESTAMP NULL,
                 signature_data TEXT,
                 signature_ip VARCHAR(45),
@@ -415,6 +419,44 @@ class Database {
                     $alterQuery = "ALTER TABLE users ADD COLUMN {$columnName} {$columnDefinition}";
                     $this->mysqli->query($alterQuery);
                     error_log("Added column '{$columnName}' to users table");
+                }
+            }
+            
+            // Add missing columns to user_contracts table
+            $contractColumnsToAdd = [
+                'company_accepted_date' => 'TIMESTAMP NULL',
+                'user_accepted_date' => 'TIMESTAMP NULL'
+            ];
+            
+            foreach ($contractColumnsToAdd as $columnName => $columnDefinition) {
+                // Check if column exists
+                $checkColumn = "SHOW COLUMNS FROM user_contracts LIKE '{$columnName}'";
+                $result = $this->mysqli->query($checkColumn);
+                
+                if ($result && $result->num_rows == 0) {
+                    // Column doesn't exist, add it
+                    $alterQuery = "ALTER TABLE user_contracts ADD COLUMN {$columnName} {$columnDefinition}";
+                    $this->mysqli->query($alterQuery);
+                    error_log("Added column '{$columnName}' to user_contracts table");
+                }
+            }
+            
+            // Add missing columns to user_documents table
+            $documentColumnsToAdd = [
+                'archived' => 'BOOLEAN DEFAULT FALSE',
+                'archived_reason' => 'VARCHAR(255) DEFAULT NULL'
+            ];
+            
+            foreach ($documentColumnsToAdd as $columnName => $columnDefinition) {
+                // Check if column exists
+                $checkColumn = "SHOW COLUMNS FROM user_documents LIKE '{$columnName}'";
+                $result = $this->mysqli->query($checkColumn);
+                
+                if ($result && $result->num_rows == 0) {
+                    // Column doesn't exist, add it
+                    $alterQuery = "ALTER TABLE user_documents ADD COLUMN {$columnName} {$columnDefinition}";
+                    $this->mysqli->query($alterQuery);
+                    error_log("Added column '{$columnName}' to user_documents table");
                 }
             }
         } catch (Exception $e) {
