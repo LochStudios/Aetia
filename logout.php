@@ -1,5 +1,5 @@
 <?php
-// logout.php - Logout functionality for Aetia Talant Agency
+// logout.php - Logout functionality for Aetia Talent Agency
 session_start();
 
 // Destroy all session data
