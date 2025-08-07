@@ -123,7 +123,7 @@ class DocumentService {
     /**
      * Upload a document for a user to S3 and store metadata in database
      */
-    public function uploadUserDocument($userId, $file, $documentType, $description, $uploadedBy) {
+    public function uploadUserDocument($userId, $file, $documentType, $description, $uploadedBy, $sendNotification = true) {
         try {
             $this->ensureConnection();
             
@@ -183,8 +183,12 @@ class DocumentService {
             
             if ($result) {
                 $documentId = $this->mysqli->insert_id;
-                // Send email notification to the user
-                $this->sendDocumentNotificationEmail($userId, $documentType, $file['name'], $description, $uploadedBy);
+                
+                // Send email notification to the user (if enabled)
+                if ($sendNotification) {
+                    $this->sendDocumentNotificationEmail($userId, $documentType, $file['name'], $description, $uploadedBy);
+                }
+                
                 return ['success' => true, 'message' => 'Document uploaded successfully.', 'document_id' => $documentId];
             } else {
                 return ['success' => false, 'message' => 'Failed to save document metadata.'];

@@ -350,7 +350,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     /**
      * Generate PDF from contract content and store as document
      */
-    private function generateAndStoreContractPDF($contractId, $userId, $contractContent, $documentType = 'contract', $archiveReason = null) {
+    private function generateAndStoreContractPDF($contractId, $userId, $contractContent, $documentType = 'contract', $archiveReason = null, $sendNotification = true) {
         try {
             // Create a temporary file for the PDF
             $tempFile = tempnam(sys_get_temp_dir(), 'contract_');
@@ -521,7 +521,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 $fileArray, 
                 $documentType, 
                 $description,
-                $_SESSION['user_id'] ?? 1
+                $_SESSION['user_id'] ?? 1,
+                $sendNotification  // Pass the notification parameter
             );
             
             // Archive previous contract document if this is a user acceptance
@@ -773,11 +774,12 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             return ['success' => false, 'message' => 'An error occurred while updating the contract status.'];
         }
     }
-    
-    /**
-     * Convert contract to PDF and upload as document
-     */
+    /** Convert contract to PDF and upload as document **/
     public function generateContractPDF($contractId) {
+        return $this->generateContractPDFInternal($contractId, true); // true = send email notification
+    }
+    /** Internal method to generate contract PDF with notification control **/
+    private function generateContractPDFInternal($contractId, $sendNotification = true) {
         try {
             $contract = $this->getContract($contractId);
             if (!$contract) {
@@ -822,7 +824,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 $mockFile,
                 'contract',
                 "Communications Services Agreement for {$contract['talent_name']}",
-                $_SESSION['user_id'] ?? 1
+                $_SESSION['user_id'] ?? 1,
+                $sendNotification  // Pass the notification parameter
             );
             
             // Clean up temporary files
@@ -1102,8 +1105,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             // Delete any existing PDF documents for this contract (since we're fixing issues)
             $this->deleteContractDocuments($contract['user_id']);
             
-            // Generate new PDF using the same logic as generateContractPDF
-            $result = $this->generateContractPDF($contractId);
+            // Generate new PDF using the same logic as generateContractPDF, but skip notifications
+            $result = $this->generateContractPDFInternal($contractId, false); // false = no email notifications
             
             if ($result['success']) {
                 return [
