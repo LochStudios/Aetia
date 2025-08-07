@@ -441,20 +441,135 @@ Date of Acceptance:";
     }
     
     /**
-     * Convert HTML to PDF (requires wkhtmltopdf or similar)
+     * Convert HTML to PDF using native PHP PDF functions
      */
     private function htmlToPdf($htmlFile, $outputFile) {
-        // Check if wkhtmltopdf is available
-        $wkhtmltopdf = shell_exec('which wkhtmltopdf');
-        
-        if ($wkhtmltopdf) {
-            $command = "wkhtmltopdf --page-size A4 --margin-top 20mm --margin-bottom 20mm '{$htmlFile}' '{$outputFile}' 2>&1";
-            $output = shell_exec($command);
+        try {
+            // Check if PDF extension is loaded
+            if (!extension_loaded('pdf')) {
+                error_log("PDF extension not loaded");
+                return false;
+            }
+            
+            // Read the HTML content and convert to plain text for PDF
+            $htmlContent = file_get_contents($htmlFile);
+            $textContent = $this->htmlToText($htmlContent);
+            
+            // Create PDF document
+            $pdf = pdf_new();
+            
+            if (!$pdf) {
+                error_log("Failed to create PDF object");
+                return false;
+            }
+            
+            // Open PDF file for writing
+            if (pdf_open_file($pdf, $outputFile) == 0) {
+                error_log("Failed to open PDF file for writing: " . pdf_get_errmsg($pdf));
+                pdf_delete($pdf);
+                return false;
+            }
+            
+            // Set document info
+            pdf_set_info($pdf, "Creator", "Aetia Talent Agency");
+            pdf_set_info($pdf, "Author", "LochStudios");
+            pdf_set_info($pdf, "Title", "Communications Services Agreement");
+            pdf_set_info($pdf, "Subject", "Professional Services Contract");
+            
+            // Begin page
+            pdf_begin_page($pdf, 595, 842); // A4 size in points
+            
+            // Set font
+            $font = pdf_findfont($pdf, "Helvetica", "host", 0);
+            if ($font == 0) {
+                $font = pdf_findfont($pdf, "Times-Roman", "host", 0);
+            }
+            
+            if ($font == 0) {
+                error_log("Failed to find suitable font");
+                pdf_end_page($pdf);
+                pdf_close($pdf);
+                pdf_delete($pdf);
+                return false;
+            }
+            
+            // Add content to PDF
+            $this->addTextToPdf($pdf, $font, $textContent);
+            
+            // End page and close document
+            pdf_end_page($pdf);
+            pdf_close($pdf);
+            pdf_delete($pdf);
             
             return file_exists($outputFile) && filesize($outputFile) > 0;
+            
+        } catch (Exception $e) {
+            error_log("PDF generation error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Convert HTML content to plain text
+     */
+    private function htmlToText($html) {
+        // Remove HTML tags
+        $text = strip_tags($html);
+        
+        // Convert HTML entities
+        $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+        
+        // Clean up whitespace
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim($text);
+        
+        return $text;
+    }
+    
+    /**
+     * Add text content to PDF with proper formatting
+     */
+    private function addTextToPdf($pdf, $font, $text) {
+        $fontSize = 11;
+        $lineHeight = 14;
+        $margin = 50;
+        $pageWidth = 595 - (2 * $margin); // A4 width minus margins
+        $pageHeight = 842 - (2 * $margin); // A4 height minus margins
+        $currentY = 792; // Start near top of page
+        
+        // Set font
+        pdf_setfont($pdf, $font, $fontSize);
+        
+        // Split text into lines that fit the page width
+        $words = explode(' ', $text);
+        $currentLine = '';
+        
+        foreach ($words as $word) {
+            $testLine = $currentLine . ($currentLine ? ' ' : '') . $word;
+            $textWidth = pdf_stringwidth($pdf, $testLine, $font, $fontSize);
+            
+            if ($textWidth > $pageWidth && $currentLine) {
+                // Current line is full, write it and start new line
+                pdf_show_xy($pdf, $currentLine, $margin, $currentY);
+                $currentY -= $lineHeight;
+                $currentLine = $word;
+                
+                // Check if we need a new page
+                if ($currentY < $margin) {
+                    pdf_end_page($pdf);
+                    pdf_begin_page($pdf, 595, 842);
+                    pdf_setfont($pdf, $font, $fontSize);
+                    $currentY = 792;
+                }
+            } else {
+                $currentLine = $testLine;
+            }
         }
         
-        return false; // PDF generation not available
+        // Write the last line if there is one
+        if ($currentLine) {
+            pdf_show_xy($pdf, $currentLine, $margin, $currentY);
+        }
     }
     
     /**
