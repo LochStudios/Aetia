@@ -34,6 +34,7 @@ class ContractService {
      */
     public function getDefaultContractTemplate() {
         return "Communications Services Agreement
+
 This Agreement is made on [Date]
 
 BETWEEN:
