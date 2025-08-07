@@ -205,7 +205,6 @@ ob_start();
                                     <hr>
                                     <p class="has-text-weight-bold">⚠️ Profile Incomplete</p>
                                     <p class="is-size-7">Some required information is missing. You can complete it below and it will be saved to the user's profile.</p>
-                                    <p class="is-size-7 has-text-info"><strong>Note:</strong> Completing the fields below will permanently update the user's profile information.</p>
                                 </div>
                             </div>
                         </div>
@@ -215,6 +214,7 @@ ob_start();
                     <div id="profile-completion-fields" style="display: none;">
                         <div class="field">
                             <label class="label">Complete User Profile</label>
+                            <p class="is-size-7 has-text-info"><strong>Note:</strong> Completing the fields below will permanently update the user's profile information.</p>
                         </div>
                         
                         <div class="columns">
