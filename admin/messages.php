@@ -341,7 +341,7 @@ ob_start();
                                 </div>
                             </div>
                             <div class="is-size-7 has-text-grey">
-                                To: <?= $msg['target_display_name'] === 'admin' ? 'Aetia Talant Agency' : htmlspecialchars($msg['target_display_name']) ?>
+                                To: <?= $msg['target_display_name'] === 'admin' ? 'Aetia Talent Agency' : htmlspecialchars($msg['target_display_name']) ?>
                                 <span class="ml-2">•</span>
                                 <span class="ml-1"><?= formatDateForUser($msg['created_at'], 'M j, Y') ?></span>
                                 <?php if ($msg['comment_count'] > 0): ?>
