@@ -1099,8 +1099,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 return ['success' => false, 'message' => 'Contract not found.'];
             }
             
-            // First, archive any existing PDF documents for this contract
-            $this->archiveContractDocuments($contract['user_id'], 'PDF regenerated on ' . date('Y-m-d H:i:s'));
+            // Delete any existing PDF documents for this contract (since we're fixing issues)
+            $this->deleteContractDocuments($contract['user_id']);
             
             // Generate new PDF using the same logic as generateContractPDF
             $result = $this->generateContractPDF($contractId);
@@ -1108,7 +1108,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             if ($result['success']) {
                 return [
                     'success' => true,
-                    'message' => 'PDF regenerated successfully and previous versions archived.',
+                    'message' => 'PDF regenerated successfully and replaced the previous version.',
                     'document_id' => $result['document_id'] ?? null
                 ];
             } else {
@@ -1125,27 +1125,44 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     }
     
     /**
-     * Archive existing contract documents
+     * Delete existing contract documents (for regeneration)
      */
-    private function archiveContractDocuments($userId, $reason) {
+    private function deleteContractDocuments($userId) {
         try {
             $this->ensureConnection();
             
+            // First get the documents we need to delete (to clean up files)
             $stmt = $this->mysqli->prepare("
-                UPDATE user_documents 
-                SET archived = TRUE, archived_reason = ? 
+                SELECT id, s3_key, s3_url 
+                FROM user_documents 
                 WHERE user_id = ? AND document_type = 'contract' AND archived = FALSE
             ");
-            $stmt->bind_param("si", $reason, $userId);
-            $result = $stmt->execute();
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $documents = $result->fetch_all(MYSQLI_ASSOC);
             $stmt->close();
             
-            if ($result) {
-                error_log("Archived existing contract documents for user $userId");
+            // Delete each document using DocumentService to properly clean up files
+            if (!empty($documents)) {
+                foreach ($documents as $document) {
+                    // Delete the database record and file
+                    $deleteStmt = $this->mysqli->prepare("DELETE FROM user_documents WHERE id = ?");
+                    $deleteStmt->bind_param("i", $document['id']);
+                    $deleteStmt->execute();
+                    $deleteStmt->close();
+                    
+                    // Clean up the actual file if it exists locally
+                    if (!empty($document['s3_url']) && file_exists($document['s3_url'])) {
+                        unlink($document['s3_url']);
+                    }
+                }
+                
+                error_log("Deleted " . count($documents) . " existing contract documents for user $userId");
             }
             
         } catch (Exception $e) {
-            error_log("Archive contract documents error: " . $e->getMessage());
+            error_log("Delete contract documents error: " . $e->getMessage());
         }
     }
 

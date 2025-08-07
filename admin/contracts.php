@@ -412,7 +412,7 @@ ob_start();
                                             <span class="icon"><i class="fas fa-download"></i></span>
                                             <span>Download PDF</span>
                                         </button>
-                                        <button class="button is-small is-info" onclick="regeneratePDF(<?= $contract['id'] ?>)" title="Regenerate PDF file (archives old version)">
+                                        <button class="button is-small is-info" onclick="regeneratePDF(<?= $contract['id'] ?>)" title="Regenerate PDF file (replaces current version)">
                                             <span class="icon"><i class="fas fa-redo"></i></span>
                                             <span>Regenerate PDF</span>
                                         </button>
@@ -731,7 +731,7 @@ function saveContract() {
 
 // Regenerate PDF
 async function regeneratePDF(contractId) {
-    if (confirm('Regenerate the PDF for this contract? This will archive the current PDF and create a new one with the latest contract content.')) {
+    if (confirm('Regenerate the PDF for this contract? This will delete the current PDF and replace it with a new one generated from the latest contract content.')) {
         try {
             const formData = new FormData();
             formData.append('action', 'regenerate_pdf');
