@@ -76,7 +76,7 @@ ob_start();
                 <span class="icon"><i class="fas fa-info-circle"></i></span>
                 <span><strong>Get in Touch:</strong> We'd love to hear from you! Whether you have questions about our services, want to discuss a collaboration, or need support, please don't hesitate to reach out.</span>
             </span><br>
-            You can also email us directly at <a href="mailto:talant@aetia.com.au">talant@aetia.com.au</a>.
+            You can also email us directly at <a href="mailto:talent@aetia.com.au">talent@aetia.com.au</a>.
         </div>
         
         <form method="POST" id="contact-form">
@@ -131,7 +131,7 @@ ob_start();
         <div class="notification is-success is-light">
             <p><strong>Thank you for your message!</strong></p>
             <p>We have received your inquiry and will get back to you as soon as possible.</p>
-            <p>If you need immediate assistance, please email us directly at <a href="mailto:talant@aetia.com.au">talant@aetia.com.au</a>.</p>
+            <p>If you need immediate assistance, please email us directly at <a href="mailto:talent@aetia.com.au">talent@aetia.com.au</a>.</p>
         </div>
         
         <div class="buttons">
