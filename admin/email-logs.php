@@ -196,7 +196,7 @@ try {
 $pageTitle = 'Email Logs | Aetia Admin';
 ob_start();
 ?>
-<div class="email-logs-container">
+<div class="content">
     <!-- Breadcrumbs -->
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>

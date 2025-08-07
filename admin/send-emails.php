@@ -155,12 +155,6 @@ ob_start();
 ?>
 
 <style>
-    .email-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-    
     .email-section {
         background: rgba(255, 255, 255, 0.1);
         border-radius: 8px;
@@ -221,7 +215,7 @@ ob_start();
     }
 </style>
 
-<div class="email-container">
+<div class="content">
     <!-- Breadcrumbs -->
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
