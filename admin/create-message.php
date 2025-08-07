@@ -347,7 +347,7 @@ ob_start();
                     <!-- Submit Button -->
                     <div class="field">
                         <div class="control">
-                            <button class="button is-primary is-large" type="submit">
+                            <button class="button is-primary is-medium" type="submit">
                                 <span class="icon"><i class="fas fa-paper-plane"></i></span>
                                 <span>Send Message</span>
                             </button>
