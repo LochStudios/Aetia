@@ -1,5 +1,5 @@
 <?php
-// profile.php - User profile page for Aetia Talant Agency
+// profile.php - User profile page for Aetia Talent Agency
 session_start();
 
 // Include timezone utilities
@@ -211,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-$pageTitle = 'Profile | Aetia Talant Agency';
+$pageTitle = 'Profile | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="content">
