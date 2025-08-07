@@ -12,6 +12,16 @@ $pageTitle = 'My Documents | Aetia';
 ob_start();
 ?>
 
+<div class="content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>My Documents</span></a></li>
+        </ul>
+    </nav>
+</div>
+
 <!-- Loading State -->
 <div id="loading-state" class="content">
     <div class="has-text-centered">
@@ -40,14 +50,6 @@ ob_start();
 
 <!-- Main Content -->
 <div id="main-content" class="content" style="display: none;">
-    <!-- Breadcrumbs -->
-    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
-        <ul>
-            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>My Documents</span></a></li>
-        </ul>
-    </nav>
-    
     <div class="level">
         <div class="level-left">
             <h2 class="title is-2 has-text-white">
