@@ -1075,21 +1075,21 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
      * Convert HTML content to plain text
      */
     private function htmlToText($html) {
-        // First handle line breaks and paragraphs
-        $text = str_replace(['<br>', '<br/>', '<br />'], "\n", $html);
-        $text = str_replace(['</p>', '</div>', '</h1>', '</h2>', '</h3>'], "\n\n", $text);
-        
+        // Remove style blocks completely
+        $text = preg_replace('/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/mi', '', $html);
+        // Remove script blocks completely
+        $text = preg_replace('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi', '', $text);
+        // Handle line breaks and paragraphs
+        $text = str_replace(['<br>', '<br/>', '<br />'], "\n", $text);
+        $text = str_replace(['</p>', '</div>', '</h1>', '</h2>', '</h3>', '</li>'], "\n\n", $text);
         // Remove all other HTML tags
         $text = strip_tags($text);
-        
         // Convert HTML entities
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
-        
         // Clean up excessive whitespace while preserving line breaks
         $text = preg_replace('/[ \t]+/', ' ', $text); // Replace multiple spaces/tabs with single space
         $text = preg_replace('/\n\s*\n\s*\n/', "\n\n", $text); // Replace multiple line breaks with double line break
         $text = trim($text);
-        
         return $text;
     }
     
