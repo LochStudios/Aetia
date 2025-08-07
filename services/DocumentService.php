@@ -38,9 +38,11 @@ class DocumentService {
                     'secret' => $this->getSecretKey(),
                 ],
             ]);
+            
+            error_log("DocumentService: S3 client initialized successfully");
         } catch (Exception $e) {
-            error_log("Object Storage Client initialization failed (DocumentService): " . $e->getMessage());
-            throw new Exception("Document service initialization failed: " . $e->getMessage());
+            error_log("DocumentService: S3 initialization failed - this is a critical error: " . $e->getMessage());
+            throw new Exception("Document service initialization failed - S3 configuration required: " . $e->getMessage());
         }
     }
     
@@ -319,20 +321,6 @@ class DocumentService {
             
         } catch (AwsException $e) {
             error_log("DocumentService: S3 Upload error: " . $e->getMessage());
-            
-            // Fallback to local storage for development
-            error_log("DocumentService: Falling back to local storage");
-            $uploadDir = __DIR__ . '/../uploads/documents/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            
-            $localPath = $uploadDir . basename($s3Key);
-            if (copy($filePath, $localPath)) {
-                error_log("DocumentService: Local fallback successful: " . $localPath);
-                return $localPath; // Return local path for fallback
-            }
-            
             return false;
         } catch (Exception $e) {
             error_log("DocumentService: General upload error: " . $e->getMessage());
@@ -357,16 +345,7 @@ class DocumentService {
             
         } catch (AwsException $e) {
             error_log("DocumentService: S3 Delete error: " . $e->getMessage());
-            
-            // Fallback to local file deletion for development
-            error_log("DocumentService: Falling back to local file deletion");
-            $localPath = __DIR__ . '/../uploads/documents/' . basename($s3Key);
-            if (file_exists($localPath)) {
-                unlink($localPath);
-                error_log("DocumentService: Local file deleted: " . $localPath);
-            }
-            
-            return true; // Return true even if S3 fails but local cleanup succeeds
+            return false;
         } catch (Exception $e) {
             error_log("DocumentService: General deletion error: " . $e->getMessage());
             return false;
@@ -393,12 +372,10 @@ class DocumentService {
             
         } catch (AwsException $e) {
             error_log("DocumentService: S3 Signed URL error: " . $e->getMessage());
-            
-            // Fallback: return the s3Key (which might be a local path)
-            return $s3Key;
+            return false;
         } catch (Exception $e) {
             error_log("DocumentService: General signed URL error: " . $e->getMessage());
-            return $s3Key; // Fallback
+            return false;
         }
     }
 }

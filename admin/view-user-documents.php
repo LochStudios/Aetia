@@ -283,12 +283,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="title is-4">${user.username}</p>
                         <p class="subtitle is-6">
                             <span class="tag is-${user.account_type === 'manual' ? 'info' : 'link'}">
-                                ${user.account_type.charAt(0).toUpperCase() + user.account_type.slice(1)} Account
+                                ${user.account_type ? (user.account_type.charAt(0).toUpperCase() + user.account_type.slice(1)) : 'Unknown'} Account
                             </span>
                             ${user.is_admin == 1 ? '<span class="tag is-info"><span class="icon"><i class="fas fa-crown"></i></span><span>Administrator</span></span>' : ''}
                         </p>
                         <div class="content">
-                            <p><strong>Email:</strong> ${user.email}</p>
+                            <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
                             ${user.first_name || user.last_name ? `<p><strong>Name:</strong> ${(user.first_name || '') + ' ' + (user.last_name || '')}</p>` : ''}
                         </div>
                     </div>
