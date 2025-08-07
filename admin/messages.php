@@ -238,6 +238,10 @@ ob_start();
                     <span class="icon"><i class="fas fa-envelope-open-text"></i></span>
                     <span>Email History</span>
                 </a>
+                <a href="generate-bills.php" class="button is-warning is-small">
+                    <span class="icon"><i class="fas fa-receipt"></i></span>
+                    <span>Generate Bills</span>
+                </a>
                 <a href="archived-messages.php" class="button is-dark is-small">
                     <span class="icon"><i class="fas fa-archive"></i></span>
                     <span>Archived Messages</span>

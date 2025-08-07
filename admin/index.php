@@ -195,6 +195,11 @@ ob_start();
             <div class="action-title">Archive</div>
             <div class="action-desc">View archived messages and data</div>
         </a>
+        <a href="generate-bills.php" class="action-card">
+            <div class="action-icon"><i class="fas fa-receipt"></i></div>
+            <div class="action-title">Generate Bills</div>
+            <div class="action-desc">Generate client billing information</div>
+        </a>
     </div>
     
     <!-- Statistics Overview -->
