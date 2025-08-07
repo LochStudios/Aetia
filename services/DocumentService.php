@@ -2,6 +2,8 @@
 // services/DocumentService.php - Service for managing user documents in S3
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../services/EmailService.php';
 require_once '/home/aetiacom/vendors/aws-autoloader.php';
 
 use Aws\S3\S3Client;
@@ -14,10 +16,14 @@ class DocumentService {
     private $bucketName;
     private $region;
     private $endpoint;
+    private $userModel;
+    private $emailService;
     
     public function __construct() {
         $this->database = new Database();
         $this->mysqli = $this->database->getConnection();
+        $this->userModel = new User();
+        $this->emailService = new EmailService();
         
         // Object Storage Configuration
         $this->bucketName = $this->getBucketName();
@@ -176,7 +182,10 @@ class DocumentService {
             $stmt->close();
             
             if ($result) {
-                return ['success' => true, 'message' => 'Document uploaded successfully.'];
+                $documentId = $this->mysqli->insert_id;
+                // Send email notification to the user
+                $this->sendDocumentNotificationEmail($userId, $documentType, $file['name'], $description, $uploadedBy);
+                return ['success' => true, 'message' => 'Document uploaded successfully.', 'document_id' => $documentId];
             } else {
                 return ['success' => false, 'message' => 'Failed to save document metadata.'];
             }
@@ -375,6 +384,81 @@ class DocumentService {
             return false;
         } catch (Exception $e) {
             error_log("DocumentService: General signed URL error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /** Send document notification email to user **/
+    private function sendDocumentNotificationEmail($userId, $documentType, $filename, $description, $uploadedBy) {
+        try {
+            // Get user details
+            $user = $this->userModel->getUserById($userId);
+            if (!$user) {
+                error_log("DocumentService: Cannot send email notification - user not found for ID: {$userId}");
+                return false;
+            }
+            // Get uploader details
+            $uploader = $this->userModel->getUserById($uploadedBy);
+            $uploaderName = 'Aetia Team';
+            if ($uploader) {
+                $uploaderName = !empty($uploader['first_name']) ? 
+                    trim($uploader['first_name'] . ' ' . ($uploader['last_name'] ?? '')) : 
+                    $uploader['username'];
+            }
+            // Determine user display name
+            $userName = !empty($user['first_name']) ? 
+                trim($user['first_name'] . ' ' . ($user['last_name'] ?? '')) : 
+                $user['username'];
+            // Format document type for display
+            $documentTypeDisplay = ucfirst(str_replace('_', ' ', $documentType));
+            $subject = "New Document Available: {$filename}";
+            $content = "
+            <h2>New Document Available</h2>
+            <div class='highlight-box'>
+                <p><strong>Hello {$userName},</strong></p>
+                <p>A new document has been uploaded to your account by <strong>{$uploaderName}</strong>.</p>
+            </div>
+            <h3>Document Details:</h3>
+            <div class='highlight-box' style='border-left-color: #209cee;'>
+                <p><strong>Document Name:</strong> " . htmlspecialchars($filename) . "</p>
+                <p><strong>Document Type:</strong> {$documentTypeDisplay}</p>
+                " . (!empty($description) ? "<p><strong>Description:</strong> " . htmlspecialchars($description) . "</p>" : "") . "
+            </div>
+            <h3>How to Access Your Document:</h3>
+            <ol>
+                <li>Log in to your Aetia account</li>
+                <li>Go to the <strong>Documents</strong> section</li>
+                <li>Find and download your new document</li>
+            </ol>
+            <p style='text-align: center; margin: 30px 0;'>
+                <a href='https://aetia.com/login.php' class='button-primary'>Log In to View Documents</a>
+            </p>
+            <div class='highlight-box' style='background-color: #2a2d2e; border-left-color: #ffdd57;'>
+                <p style='color: #b0b3b5; font-size: 14px; margin: 0;'>
+                    <strong>Note:</strong> This document is securely stored and only accessible through your Aetia account. 
+                    If you have any questions about this document, please contact our support team.
+                </p>
+            </div>
+            ";
+            $body = $this->emailService->wrapInDarkTemplate($subject, $content);
+            $result = $this->emailService->sendEmail(
+                $user['email'], 
+                $subject, 
+                $body, 
+                '', 
+                [], 
+                null, 
+                'document_upload', 
+                $uploadedBy
+            );
+            if ($result) {
+                error_log("DocumentService: Email notification sent successfully to {$user['email']} for document: {$filename}");
+            } else {
+                error_log("DocumentService: Failed to send email notification to {$user['email']} for document: {$filename}");
+            }
+            return $result;
+        } catch (Exception $e) {
+            error_log("DocumentService: Email notification error: " . $e->getMessage());
             return false;
         }
     }
