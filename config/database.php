@@ -97,6 +97,9 @@ class Database {
                 deactivated_by VARCHAR(100),
                 deactivation_date TIMESTAMP NULL,
                 signup_email_sent BOOLEAN DEFAULT FALSE,
+                public_email VARCHAR(100) NULL,
+                abn_acn VARCHAR(20) NULL,
+                address TEXT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
@@ -397,7 +400,9 @@ class Database {
                 'deactivated_by' => 'VARCHAR(100)',
                 'deactivation_date' => 'TIMESTAMP NULL',
                 'signup_email_sent' => 'BOOLEAN DEFAULT FALSE',
-                'public_email' => 'VARCHAR(100) NULL'
+                'public_email' => 'VARCHAR(100) NULL',
+                'abn_acn' => 'VARCHAR(20) NULL',
+                'address' => 'TEXT NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {
