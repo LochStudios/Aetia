@@ -372,14 +372,15 @@ ob_start();
                                             <span class="icon"><i class="fas fa-edit"></i></span>
                                             <span>Edit</span>
                                         </button>
-                                        <button class="button is-small is-success" onclick="generatePDF(<?= $contract['id'] ?>)" title="Generate preview PDF for review (does not send to user)">
-                                            <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                                            <span>Preview PDF</span>
-                                        </button>
                                         <?php if ($contract['status'] === 'draft' && empty($contract['company_accepted_date'])): ?>
-                                        <button class="button is-small is-primary" onclick="sendContract(<?= $contract['id'] ?>)" title="Send contract to user (marks company acceptance and generates official PDF)">
-                                            <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                                            <span>Send Contract</span>
+                                        <button class="button is-small is-primary" onclick="sendContract(<?= $contract['id'] ?>)" title="Generate and send PDF to user (marks company acceptance)">
+                                            <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                                            <span>Generate & Send PDF</span>
+                                        </button>
+                                        <?php else: ?>
+                                        <button class="button is-small is-success" onclick="generatePDF(<?= $contract['id'] ?>)" title="Download PDF copy">
+                                            <span class="icon"><i class="fas fa-download"></i></span>
+                                            <span>Download PDF</span>
                                         </button>
                                         <?php endif; ?>
                                         <button class="button is-small is-danger" onclick="deleteContract(<?= $contract['id'] ?>)">
@@ -767,8 +768,8 @@ async function sendContract(contractId) {
         <div class="modal-card">
             <header class="modal-card-head">
                 <p class="modal-card-title">
-                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                    Send Contract to User
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    Generate and Send PDF Contract
                 </p>
             </header>
             <section class="modal-card-body">
@@ -776,19 +777,20 @@ async function sendContract(contractId) {
                     <p><strong>This action will:</strong></p>
                     <ul>
                         <li>Mark the contract as <strong>accepted by the company</strong></li>
-                        <li>Generate an official PDF document</li>
+                        <li>Generate an official PDF document with company acceptance date</li>
+                        <li>Store the PDF in the user's documents</li>
                         <li>Change the contract status to <strong>"sent"</strong></li>
                         <li>Allow the user to view and accept the contract</li>
                     </ul>
                     <div class="notification is-info">
-                        <p><strong>Note:</strong> Once sent, the user will see an "I Accept" button on their contracts page.</p>
+                        <p><strong>Note:</strong> Once generated, the user will see an "I Accept" button on their contracts page and the PDF will be available in their documents.</p>
                     </div>
                 </div>
             </section>
             <footer class="modal-card-foot">
                 <button class="button is-primary" id="confirm-send">
-                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                    <span>Send Contract</span>
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span>Generate & Send PDF</span>
                 </button>
                 <button class="button" id="cancel-send">Cancel</button>
             </footer>
