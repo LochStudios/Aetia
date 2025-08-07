@@ -145,8 +145,134 @@ class EmailService {
         }
     }
     
+    /** Get dark mode email styling */
+    private function getDarkModeStyles() {
+        return "
+        <style>
+            body, table, td, p, h1, h2, h3, h4, h5, h6 {
+                color: #ffffff !important;
+                font-family: Arial, sans-serif !important;
+            }
+            body {
+                background-color: #181a1b !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .email-container {
+                max-width: 600px !important;
+                margin: 0 auto !important;
+                background-color: #181a1b !important;
+                padding: 20px !important;
+            }
+            .email-header {
+                text-align: center !important;
+                margin-bottom: 30px !important;
+            }
+            .email-content {
+                background-color: #1f2122 !important;
+                border-radius: 1rem !important;
+                padding: 30px !important;
+                border: 2px solid #209cee !important;
+                box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18) !important;
+            }
+            .highlight-box {
+                background-color: #2a2d2e !important;
+                padding: 20px !important;
+                border-radius: 0.5rem !important;
+                margin: 20px 0 !important;
+                border-left: 4px solid #209cee !important;
+            }
+            .button-primary {
+                background-color: #209cee !important;
+                color: #ffffff !important;
+                padding: 12px 24px !important;
+                text-decoration: none !important;
+                border-radius: 0.5rem !important;
+                font-weight: bold !important;
+                display: inline-block !important;
+                margin: 10px 0 !important;
+                border: none !important;
+            }
+            .button-primary:hover {
+                background-color: #1a7bc4 !important;
+            }
+            .footer {
+                margin-top: 30px !important;
+                padding-top: 20px !important;
+                border-top: 1px solid #3a3d3e !important;
+                text-align: center !important;
+                color: #b0b3b5 !important;
+                font-size: 14px !important;
+            }
+            a {
+                color: #209cee !important;
+                text-decoration: none !important;
+            }
+            a:hover {
+                color: #1a7bc4 !important;
+                text-decoration: underline !important;
+            }
+            ul, ol {
+                color: #ffffff !important;
+            }
+            li {
+                margin-bottom: 8px !important;
+                color: #ffffff !important;
+            }
+            .priority-urgent {
+                color: #ff3860 !important;
+                font-weight: bold !important;
+            }
+            .priority-high {
+                color: #ffdd57 !important;
+                font-weight: bold !important;
+            }
+            .priority-normal {
+                color: #209cee !important;
+            }
+            .priority-low {
+                color: #b0b3b5 !important;
+            }
+        </style>";
+    }
+    
+    /** Wrap email content in dark mode template */
+    private function wrapInDarkTemplate($title, $content) {
+        $styles = $this->getDarkModeStyles();
+        
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>{$title}</title>
+            {$styles}
+        </head>
+        <body>
+            <div class='email-container'>
+                <div class='email-header'>
+                    <h1 style='color: #209cee; margin: 0;'>Aetia Talent Agency</h1>
+                </div>
+                <div class='email-content'>
+                    {$content}
+                </div>
+                <div class='footer'>
+                    <p>{$this->config['footer']}</p>
+                </div>
+            </div>
+        </body>
+        </html>";
+    }
+    
     /** Add footer to email body */
     private function addEmailFooter($body) {
+        // If the body is already wrapped in our dark template, return as is
+        if (strpos($body, 'email-container') !== false) {
+            return $body;
+        }
+        
+        // Legacy footer for non-templated emails
         $footer = "<br><br><hr>";
         $footer .= "<p><small>{$this->config['footer']}</small></p>";
         
@@ -325,7 +451,7 @@ class EmailService {
     public function sendWelcomeEmail($userEmail, $userName) {
         $subject = "Welcome to Aetia Talent Agency";
         
-        $body = "
+        $content = "
         <h2>Welcome to Aetia Talent Agency, {$userName}!</h2>
         <p>Thank you for joining our platform. We're excited to have you as part of our community.</p>
         <p>You can now access all features of our platform by logging in to your account.</p>
@@ -334,6 +460,8 @@ class EmailService {
         <p>Best regards,<br>The Aetia Team</p>
         ";
         
+        $body = $this->wrapInDarkTemplate($subject, $content);
+        
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'welcome');
     }
     
@@ -341,12 +469,12 @@ class EmailService {
     public function sendSignupNotificationEmail($userEmail, $userName) {
         $subject = "Account Created - Approval Required - Aetia Talent Agency";
         
-        $body = "
+        $content = "
         <h2>Welcome to Aetia Talent Agency, {$userName}!</h2>
         <p>Thank you for creating your account with us.</p>
         
-        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;'>
-            <h3 style='color: #495057; margin-top: 0;'>Important Notice</h3>
+        <div class='highlight-box'>
+            <h3 style='color: #209cee; margin-top: 0;'>Important Notice</h3>
             <p><strong>All new accounts require approval from Aetia Talent Agency.</strong></p>
             
             <p>After creating your account, our team will contact you to discuss:</p>
@@ -367,6 +495,8 @@ class EmailService {
         <p>Best regards,<br>The Aetia Team</p>
         ";
         
+        $body = $this->wrapInDarkTemplate($subject, $content);
+        
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'signup_notification');
     }
     
@@ -374,19 +504,31 @@ class EmailService {
     public function sendPasswordResetEmail($userEmail, $userName, $resetCode, $resetUrl) {
         $subject = "Password Reset Request - Aetia Talent Agency";
         
-        $body = "
+        $content = "
         <h2>Password Reset Request</h2>
         <p>Hello {$userName},</p>
         <p>We received a request to reset your password for your Aetia Talent Agency account.</p>
-        <p>Click the link below to reset your password:</p>
-        <p><a href='{$resetUrl}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Reset Password</a></p>
+        <p>Click the button below to reset your password:</p>
+        <p style='text-align: center; margin: 30px 0;'>
+            <a href='{$resetUrl}' class='button-primary'>Reset Password</a>
+        </p>
         <p>If the button doesn't work, copy and paste this link into your browser:</p>
-        <p>{$resetUrl}</p>
-        <p>This link will expire in 1 hour for security reasons.</p>
-        <p>If you didn't request this password reset, please ignore this email.</p>
+        <p style='word-break: break-all;'><a href='{$resetUrl}'>{$resetUrl}</a></p>
+        
+        <div class='highlight-box'>
+            <p><strong>Security Notice:</strong></p>
+            <ul>
+                <li>This link will expire in 1 hour for security reasons</li>
+                <li>If you didn't request this password reset, please ignore this email</li>
+                <li>Your account remains secure</li>
+            </ul>
+        </div>
+        
         <br>
         <p>Best regards,<br>The Aetia Team</p>
         ";
+        
+        $body = $this->wrapInDarkTemplate($subject, $content);
         
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'password_reset');
     }
@@ -395,58 +537,61 @@ class EmailService {
     public function sendNewMessageNotification($userEmail, $userName, $messageSubject, $messagePriority = 'normal') {
         $subject = "New Message: " . $messageSubject;
         
-        // Set priority indicator
+        // Set priority indicator and styling
         $priorityText = '';
-        $priorityClass = 'info';
+        $priorityClass = 'priority-normal';
         switch ($messagePriority) {
             case 'urgent':
                 $priorityText = '[URGENT] ';
-                $priorityClass = 'danger';
+                $priorityClass = 'priority-urgent';
                 break;
             case 'high':
                 $priorityText = '[HIGH PRIORITY] ';
-                $priorityClass = 'warning';
+                $priorityClass = 'priority-high';
                 break;
             case 'normal':
-                $priorityClass = 'info';
+                $priorityClass = 'priority-normal';
                 break;
             case 'low':
-                $priorityClass = 'light';
+                $priorityClass = 'priority-low';
                 break;
         }
         
         $subject = $priorityText . $subject;
         
-        $body = "
-        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-            <h2 style='color: #3273dc;'>You Have a New Message</h2>
+        $content = "
+        <h2>You Have a New Message</h2>
+        
+        <div class='highlight-box'>
+            <p><strong>Hello " . htmlspecialchars($userName) . ",</strong></p>
+            <p>You have received a new message from <strong>Aetia Talent Agency</strong>.</p>
             
-            <div style='background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;'>
-                <p><strong>Hello " . htmlspecialchars($userName) . ",</strong></p>
-                <p>You have received a new message from <strong>Aetia Talent Agency</strong>.</p>
-                
-                <div style='margin: 15px 0;'>
-                    <p><strong>Subject:</strong> " . htmlspecialchars($messageSubject) . "</p>
-                    <p><strong>Priority:</strong> <span style='color: " . ($priorityClass === 'danger' ? '#ff3860' : ($priorityClass === 'warning' ? '#ffdd57' : '#3273dc')) . ";'>" . ucfirst($messagePriority) . "</span></p>
-                </div>
+            <div style='margin: 15px 0;'>
+                <p><strong>Subject:</strong> " . htmlspecialchars($messageSubject) . "</p>
+                <p><strong>Priority:</strong> <span class='{$priorityClass}'>" . ucfirst($messagePriority) . "</span></p>
             </div>
-            
-            <p><strong>To view and respond to this message:</strong></p>
-            <ol>
-                <li>Log in to your Aetia account</li>
-                <li>Go to your Messages section</li>
-                <li>Click on the new message to read and respond</li>
-            </ol>
-            
-            <div style='background-color: #209cee; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;'>
-                <a href='https://aetia.com/login.php' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>Log In to View Message</a>
-            </div>
-            
-            <p style='color: #666; font-size: 14px;'>
+        </div>
+        
+        <p><strong>To view and respond to this message:</strong></p>
+        <ol>
+            <li>Log in to your Aetia account</li>
+            <li>Go to your Messages section</li>
+            <li>Click on the new message to read and respond</li>
+        </ol>
+        
+        <p style='text-align: center; margin: 30px 0;'>
+            <a href='https://aetia.com/login.php' class='button-primary'>Log In to View Message</a>
+        </p>
+        
+        <div class='highlight-box' style='background-color: #2a2d2e; border-left-color: #ffdd57;'>
+            <p style='color: #b0b3b5; font-size: 14px; margin: 0;'>
                 <strong>Note:</strong> This is an automated notification. Please do not reply to this email directly. 
                 Use the message system on the website to respond.
             </p>
-        </div>";
+        </div>
+        ";
+        
+        $body = $this->wrapInDarkTemplate($subject, $content);
         
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'new_message');
     }
@@ -458,12 +603,16 @@ class EmailService {
             $adminEmails = $this->getAdminEmails();
         }
         
-        $body = "
+        $content = "
         <h2>Admin Notification</h2>
-        <p>{$message}</p>
+        <div class='highlight-box'>
+            <p>{$message}</p>
+        </div>
         <br>
-        <p>This is an automated notification from the Aetia Talent Agency system.</p>
+        <p style='color: #b0b3b5; font-size: 14px;'>This is an automated notification from the Aetia Talent Agency system.</p>
         ";
+        
+        $body = $this->wrapInDarkTemplate($subject, $content);
         
         foreach ($adminEmails as $email) {
             $this->sendEmail($email, $subject, $body);
@@ -476,16 +625,25 @@ class EmailService {
     public function sendContactFormNotification($contactData) {
         $subject = "New Contact Form Submission - Aetia Talent Agency";
         
-        $body = "
+        $content = "
         <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> {$contactData['name']}</p>
-        <p><strong>Email:</strong> {$contactData['email']}</p>
-        <p><strong>Subject:</strong> {$contactData['subject']}</p>
-        <p><strong>Message:</strong></p>
-        <p>{$contactData['message']}</p>
+        
+        <div class='highlight-box'>
+            <p><strong>Name:</strong> " . htmlspecialchars($contactData['name']) . "</p>
+            <p><strong>Email:</strong> <a href='mailto:" . htmlspecialchars($contactData['email']) . "'>" . htmlspecialchars($contactData['email']) . "</a></p>
+            <p><strong>Subject:</strong> " . htmlspecialchars($contactData['subject']) . "</p>
+        </div>
+        
+        <h3>Message:</h3>
+        <div class='highlight-box' style='border-left-color: #ffdd57;'>
+            <p>" . nl2br(htmlspecialchars($contactData['message'])) . "</p>
+        </div>
+        
         <br>
-        <p>Submitted on: " . date('Y-m-d H:i:s') . "</p>
+        <p style='color: #b0b3b5; font-size: 14px;'>Submitted on: " . date('Y-m-d H:i:s') . "</p>
         ";
+        
+        $body = $this->wrapInDarkTemplate($subject, $content);
         
         // Send to admin emails
         $adminEmails = $this->getAdminEmails();
