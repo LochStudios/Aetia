@@ -162,8 +162,8 @@ Date of Acceptance:";
             
             // Replace placeholders
             $personalizedContract = str_replace(
-                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]'],
-                [date('F j, Y'), $talentName, $talentAddress, $userAbn],
+                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]', '[User\'s Full Legal Name]'],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName],
                 $template
             );
             
@@ -358,8 +358,8 @@ Date of Acceptance:";
             
             // Replace placeholders
             $personalizedContract = str_replace(
-                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]'],
-                [date('F j, Y'), $talentName, $talentAddress, $userAbn],
+                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]', '[User\'s Full Legal Name]'],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName],
                 $template
             );
             
