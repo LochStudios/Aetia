@@ -31,9 +31,6 @@ class DocumentService {
         $this->endpoint = $this->getEndpoint();
         
         try {
-            // Debug: Log configuration being used
-            error_log("S3 Config (DocumentService) - Region: " . $this->region . ", Endpoint: " . $this->endpoint . ", Bucket: " . $this->bucketName);
-            
             $this->s3Client = new S3Client([
                 'version' => 'latest',
                 'region' => $this->region,
@@ -44,8 +41,6 @@ class DocumentService {
                     'secret' => $this->getSecretKey(),
                 ],
             ]);
-            
-            error_log("DocumentService: S3 client initialized successfully");
         } catch (Exception $e) {
             error_log("DocumentService: S3 initialization failed - this is a critical error: " . $e->getMessage());
             throw new Exception("Document service initialization failed - S3 configuration required: " . $e->getMessage());
