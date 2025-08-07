@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         documentStats.innerHTML = `
             <div class="column is-3">
                 <div class="box has-text-centered">
-                    <p class="title is-4 has-text-black">${stats.total}</p>
+                    <p class="title is-4 has-text-white">${stats.total}</p>
                     <p class="subtitle is-6">Total Documents</p>
                 </div>
             </div>
