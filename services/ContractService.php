@@ -167,7 +167,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             // Replace placeholders
             $personalizedContract = str_replace(
                 ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]', '[User\'s Full Legal Name]', '{{COMPANY_ACCEPTANCE_DATE}}', '{{USER_ACCEPTANCE_DATE}}'],
-                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName, '', ''],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn, $talentName, '', '_____________________'],
                 $template
             );
             
@@ -962,8 +962,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
         }
         
-        // Split content into pages (about 50 lines per page to fill better)
-        $linesPerPage = 50;
+        // Split content into pages (about 55 lines per page to fill better)
+        $linesPerPage = 55;
         $pages = array_chunk($contentLines, $linesPerPage);
         $pageCount = count($pages);
         
@@ -1027,21 +1027,21 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             $pageLines = $pages[$pageIndex];
             
             // Build content stream for this page
-            $yPosition = 750;
+            $yPosition = 780;
             $stream = "BT\n/F1 11 Tf\n50 {$yPosition} Td\n";
             
             foreach ($pageLines as $line) {
                 if (empty($line)) {
                     // Empty line - just move down
-                    $stream .= "0 -14 Td\n";
-                    $yPosition -= 14;
+                    $stream .= "0 -13 Td\n";
+                    $yPosition -= 13;
                     continue;
                 }
                 
                 // Escape PDF special characters
                 $line = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line);
-                $stream .= "({$line}) Tj\n0 -14 Td\n";
-                $yPosition -= 14;
+                $stream .= "({$line}) Tj\n0 -13 Td\n";
+                $yPosition -= 13;
             }
             
             $stream .= "ET";
