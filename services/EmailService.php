@@ -356,7 +356,7 @@ class EmailService {
                 <li>Business partnership agreements</li>
             </ul>
             
-            <p><strong>You will be able to access your account once approved.</strong></p>
+            <p><strong>You can login and access the website, but email and messaging services will be activated once your account is approved.</strong></p>
         </div>
         
         <p>We appreciate your patience during the approval process. Our team will be in touch with you soon.</p>
