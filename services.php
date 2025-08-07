@@ -1,7 +1,7 @@
 <?php
-// services.php - Services page for Aetia Talant Agency
+// services.php - Services page for Aetia Talent Agency
 session_start();
-$pageTitle = 'Services | Aetia Talant Agency';
+$pageTitle = 'Services | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="content">
