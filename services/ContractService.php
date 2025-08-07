@@ -939,7 +939,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     }
     
     /**
-     * Create a robust PDF with proper cross-reference table
+     * Create a robust PDF with proper cross-reference table and multi-page support
      */
     private function createRobustPDF($textContent, $outputFile) {
         // Prepare text content
@@ -962,84 +962,108 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
         }
         
-        // Build content stream with proper positioning
-        $yPosition = 750;
-        $stream = "BT\n/F1 11 Tf\n50 {$yPosition} Td\n";
-        
-        foreach ($contentLines as $line) {
-            if ($yPosition < 50) {
-                break; // Stop if we run out of page space
-            }
-            
-            if (empty($line)) {
-                // Empty line - just move down
-                $stream .= "0 -14 Td\n";
-                $yPosition -= 14;
-                continue;
-            }
-            
-            // Escape PDF special characters
-            $line = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line);
-            $stream .= "({$line}) Tj\n0 -14 Td\n";
-            $yPosition -= 14;
-        }
-        
-        $stream .= "ET";
-        $streamLength = strlen($stream);
+        // Split content into pages (about 45 lines per page with margins)
+        $linesPerPage = 45;
+        $pages = array_chunk($contentLines, $linesPerPage);
+        $pageCount = count($pages);
         
         // Build PDF structure
         $pdf = "%PDF-1.4\n";
         $objOffsets = [];
+        $objNum = 1;
         
         // Object 1: Catalog
-        $objOffsets[1] = strlen($pdf);
-        $pdf .= "1 0 obj\n";
+        $objOffsets[$objNum] = strlen($pdf);
+        $pdf .= "{$objNum} 0 obj\n";
         $pdf .= "<<\n";
         $pdf .= "/Type /Catalog\n";
         $pdf .= "/Pages 2 0 R\n";
         $pdf .= ">>\n";
         $pdf .= "endobj\n\n";
+        $objNum++;
         
         // Object 2: Pages
-        $objOffsets[2] = strlen($pdf);
-        $pdf .= "2 0 obj\n";
+        $objOffsets[$objNum] = strlen($pdf);
+        $pdf .= "{$objNum} 0 obj\n";
         $pdf .= "<<\n";
         $pdf .= "/Type /Pages\n";
-        $pdf .= "/Kids [3 0 R]\n";
-        $pdf .= "/Count 1\n";
+        $pdf .= "/Kids [";
+        for ($i = 0; $i < $pageCount; $i++) {
+            $pdf .= ($i + 3) . " 0 R";
+            if ($i < $pageCount - 1) $pdf .= " ";
+        }
+        $pdf .= "]\n";
+        $pdf .= "/Count {$pageCount}\n";
         $pdf .= ">>\n";
         $pdf .= "endobj\n\n";
+        $objNum++;
         
-        // Object 3: Page
-        $objOffsets[3] = strlen($pdf);
-        $pdf .= "3 0 obj\n";
-        $pdf .= "<<\n";
-        $pdf .= "/Type /Page\n";
-        $pdf .= "/Parent 2 0 R\n";
-        $pdf .= "/MediaBox [0 0 612 792]\n";
-        $pdf .= "/Contents 4 0 R\n";
-        $pdf .= "/Resources <<\n";
-        $pdf .= "  /Font <<\n";
-        $pdf .= "    /F1 5 0 R\n";
-        $pdf .= "  >>\n";
-        $pdf .= ">>\n";
-        $pdf .= ">>\n";
-        $pdf .= "endobj\n\n";
+        // Page objects and content streams
+        $pageObjectNums = [];
+        $contentObjectNums = [];
         
-        // Object 4: Content stream
-        $objOffsets[4] = strlen($pdf);
-        $pdf .= "4 0 obj\n";
-        $pdf .= "<<\n";
-        $pdf .= "/Length {$streamLength}\n";
-        $pdf .= ">>\n";
-        $pdf .= "stream\n";
-        $pdf .= $stream . "\n";
-        $pdf .= "endstream\n";
-        $pdf .= "endobj\n\n";
+        for ($pageIndex = 0; $pageIndex < $pageCount; $pageIndex++) {
+            // Page object
+            $pageObjectNums[$pageIndex] = $objNum;
+            $objOffsets[$objNum] = strlen($pdf);
+            $pdf .= "{$objNum} 0 obj\n";
+            $pdf .= "<<\n";
+            $pdf .= "/Type /Page\n";
+            $pdf .= "/Parent 2 0 R\n";
+            $pdf .= "/MediaBox [0 0 612 792]\n";
+            $pdf .= "/Contents " . ($objNum + $pageCount) . " 0 R\n";
+            $pdf .= "/Resources <<\n";
+            $pdf .= "  /Font <<\n";
+            $pdf .= "    /F1 " . ($objNum + $pageCount * 2) . " 0 R\n";
+            $pdf .= "  >>\n";
+            $pdf .= ">>\n";
+            $pdf .= ">>\n";
+            $pdf .= "endobj\n\n";
+            $objNum++;
+        }
         
-        // Object 5: Font
-        $objOffsets[5] = strlen($pdf);
-        $pdf .= "5 0 obj\n";
+        // Content stream objects
+        for ($pageIndex = 0; $pageIndex < $pageCount; $pageIndex++) {
+            $pageLines = $pages[$pageIndex];
+            
+            // Build content stream for this page
+            $yPosition = 750;
+            $stream = "BT\n/F1 11 Tf\n50 {$yPosition} Td\n";
+            
+            foreach ($pageLines as $line) {
+                if (empty($line)) {
+                    // Empty line - just move down
+                    $stream .= "0 -14 Td\n";
+                    $yPosition -= 14;
+                    continue;
+                }
+                
+                // Escape PDF special characters
+                $line = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line);
+                $stream .= "({$line}) Tj\n0 -14 Td\n";
+                $yPosition -= 14;
+            }
+            
+            $stream .= "ET";
+            $streamLength = strlen($stream);
+            
+            // Content stream object
+            $contentObjectNums[$pageIndex] = $objNum;
+            $objOffsets[$objNum] = strlen($pdf);
+            $pdf .= "{$objNum} 0 obj\n";
+            $pdf .= "<<\n";
+            $pdf .= "/Length {$streamLength}\n";
+            $pdf .= ">>\n";
+            $pdf .= "stream\n";
+            $pdf .= $stream . "\n";
+            $pdf .= "endstream\n";
+            $pdf .= "endobj\n\n";
+            $objNum++;
+        }
+        
+        // Font object (shared by all pages)
+        $objOffsets[$objNum] = strlen($pdf);
+        $pdf .= "{$objNum} 0 obj\n";
         $pdf .= "<<\n";
         $pdf .= "/Type /Font\n";
         $pdf .= "/Subtype /Type1\n";
@@ -1050,17 +1074,17 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
         // Cross-reference table
         $xrefOffset = strlen($pdf);
         $pdf .= "xref\n";
-        $pdf .= "0 6\n";
+        $pdf .= "0 " . ($objNum + 1) . "\n";
         $pdf .= "0000000000 65535 f \n";
         
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= $objNum; $i++) {
             $pdf .= sprintf("%010d 00000 n \n", $objOffsets[$i]);
         }
         
         // Trailer
         $pdf .= "trailer\n";
         $pdf .= "<<\n";
-        $pdf .= "/Size 6\n";
+        $pdf .= "/Size " . ($objNum + 1) . "\n";
         $pdf .= "/Root 1 0 R\n";
         $pdf .= ">>\n";
         $pdf .= "startxref\n";
