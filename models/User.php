@@ -197,9 +197,9 @@ class User {
                 
                 // Check approval status
                 if ($user['approval_status'] === 'pending') {
-                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms.'];
+                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
                 } elseif ($user['approval_status'] === 'rejected') {
-                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talant@aetia.com.au for more information.'];
+                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talent@aetia.com.au for more information.'];
                 }
                 
                 // Check if we need to send signup notification to this user
@@ -235,9 +235,9 @@ class User {
             if ($existingUser) {
                 // Check approval status for existing user
                 if ($existingUser['approval_status'] === 'pending') {
-                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms.'];
+                    return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
                 } elseif ($existingUser['approval_status'] === 'rejected') {
-                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talant@aetia.com.au for more information.'];
+                    return ['success' => false, 'message' => 'Your account application has been declined. Please contact talent@aetia.com.au for more information.'];
                 }
                 
                 // Update existing social connection
