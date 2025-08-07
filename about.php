@@ -1,7 +1,7 @@
 <?php
-// about.php - About page for Aetia Talant Agency
+// about.php - About page for Aetia Talent Agency
 session_start();
-$pageTitle = 'About | Aetia Talant Agency';
+$pageTitle = 'About | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="content">
@@ -20,7 +20,7 @@ ob_start();
         <div class="column is-7">
             <div class="box aetia-about-box has-background-dark has-text-light">
                 <h2 class="title is-3 has-text-info">About Us</h2>
-                <p class="mb-4">Aetia Talant Agency was founded by creators, for creators. We’re not here to pretend we have all the answers—we’re here to learn, experiment, and grow with you. Our approach is collaborative, honest, and always a little bit different. If you want to break the awkwardness and do things your way, you’re in the right place.</p>
+                <p class="mb-4">Aetia Talent Agency was founded by creators, for creators. We're not here to pretend we have all the answers—we're here to learn, experiment, and grow with you. Our approach is collaborative, honest, and always a little bit different. If you want to break the awkwardness and do things your way, you're in the right place.</p>
                 <a class="button is-primary is-medium mr-2" href="contact.php">
                     <span class="icon"><i class="fas fa-envelope"></i></span>
                     <span>Contact Us</span>
