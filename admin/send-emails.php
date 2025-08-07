@@ -239,6 +239,16 @@ ob_start();
                 <span>Back to Messages</span>
             </a>
         </div>
+        <div class="control">
+            <form method="POST" style="display: inline;">
+                <button type="submit" name="test_connection" class="button is-warning">
+                    <span class="icon">
+                        <i class="fas fa-plug"></i>
+                    </span>
+                    <span>Test SMTP Connection</span>
+                </button>
+            </form>
+        </div>
     </div>
     
     <?php if ($message): ?>
@@ -252,21 +262,6 @@ ob_start();
             <strong>Error:</strong> <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
-    
-    <!-- SMTP Connection Test -->
-    <div class="email-section">
-        <h2 class="subtitle has-text-light">Test Email Configuration</h2>
-        <p class="has-text-light">Test your SMTP connection before sending emails.</p>
-        
-        <form method="POST" class="email-form">
-            <button type="submit" name="test_connection" class="button is-info">
-                <span class="icon">
-                    <i class="fas fa-plug"></i>
-                </span>
-                <span>Test SMTP Connection</span>
-            </button>
-        </form>
-    </div>
     
     <!-- Send Custom Email -->
     <div class="email-section">
