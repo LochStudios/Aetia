@@ -962,8 +962,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
         }
         
-        // Split content into pages (about 45 lines per page with margins)
-        $linesPerPage = 45;
+        // Split content into pages (about 50 lines per page to fill better)
+        $linesPerPage = 50;
         $pages = array_chunk($contentLines, $linesPerPage);
         $pageCount = count($pages);
         
