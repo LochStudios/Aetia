@@ -915,17 +915,37 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             if (!class_exists('Mpdf\\Mpdf')) {
                 // Load mPDF autoloader
                 $autoloadPath = '/home/aetiacom/vendors/mpdf/autoload.php';
-                
                 if (file_exists($autoloadPath)) {
                     require_once $autoloadPath;
                     error_log("mPDF autoloader loaded from: " . $autoloadPath);
+                    // Debug: Check what classes are available
+                    $declaredClasses = get_declared_classes();
+                    $mpdfClasses = array_filter($declaredClasses, function($class) {
+                        return stripos($class, 'mpdf') !== false;
+                    });
+                    error_log("Available mPDF classes: " . implode(', ', $mpdfClasses));
+                    // Try alternative class names
+                    $possibleClasses = [
+                        'Mpdf\\Mpdf',
+                        'mPDF',
+                        'MPDF',
+                        'Mpdf',
+                        'mpdf'
+                    ];
+                    $foundClass = null;
+                    foreach ($possibleClasses as $className) {
+                        if (class_exists($className)) {
+                            $foundClass = $className;
+                            error_log("Found mPDF class: " . $className);
+                            break;
+                        }
+                    }
+                    if (!$foundClass) {
+                        error_log("No mPDF class found. Available classes count: " . count($declaredClasses));
+                        return false;
+                    }
                 } else {
                     error_log("mPDF not found at: " . $autoloadPath);
-                    return false;
-                }
-                
-                if (!class_exists('Mpdf\\Mpdf')) {
-                    error_log("mPDF class not available after loading autoloader");
                     return false;
                 }
             }
@@ -953,14 +973,29 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 'orientation' => 'P'
             ];
             
-            // Create mPDF instance
-            $mpdf = new \Mpdf\Mpdf($config);
+            // Create mPDF instance using the found class
+            $mpdfClass = $foundClass ?? 'Mpdf\\Mpdf';
+            error_log("Creating mPDF instance using class: " . $mpdfClass);
+            
+            if ($mpdfClass === 'Mpdf\\Mpdf') {
+                $mpdf = new \Mpdf\Mpdf($config);
+            } else {
+                // For older versions of mPDF, try without config array
+                try {
+                    $mpdf = new $mpdfClass($config);
+                } catch (Exception $e) {
+                    error_log("Failed with config, trying without: " . $e->getMessage());
+                    $mpdf = new $mpdfClass();
+                }
+            }
             
             // Set document properties
-            $mpdf->SetCreator('Aetia Talent Agency');
-            $mpdf->SetAuthor('LochStudios');
-            $mpdf->SetTitle('Communications Services Agreement');
-            $mpdf->SetSubject('Professional Services Contract');
+            if (method_exists($mpdf, 'SetCreator')) {
+                $mpdf->SetCreator('Aetia Talent Agency');
+                $mpdf->SetAuthor('LochStudios');
+                $mpdf->SetTitle('Communications Services Agreement');
+                $mpdf->SetSubject('Professional Services Contract');
+            }
             
             // Add basic CSS for better formatting
             $css = '
@@ -978,11 +1013,23 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 th { background-color: #f5f5f5; font-weight: bold; }
             ';
             
-            $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
-            $mpdf->WriteHTML($htmlContent, \Mpdf\HTMLParserMode::HTML_BODY);
+            // Write CSS and HTML with version compatibility
+            if (method_exists($mpdf, 'WriteHTML') && defined('Mpdf\\HTMLParserMode::HEADER_CSS')) {
+                $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+                $mpdf->WriteHTML($htmlContent, \Mpdf\HTMLParserMode::HTML_BODY);
+            } else {
+                // Fallback for older mPDF versions
+                $mpdf->WriteHTML($css, 1); // 1 = CSS mode
+                $mpdf->WriteHTML($htmlContent, 2); // 2 = HTML mode
+            }
             
-            // Output PDF to file
-            $mpdf->Output($outputFile, \Mpdf\Output\Destination::FILE);
+            // Output PDF to file with version compatibility
+            if (method_exists($mpdf, 'Output') && defined('Mpdf\\Output\\Destination::FILE')) {
+                $mpdf->Output($outputFile, \Mpdf\Output\Destination::FILE);
+            } else {
+                // Fallback for older mPDF versions
+                $mpdf->Output($outputFile, 'F'); // 'F' = save to file
+            }
             
             // Validate the generated file
             if (!file_exists($outputFile) || filesize($outputFile) == 0) {
