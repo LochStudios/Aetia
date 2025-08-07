@@ -56,6 +56,10 @@ if (!isset($content)) $content = '';
             <span class="icon"><i class="fas fa-envelope"></i></span>
             <span>Your Messages</span>
           </a>
+          <a class="navbar-item" href="../documents.php">
+            <span class="icon"><i class="fas fa-file-contract"></i></span>
+            <span>My Documents</span>
+          </a>
           <?php endif; ?>
         </div>
         <div class="navbar-end">
