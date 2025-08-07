@@ -1,5 +1,5 @@
 <?php
-// services/TwitchOAuth.php - Twitch OAuth integration for Aetia Talant Agency
+// services/TwitchOAuth.php - Twitch OAuth integration for Aetia Talent Agency
 
 require_once '/home/aetiacom/web-config/config.php';
 
