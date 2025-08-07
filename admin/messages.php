@@ -185,7 +185,7 @@ if ($messageId) {
 $messages = $messageModel->getAllMessages($limit, $offset, $statusFilter, $tagFilter);
 $availableTags = $messageModel->getAvailableTags();
 
-$pageTitle = $currentMessage ? htmlspecialchars($currentMessage['subject']) . ' | Admin Messages' : 'Admin Messages | Aetia';
+$pageTitle = $currentMessage ? htmlspecialchars($currentMessage['subject'], ENT_QUOTES, 'UTF-8') . ' | Admin Messages' : 'Admin Messages | Aetia';
 ob_start();
 ?>
 
@@ -301,7 +301,7 @@ ob_start();
                         </span>
                         <div class="is-flex-grow-1">
                             <div class="is-flex is-justify-content-space-between is-align-items-center">
-                                <strong><?= htmlspecialchars($msg['subject']) ?></strong>
+                                <strong><?= htmlspecialchars($msg['subject'], ENT_QUOTES, 'UTF-8') ?></strong>
                                 <div class="tags">
                                     <span class="tag is-small is-<?= match($msg['priority']) {
                                         'urgent' => 'danger',
@@ -353,7 +353,7 @@ ob_start();
                 <div class="level mb-4">
                     <div class="level-left">
                         <div>
-                            <h2 class="title is-3 message-title"><?= htmlspecialchars($currentMessage['subject']) ?></h2>
+                            <h2 class="title is-3 message-title"><?= htmlspecialchars($currentMessage['subject'], ENT_QUOTES, 'UTF-8') ?></h2>
                             <p class="subtitle is-6">
                                 To: <strong><?= $currentMessage['target_display_name'] === 'admin' ? 'Aetia Talent Agency' : htmlspecialchars($currentMessage['target_display_name']) ?></strong>
                                 <span class="ml-2">•</span>

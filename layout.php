@@ -1,6 +1,9 @@
 <?php
 // layout.php - Main layout template for Aetia Talent Agency
 
+// Set UTF-8 content type header
+header('Content-Type: text/html; charset=UTF-8');
+
 // Include timezone utilities
 require_once __DIR__ . '/includes/timezone.php';
 

@@ -10,8 +10,8 @@ class LinkConverter {
      * @return string Text with URLs converted to links
      */
     public static function convertLinksToClickable($text) {
-        // First escape HTML to prevent XSS, but preserve line breaks
-        $text = htmlspecialchars($text);
+        // First escape HTML to prevent XSS, but preserve line breaks and UTF-8 characters
+        $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
         
         // Pattern to match URLs (http, https, www)
         $urlPattern = '/\b(?:(?:https?:\/\/|www\.)[^\s<>"{}|\\^`\[\]]*)/i';
@@ -29,7 +29,7 @@ class LinkConverter {
                 $displayUrl = substr($displayUrl, 0, 57) . '...';
             }
             
-            return '<a href="' . htmlspecialchars($linkUrl) . '" target="_blank" rel="noopener noreferrer" class="message-link">' . htmlspecialchars($displayUrl) . '</a>';
+            return '<a href="' . htmlspecialchars($linkUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" class="message-link">' . htmlspecialchars($displayUrl, ENT_QUOTES, 'UTF-8') . '</a>';
         }, $text);
         
         // Convert line breaks to <br> tags
@@ -50,7 +50,7 @@ class LinkConverter {
         
         return preg_replace_callback($emailPattern, function($matches) {
             $email = $matches[0];
-            return '<a href="mailto:' . htmlspecialchars($email) . '" class="message-email-link">' . htmlspecialchars($email) . '</a>';
+            return '<a href="mailto:' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '" class="message-email-link">' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '</a>';
         }, $text);
     }
     
