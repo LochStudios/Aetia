@@ -88,7 +88,10 @@ ob_start();
                                 <span class="icon"><i class="fas fa-eye"></i></span>
                                 <span>View Contract</span>
                             </button>
-                            <?php if ($contract['status'] === 'sent' && !empty($contract['company_accepted_date']) && empty($contract['user_accepted_date'])): ?>
+                            <?php if ($contract['status'] === 'sent' && 
+                                      $contract['company_accepted_date'] && 
+                                      $contract['company_accepted_date'] !== '0000-00-00 00:00:00' && 
+                                      (!$contract['user_accepted_date'] || $contract['user_accepted_date'] === '0000-00-00 00:00:00')): ?>
                                 <button class="card-footer-item button is-primary" onclick="acceptContract(<?= $contract['id'] ?>)">
                                     <span class="icon"><i class="fas fa-check"></i></span>
                                     <span>I Accept</span>

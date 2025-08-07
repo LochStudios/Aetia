@@ -295,12 +295,12 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
             
             // Check if company has already accepted
-            if (empty($contract['company_accepted_date'])) {
+            if (!$contract['company_accepted_date'] || $contract['company_accepted_date'] === '0000-00-00 00:00:00') {
                 return ['success' => false, 'message' => 'Contract must be accepted by company first.'];
             }
             
             // Check if user already accepted
-            if (!empty($contract['user_accepted_date'])) {
+            if ($contract['user_accepted_date'] && $contract['user_accepted_date'] !== '0000-00-00 00:00:00') {
                 return ['success' => false, 'message' => 'Contract has already been accepted by user.'];
             }
             
@@ -316,13 +316,20 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             $stmt = $this->mysqli->prepare("
                 UPDATE user_contracts 
                 SET contract_content = ?, user_accepted_date = NOW(), status = 'signed', updated_at = NOW()
-                WHERE id = ?
+                WHERE id = ? AND user_id = ?
             ");
-            $stmt->bind_param("si", $updatedContent, $contractId);
+            $stmt->bind_param("sii", $updatedContent, $contractId, $userId);
             $result = $stmt->execute();
+            
+            if (!$result) {
+                $stmt->close();
+                return ['success' => false, 'message' => 'Failed to update contract in database.'];
+            }
+            
+            $affectedRows = $stmt->affected_rows;
             $stmt->close();
             
-            if ($result) {
+            if ($affectedRows > 0) {
                 // Generate and store PDF document, archiving the previous one
                 $pdfResult = $this->generateAndStoreContractPDF(
                     $contractId, 
@@ -338,7 +345,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 
                 return ['success' => true, 'message' => 'Contract accepted successfully and PDF generated.'];
             } else {
-                return ['success' => false, 'message' => 'Failed to update contract.'];
+                return ['success' => false, 'message' => 'Failed to update contract - no changes made.'];
             }
             
         } catch (Exception $e) {
