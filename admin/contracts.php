@@ -126,6 +126,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
             
+        case 'refresh_contract':
+            $contractId = intval($_POST['contract_id'] ?? 0);
+            
+            if ($contractId > 0) {
+                $result = $contractService->refreshContractWithUserData($contractId);
+                $message = $result['message'];
+                $messageType = $result['success'] ? 'success' : 'error';
+            } else {
+                $message = 'Invalid contract ID.';
+                $messageType = 'error';
+            }
+            break;
+            
         case 'update_user_profile':
             $userId = intval($_POST['edit_user_id'] ?? 0);
             $firstName = trim($_POST['edit_first_name'] ?? '');
@@ -337,6 +350,10 @@ ob_start();
                                         <button class="button is-small is-info" onclick="viewContract(<?= $contract['id'] ?>)">
                                             <span class="icon"><i class="fas fa-eye"></i></span>
                                             <span>View</span>
+                                        </button>
+                                        <button class="button is-small is-primary" onclick="refreshContract(<?= $contract['id'] ?>)" title="Update contract with latest user profile data">
+                                            <span class="icon"><i class="fas fa-sync"></i></span>
+                                            <span>Refresh</span>
                                         </button>
                                         <button class="button is-small is-warning" onclick="editContract(<?= $contract['id'] ?>)">
                                             <span class="icon"><i class="fas fa-edit"></i></span>
@@ -696,6 +713,27 @@ async function deleteContract(contractId) {
         } catch (error) {
             console.error('Error deleting contract:', error);
             alert('Failed to delete contract');
+        }
+    }
+}
+
+// Refresh contract with latest user data
+async function refreshContract(contractId) {
+    if (confirm('Update this contract with the latest user profile information? This will overwrite the current contract content with fresh data from the user\'s profile.')) {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'refresh_contract');
+            formData.append('contract_id', contractId);
+            
+            const response = await fetch('', {
+                method: 'POST',
+                body: formData
+            });
+            
+            location.reload(); // Reload to see the changes
+        } catch (error) {
+            console.error('Error refreshing contract:', error);
+            alert('Failed to refresh contract');
         }
     }
 }

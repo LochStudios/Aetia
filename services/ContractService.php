@@ -310,6 +310,83 @@ Date of Acceptance:";
     }
     
     /**
+     * Refresh contract with latest user profile data
+     */
+    public function refreshContractWithUserData($contractId) {
+        try {
+            $this->ensureConnection();
+            
+            // Get the contract and user data
+            $stmt = $this->mysqli->prepare("
+                SELECT uc.*, u.first_name, u.last_name, u.address, u.abn_acn, u.username
+                FROM user_contracts uc
+                JOIN users u ON uc.user_id = u.id
+                WHERE uc.id = ?
+            ");
+            $stmt->bind_param("i", $contractId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $contractData = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$contractData) {
+                return ['success' => false, 'message' => 'Contract not found.'];
+            }
+            
+            // Get current user profile data
+            $talentName = trim(($contractData['first_name'] ?? '') . ' ' . ($contractData['last_name'] ?? ''));
+            $talentAddress = trim($contractData['address'] ?? '');
+            $userAbn = !empty($contractData['abn_acn']) ? trim($contractData['abn_acn']) : '';
+            
+            // Validate required fields
+            if (empty($talentName) || trim($talentName) === '') {
+                return ['success' => false, 'message' => 'User profile is incomplete. Please ensure the user has a first and last name.'];
+            }
+            
+            if (empty($talentAddress)) {
+                return ['success' => false, 'message' => 'User profile is incomplete. Please ensure the user has an address.'];
+            }
+            
+            // Generate new contract content with updated user data
+            $template = $this->getDefaultContractTemplate();
+            
+            // Handle ABN/ACN section dynamically
+            if (empty($userAbn)) {
+                // Remove the entire ABN/ACN line if user doesn't have one, but keep proper spacing
+                $template = preg_replace('/\s*ABN\/ACN \(if applicable\):\s*\[Talent\'s ABN\/ACN\]\s*\n/', "\n", $template);
+            }
+            
+            // Replace placeholders
+            $personalizedContract = str_replace(
+                ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]'],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn],
+                $template
+            );
+            
+            // Update the contract
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_contracts 
+                SET contract_content = ?, client_name = ?, client_address = ?, updated_at = NOW()
+                WHERE id = ?
+            ");
+            
+            $stmt->bind_param("sssi", $personalizedContract, $talentName, $talentAddress, $contractId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'Contract refreshed successfully with latest user profile data.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to refresh contract.'];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Refresh contract error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while refreshing the contract.'];
+        }
+    }
+    
+    /**
      * Change contract status
      */
     public function updateContractStatus($contractId, $status, $signedBy = null) {
