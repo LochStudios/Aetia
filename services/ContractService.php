@@ -792,7 +792,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             file_put_contents($tempHtmlFile, $htmlContent);
             
             // Generate PDF filename
-            $filename = "Contract_{$contract['talent_name']}_{$contract['id']}_" . date('Y-m-d') . ".pdf";
+            $filename = "Contract_{$contract['client_name']}_{$contract['id']}_" . date('Y-m-d') . ".pdf";
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
             
             // Create temporary PDF file
@@ -823,7 +823,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 $contract['user_id'],
                 $mockFile,
                 'contract',
-                "Communications Services Agreement for {$contract['talent_name']}",
+                "Communications Services Agreement for {$contract['client_name']}",
                 $_SESSION['user_id'] ?? 1,
                 $sendNotification  // Pass the notification parameter
             );
