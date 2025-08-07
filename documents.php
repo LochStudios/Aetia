@@ -31,7 +31,7 @@ ob_start();
         </span>
     </div>
     <div class="buttons">
-        <a href="index.php" class="button is-light">
+        <a href="index.php" class="button">
             <span class="icon"><i class="fas fa-home"></i></span>
             <span>Back to Home</span>
         </a>
@@ -57,7 +57,7 @@ ob_start();
         </div>
         <div class="level-right">
             <div class="buttons">
-                <a href="profile.php" class="button is-light is-small">
+                <a href="profile.php" class="button is-small">
                     <span class="icon"><i class="fas fa-user"></i></span>
                     <span>My Profile</span>
                 </a>
@@ -70,7 +70,7 @@ ob_start();
     </div>
     
     <!-- User Info -->
-    <div id="user-welcome" class="notification is-info is-light mb-5">
+    <div id="user-welcome" class="notification is-info mb-5">
         <!-- Will be populated by JavaScript -->
     </div>
     
@@ -85,11 +85,11 @@ ob_start();
             <p class="card-header-title">
                 <span class="icon"><i class="fas fa-file-alt"></i></span>
                 My Documents
-                <span id="document-count-badge" class="tag is-info is-light ml-2" style="display: none;">0</span>
+                <span id="document-count-badge" class="tag is-info ml-2" style="display: none;">0</span>
             </p>
         </header>
         <div class="card-content">
-            <div id="no-documents" class="notification is-info is-light" style="display: none;">
+            <div id="no-documents" class="notification is-info" style="display: none;">
                 <div class="has-text-centered">
                     <span class="icon is-large has-text-info">
                         <i class="fas fa-file-plus fa-3x"></i>
@@ -149,7 +149,7 @@ ob_start();
             </div>
             
             <!-- No documents message for filtered views -->
-            <div id="no-filtered-documents" class="notification is-info is-light" style="display: none;">
+            <div id="no-filtered-documents" class="notification is-info" style="display: none;">
                 <div class="has-text-centered">
                     <span class="icon is-large has-text-info">
                         <i class="fas fa-search fa-2x"></i>
@@ -164,7 +164,7 @@ ob_start();
     <!-- Contact Section -->
     <div class="card mt-5">
         <div class="card-content">
-            <div class="notification is-light">
+            <div class="notification">
                 <h4 class="title is-5">
                     <span class="icon"><i class="fas fa-question-circle"></i></span>
                     Need Help?
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span class="tag is-${tagColor}">
                                             ${doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1).replace('_', ' ')}
                                         </span>
-                                        <span class="tag is-light">
+                                        <span class="tag">
                                             ${(doc.file_size / 1024).toFixed(1)} KB
                                         </span>
                                     </p>
