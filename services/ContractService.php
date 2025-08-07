@@ -1133,7 +1133,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             
             $stmt = $this->mysqli->prepare("
                 UPDATE user_documents 
-                SET archived = TRUE, archived_reason = ?, archived_at = NOW() 
+                SET archived = TRUE, archived_reason = ? 
                 WHERE user_id = ? AND document_type = 'contract' AND archived = FALSE
             ");
             $stmt->bind_param("si", $reason, $userId);
