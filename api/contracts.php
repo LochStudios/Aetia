@@ -22,7 +22,7 @@ $contractService = new ContractService();
 $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
 
 // Get request parameters
-$action = $_GET['action'] ?? 'list';
+$action = $_GET['action'] ?? $_POST['action'] ?? 'list';
 
 // Check permissions based on action
 if ($action === 'list' || $action === 'get' || $action === 'user_accept') {
