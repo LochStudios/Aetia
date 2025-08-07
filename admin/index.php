@@ -94,7 +94,7 @@ $contactStats['new'] = $result->fetch_assoc()['new'];
 $result = $mysqli->query("SELECT COUNT(*) as responded FROM contact_submissions WHERE status = 'responded'");
 $contactStats['responded'] = $result->fetch_assoc()['responded'];
 
-$result = $mysqli->query("SELECT COUNT(*) as recent FROM contact_submissions WHERE submitted_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+$result = $mysqli->query("SELECT COUNT(*) as recent FROM contact_submissions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
 $contactStats['recent'] = $result->fetch_assoc()['recent'];
 
 // Email statistics
@@ -137,7 +137,7 @@ while ($row = $result->fetch_assoc()) {
 }
 
 $recentContacts = [];
-$result = $mysqli->query("SELECT id, name, subject, submitted_at, status FROM contact_submissions ORDER BY submitted_at DESC LIMIT 5");
+$result = $mysqli->query("SELECT id, name, subject, created_at, status FROM contact_submissions ORDER BY created_at DESC LIMIT 5");
 while ($row = $result->fetch_assoc()) {
     $recentContacts[] = $row;
 }
@@ -316,7 +316,7 @@ ob_start();
                         <strong><?= htmlspecialchars($contact['subject'] ?: 'No Subject') ?></strong>
                         <span class="status-badge status-<?= $contact['status'] ?>"><?= ucfirst($contact['status']) ?></span>
                         <div class="activity-meta">
-                            From: <?= htmlspecialchars($contact['name']) ?> • <?= date('M j, Y g:i A', strtotime($contact['submitted_at'])) ?>
+                            From: <?= htmlspecialchars($contact['name']) ?> • <?= date('M j, Y g:i A', strtotime($contact['created_at'])) ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
