@@ -1,5 +1,5 @@
 <?php
-// login.php - Login/Signup page for Aetia Talant Agency
+// login.php - Login/Signup page for Aetia Talent Agency
 session_start();
 
 require_once __DIR__ . '/models/User.php';
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = $userModel->createManualUser($username, $email, $password, $firstName, $lastName);
                 
                 if ($result['success']) {
-                    $success_message = 'Account created successfully! Your account is pending approval. Aetia Talant Agency will contact you with critical platform information and business terms before you can access your account.';
+                    $success_message = 'Account created successfully! Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms before you can access your account.';
                     $isSignupMode = false; // Switch to login mode
                 } else {
                     $error_message = $result['message'];
@@ -133,7 +133,7 @@ if (file_exists($tempPasswordFile)) {
     $initialAdminPassword = trim(file_get_contents($tempPasswordFile));
 }
 
-$pageTitle = ($isSignupMode ? 'Sign Up' : 'Login') . ' | Aetia Talant Agency';
+$pageTitle = ($isSignupMode ? 'Sign Up' : 'Login') . ' | Aetia Talent Agency';
 ob_start();
 ?>
 <div class="columns is-centered">
@@ -148,7 +148,7 @@ ob_start();
                 <?php if ($isSignupMode): ?>
                 <div class="notification is-info is-light mb-4">
                     <div class="content">
-                        <p><strong>Notice:</strong> All new accounts require approval from Aetia Talant Agency.</p>
+                        <p><strong>Notice:</strong> All new accounts require approval from Aetia Talent Agency.</p>
                         <p>After creating your account, our team will contact you to discuss:</p>
                         <ul>
                             <li>Platform terms and conditions</li>
