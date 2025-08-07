@@ -405,7 +405,8 @@ ob_start();
                         <?php endif; ?>
                     </p>
                     <div class="content">
-                        <p><strong>Email:</strong> 
+                        <p><strong>Private Email:</strong> <?= htmlspecialchars($user['email']) ?></p>
+                        <p><strong>Public Email:</strong> 
                         <?php 
                         $displayEmail = $user['public_email'] ?? ($user['username'] . '@aetia.com.au');
                         echo htmlspecialchars($displayEmail);
