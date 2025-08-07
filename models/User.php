@@ -1173,32 +1173,56 @@ class User {
         }
     }
     
-    // Update user profile information (first name and last name)
-    public function updateUserProfile($userId, $firstName, $lastName) {
+    // Update user profile information (supports multiple fields)
+    public function updateUserProfile($userId, $profileData = []) {
         try {
             $this->ensureConnection();
             
-            // Trim and validate input
-            $firstName = trim($firstName);
-            $lastName = trim($lastName);
-            
-            // Basic validation
-            if (empty($firstName) && empty($lastName)) {
-                return ['success' => false, 'message' => 'At least one name field must be provided.'];
+            // Handle legacy parameters (backward compatibility)
+            if (is_string($profileData)) {
+                // Legacy call: updateUserProfile($userId, $firstName, $lastName)
+                $firstName = func_get_arg(1);
+                $lastName = func_get_arg(2);
+                $profileData = ['first_name' => $firstName, 'last_name' => $lastName];
             }
             
-            if (strlen($firstName) > 50 || strlen($lastName) > 50) {
-                return ['success' => false, 'message' => 'Name fields must be 50 characters or less.'];
+            // Build dynamic update query based on provided fields
+            $validFields = ['first_name', 'last_name', 'abn_acn', 'address'];
+            $updateFields = [];
+            $values = [];
+            $types = '';
+            
+            foreach ($profileData as $field => $value) {
+                if (in_array($field, $validFields)) {
+                    $value = trim($value);
+                    if (!empty($value)) { // Only update non-empty values
+                        $updateFields[] = "$field = ?";
+                        $values[] = $value;
+                        $types .= 's';
+                    }
+                }
             }
             
-            // Update the user's profile
-            $stmt = $this->mysqli->prepare("
-                UPDATE users 
-                SET first_name = ?, last_name = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?
-            ");
+            if (empty($updateFields)) {
+                return ['success' => false, 'message' => 'No valid fields provided for update.'];
+            }
             
-            $stmt->bind_param("ssi", $firstName, $lastName, $userId);
+            // Basic validation for name fields
+            if (isset($profileData['first_name']) && strlen($profileData['first_name']) > 50) {
+                return ['success' => false, 'message' => 'First name must be 50 characters or less.'];
+            }
+            if (isset($profileData['last_name']) && strlen($profileData['last_name']) > 50) {
+                return ['success' => false, 'message' => 'Last name must be 50 characters or less.'];
+            }
+            
+            $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
+            $values[] = $userId;
+            $types .= 'i';
+            
+            $sql = "UPDATE users SET " . implode(', ', $updateFields) . " WHERE id = ?";
+            $stmt = $this->mysqli->prepare($sql);
+            
+            $stmt->bind_param($types, ...$values);
             $result = $stmt->execute();
             $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();

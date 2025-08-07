@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($userId > 0) {
                 // First, update user profile if any data was provided
                 $profileUpdated = false;
+                $profileMessage = '';
                 if (!empty($userFirstName) || !empty($userLastName) || !empty($userAddress) || !empty($userAbn)) {
                     $updateResult = $userModel->updateUserProfile($userId, [
                         'first_name' => $userFirstName,
@@ -45,21 +46,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'address' => $userAddress,
                         'abn_acn' => $userAbn
                     ]);
-                    $profileUpdated = $updateResult;
+                    
+                    if ($updateResult['success']) {
+                        $profileUpdated = true;
+                        $profileMessage = ' User profile has been updated with the provided information.';
+                    } else {
+                        $profileMessage = ' Warning: ' . $updateResult['message'];
+                    }
                 }
                 
                 // Then generate the contract
                 $result = $contractService->generatePersonalizedContract($userId);
                 
                 if ($result['success']) {
-                    $message = $result['message'];
-                    if ($profileUpdated) {
-                        $message .= ' User profile has been updated with the provided information.';
-                    }
+                    $message = $result['message'] . $profileMessage;
+                    $messageType = 'success';
                 } else {
-                    $message = $result['message'];
+                    $message = $result['message'] . $profileMessage;
+                    $messageType = 'error';
                 }
-                $messageType = $result['success'] ? 'success' : 'error';
             } else {
                 $message = 'Please select a user.';
                 $messageType = 'error';
