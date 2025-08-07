@@ -161,31 +161,6 @@ ob_start();
             </div>
         </div>
     </div>
-    
-    <!-- Contact Section -->
-    <div class="card mt-5">
-        <div class="card-content">
-            <div class="notification">
-                <h4 class="title is-5">
-                    <span class="icon"><i class="fas fa-question-circle"></i></span>
-                    Need Help?
-                </h4>
-                <div class="content">
-                    <p>If you have questions about your documents or need additional files uploaded:</p>
-                    <div class="buttons">
-                        <a href="messages.php" class="button is-info">
-                            <span class="icon"><i class="fas fa-envelope"></i></span>
-                            <span>Send Message</span>
-                        </a>
-                        <a href="contact.php" class="button is-link">
-                            <span class="icon"><i class="fas fa-phone"></i></span>
-                            <span>Contact Us</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <?php
@@ -247,7 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="media-content">
                     <p class="title is-5">Welcome, ${user.username}!</p>
-                    <p class="subtitle is-6">Here you can view all documents that have been uploaded to your account. These may include contracts, invoices, agreements, and other important files related to your work with Aetia Talent Agency.</p>
+                    <p class="subtitle is-6">Here you can view all documents that have been uploaded to your account.<br>
+                        These may include contracts, invoices, agreements, and other important files related to your work with Aetia Talent Agency.</p>
                 </div>
             </div>
         `;
