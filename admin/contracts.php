@@ -30,12 +30,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'generate_contract':
             $userId = intval($_POST['user_id'] ?? 0);
-            $talentAddress = trim($_POST['talent_address'] ?? '');
-            $talentAbn = trim($_POST['talent_abn'] ?? '');
+            $userFirstName = trim($_POST['user_first_name'] ?? '');
+            $userLastName = trim($_POST['user_last_name'] ?? '');
+            $userAddress = trim($_POST['user_address'] ?? '');
+            $userAbn = trim($_POST['user_abn'] ?? '');
             
             if ($userId > 0) {
-                $result = $contractService->generatePersonalizedContract($userId, $talentAddress, $talentAbn);
-                $message = $result['message'];
+                // First, update user profile if any data was provided
+                $profileUpdated = false;
+                if (!empty($userFirstName) || !empty($userLastName) || !empty($userAddress) || !empty($userAbn)) {
+                    $updateResult = $userModel->updateUserProfile($userId, [
+                        'first_name' => $userFirstName,
+                        'last_name' => $userLastName,
+                        'address' => $userAddress,
+                        'abn_acn' => $userAbn
+                    ]);
+                    $profileUpdated = $updateResult;
+                }
+                
+                // Then generate the contract
+                $result = $contractService->generatePersonalizedContract($userId);
+                
+                if ($result['success']) {
+                    $message = $result['message'];
+                    if ($profileUpdated) {
+                        $message .= ' User profile has been updated with the provided information.';
+                    }
+                } else {
+                    $message = $result['message'];
+                }
                 $messageType = $result['success'] ? 'success' : 'error';
             } else {
                 $message = 'Please select a user.';
@@ -46,11 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'update_contract':
             $contractId = intval($_POST['contract_id'] ?? 0);
             $contractContent = trim($_POST['contract_content'] ?? '');
-            $talentAddress = trim($_POST['talent_address'] ?? '');
-            $talentAbn = trim($_POST['talent_abn'] ?? '');
             
             if ($contractId > 0 && !empty($contractContent)) {
-                $result = $contractService->updateContract($contractId, $contractContent, null, $talentAddress, $talentAbn);
+                $result = $contractService->updateContract($contractId, $contractContent);
                 $message = $result['message'];
                 $messageType = $result['success'] ? 'success' : 'error';
             } else {
@@ -153,6 +174,8 @@ ob_start();
                                         <option value="<?= $user['id'] ?>" 
                                                 data-first-name="<?= htmlspecialchars($user['first_name'] ?? '') ?>"
                                                 data-last-name="<?= htmlspecialchars($user['last_name'] ?? '') ?>"
+                                                data-abn="<?= htmlspecialchars($user['abn_acn'] ?? '') ?>"
+                                                data-address="<?= htmlspecialchars($user['address'] ?? '') ?>"
                                                 data-email="<?= htmlspecialchars($user['email']) ?>">
                                             <?= htmlspecialchars($user['username']) ?> 
                                             (<?= htmlspecialchars($user['email']) ?>)
@@ -164,34 +187,79 @@ ob_start();
                     </div>
                     
                     <div class="field" id="selected-user-info" style="display: none;">
-                        <label class="label">Contract Legal Name</label>
+                        <label class="label">Contract Information</label>
                         <div class="control">
-                            <div class="notification is-info is-light">
-                                <p><strong>Legal Name:</strong> <span id="user-legal-name">-</span></p>
-                                <p class="is-size-7">This name will be used in the contract. If the user's first/last name is not complete, the contract cannot be generated.</p>
+                            <div class="notification is-info is-light" id="user-info-notification">
+                                <p><strong>User Profile Status:</strong></p>
+                                <div id="profile-status">
+                                    <p><span id="name-status">✓</span> <strong>Legal Name:</strong> <span id="user-legal-name">-</span></p>
+                                    <p><span id="address-status">✓</span> <strong>Address:</strong> <span id="user-address">-</span></p>
+                                    <p><span id="abn-status">✓</span> <strong>ABN/ACN:</strong> <span id="user-abn-status">-</span></p>
+                                </div>
+                                <div id="incomplete-notice" style="display: none;">
+                                    <hr>
+                                    <p class="has-text-weight-bold">⚠️ Profile Incomplete</p>
+                                    <p class="is-size-7">Some required information is missing. You can complete it below and it will be saved to the user's profile.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Editable fields for incomplete data -->
+                    <div id="profile-completion-fields" style="display: none;">
+                        <div class="field">
+                            <label class="label">Complete User Profile</label>
+                        </div>
+                        
+                        <div class="columns">
+                            <div class="column">
+                                <div class="field" id="edit-first-name-field" style="display: none;">
+                                    <label class="label">First Name</label>
+                                    <div class="control">
+                                        <input class="input" type="text" name="user_first_name" id="user-first-name-input" placeholder="Enter first name">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field" id="edit-last-name-field" style="display: none;">
+                                    <label class="label">Last Name</label>
+                                    <div class="control">
+                                        <input class="input" type="text" name="user_last_name" id="user-last-name-input" placeholder="Enter last name">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="field" id="edit-address-field" style="display: none;">
+                            <label class="label">Address</label>
+                            <div class="control">
+                                <textarea class="textarea" name="user_address" id="user-address-input" rows="3" placeholder="Enter full address"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="field" id="edit-abn-field" style="display: none;">
+                            <label class="label">ABN/ACN (Optional)</label>
+                            <div class="control">
+                                <input class="input" type="text" name="user_abn" id="user-abn-input" placeholder="Enter ABN or ACN if applicable">
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="column is-half">
-                    <div class="field">
-                        <label class="label">Talent's Address</label>
-                        <div class="control">
-                            <textarea class="textarea" name="talent_address" rows="3" placeholder="Enter full address"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="field">
-                        <label class="label">ABN/ACN (Optional)</label>
-                        <div class="control">
-                            <input class="input" type="text" name="talent_abn" placeholder="Enter ABN or ACN if applicable">
-                        </div>
+                    <div class="notification is-light">
+                        <p class="has-text-centered">
+                            <span class="icon is-large">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </span>
+                        </p>
+                        <p class="has-text-centered">
+                            <strong>Automatic Contract Generation</strong><br>
+                            All contract information (name, address, ABN/ACN) will be automatically pulled from the user's profile.
+                        </p>
                     </div>
                 </div>
-            </div>
-            
-            <div class="field is-grouped">
+            </div>            <div class="field is-grouped">
                 <div class="control">
                     <button type="submit" class="button is-primary">
                         <span class="icon"><i class="fas fa-file-contract"></i></span>
@@ -303,22 +371,18 @@ ob_start();
                             <div class="control">
                                 <div class="notification is-info is-light">
                                     <p id="edit-legal-name-display">-</p>
-                                    <p class="is-size-7">This name comes from the user's profile and cannot be changed here.</p>
+                                    <p class="is-size-7">This information comes from the user's profile and cannot be changed here.</p>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="field">
-                            <label class="label">Address</label>
+                            <label class="label">Address (From User Profile)</label>
                             <div class="control">
-                                <textarea class="textarea" name="talent_address" id="edit-talent-address" rows="3"></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="field">
-                            <label class="label">ABN/ACN</label>
-                            <div class="control">
-                                <input class="input" type="text" name="talent_abn" id="edit-talent-abn">
+                                <div class="notification is-info is-light">
+                                    <p id="edit-address-display">-</p>
+                                    <p class="is-size-7">This address comes from the user's profile and cannot be changed here.</p>
+                                </div>
                             </div>
                         </div>
                         
@@ -371,24 +435,82 @@ function updateSelectedUserInfo() {
     const select = document.querySelector('select[name="user_id"]');
     const selectedOption = select.options[select.selectedIndex];
     const infoDiv = document.getElementById('selected-user-info');
-    const legalNameSpan = document.getElementById('user-legal-name');
+    const completionDiv = document.getElementById('profile-completion-fields');
+    const incompleteNotice = document.getElementById('incomplete-notice');
+    const notification = document.getElementById('user-info-notification');
     
     if (select.value && selectedOption) {
         const firstName = selectedOption.getAttribute('data-first-name') || '';
         const lastName = selectedOption.getAttribute('data-last-name') || '';
+        const address = selectedOption.getAttribute('data-address') || '';
+        const abn = selectedOption.getAttribute('data-abn') || '';
         const fullName = (firstName + ' ' + lastName).trim();
         
-        if (fullName) {
-            legalNameSpan.textContent = fullName;
-            legalNameSpan.parentElement.parentElement.className = 'notification is-success is-light';
+        // Update status indicators and display
+        let isComplete = true;
+        
+        // Check and update name status
+        if (fullName && firstName && lastName) {
+            document.getElementById('name-status').textContent = '✓';
+            document.getElementById('name-status').style.color = 'green';
+            document.getElementById('user-legal-name').textContent = fullName;
+            document.getElementById('edit-first-name-field').style.display = 'none';
+            document.getElementById('edit-last-name-field').style.display = 'none';
         } else {
-            legalNameSpan.textContent = 'Incomplete - User must complete their profile';
-            legalNameSpan.parentElement.parentElement.className = 'notification is-warning is-light';
+            document.getElementById('name-status').textContent = '✗';
+            document.getElementById('name-status').style.color = 'red';
+            document.getElementById('user-legal-name').textContent = 'Missing - Enter below';
+            document.getElementById('edit-first-name-field').style.display = 'block';
+            document.getElementById('edit-last-name-field').style.display = 'block';
+            document.getElementById('user-first-name-input').value = firstName;
+            document.getElementById('user-last-name-input').value = lastName;
+            isComplete = false;
+        }
+        
+        // Check and update address status
+        if (address) {
+            document.getElementById('address-status').textContent = '✓';
+            document.getElementById('address-status').style.color = 'green';
+            document.getElementById('user-address').textContent = address;
+            document.getElementById('edit-address-field').style.display = 'none';
+        } else {
+            document.getElementById('address-status').textContent = '✗';
+            document.getElementById('address-status').style.color = 'red';
+            document.getElementById('user-address').textContent = 'Missing - Enter below';
+            document.getElementById('edit-address-field').style.display = 'block';
+            document.getElementById('user-address-input').value = '';
+            isComplete = false;
+        }
+        
+        // Check and update ABN status (optional)
+        if (abn) {
+            document.getElementById('abn-status').textContent = '✓';
+            document.getElementById('abn-status').style.color = 'green';
+            document.getElementById('user-abn-status').textContent = abn;
+            document.getElementById('edit-abn-field').style.display = 'none';
+        } else {
+            document.getElementById('abn-status').textContent = '○';
+            document.getElementById('abn-status').style.color = 'orange';
+            document.getElementById('user-abn-status').textContent = 'Optional - Can add below';
+            document.getElementById('edit-abn-field').style.display = 'block';
+            document.getElementById('user-abn-input').value = '';
+        }
+        
+        // Update notification appearance and show/hide completion fields
+        if (isComplete) {
+            notification.className = 'notification is-success is-light';
+            incompleteNotice.style.display = 'none';
+            completionDiv.style.display = 'none';
+        } else {
+            notification.className = 'notification is-warning is-light';
+            incompleteNotice.style.display = 'block';
+            completionDiv.style.display = 'block';
         }
         
         infoDiv.style.display = 'block';
     } else {
         infoDiv.style.display = 'none';
+        completionDiv.style.display = 'none';
     }
 }
 
@@ -425,8 +547,7 @@ async function editContract(contractId) {
             const contract = data.contract;
             document.getElementById('edit-contract-id').value = contract.id;
             document.getElementById('edit-legal-name-display').textContent = contract.client_name || 'Not specified';
-            document.getElementById('edit-talent-address').value = contract.client_address || '';
-            document.getElementById('edit-talent-abn').value = '';
+            document.getElementById('edit-address-display').textContent = contract.client_address || 'Not specified';
             document.getElementById('edit-contract-content').value = contract.contract_content;
             document.getElementById('edit-status').value = contract.status;
             document.getElementById('edit-modal').classList.add('is-active');

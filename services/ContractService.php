@@ -116,7 +116,7 @@ Date of Acceptance:";
     /**
      * Create a personalized contract for a user
      */
-    public function generatePersonalizedContract($userId, $talentAddress, $talentAbn = '', $customTemplate = null) {
+    public function generatePersonalizedContract($userId, $customTemplate = null) {
         try {
             $this->ensureConnection();
             
@@ -134,16 +134,36 @@ Date of Acceptance:";
                 ];
             }
             
+            // Validate that user has an address
+            if (empty($user['address'])) {
+                return [
+                    'success' => false, 
+                    'message' => 'Cannot generate contract: User must have an address filled out in their profile. Please ask the user to complete their profile first.'
+                ];
+            }
+            
             // Build full legal name from database
             $talentName = trim($user['first_name'] . ' ' . $user['last_name']);
+            
+            // Get address from user profile
+            $talentAddress = trim($user['address']);
+            
+            // Get ABN/ACN from user profile if available
+            $userAbn = !empty($user['abn_acn']) ? trim($user['abn_acn']) : '';
             
             // Use custom template or default
             $template = $customTemplate ?? $this->getDefaultContractTemplate();
             
+            // Handle ABN/ACN section dynamically
+            if (empty($userAbn)) {
+                // Remove the entire ABN/ACN line if user doesn't have one
+                $template = preg_replace('/\s*ABN\/ACN \(if applicable\):\s*\[Talent\'s ABN\/ACN\]\s*\n?/', '', $template);
+            }
+            
             // Replace placeholders
             $personalizedContract = str_replace(
                 ['[Date]', '[Talent\'s Full Legal Name]', '[Talent\'s Address]', '[Talent\'s ABN/ACN]'],
-                [date('F j, Y'), $talentName, $talentAddress, $talentAbn ?: 'N/A'],
+                [date('F j, Y'), $talentName, $talentAddress, $userAbn],
                 $template
             );
             
