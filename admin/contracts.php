@@ -417,7 +417,7 @@ ob_start();
                                             <span><?= date('M j, Y', strtotime($contract['company_accepted_date'])) ?></span>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">
+                                        <span class="tag is-dark">
                                             <span class="icon"><i class="fas fa-clock"></i></span>
                                             <span>Pending</span>
                                         </span>
