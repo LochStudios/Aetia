@@ -333,6 +333,19 @@ ob_start();
         </form>
     </div>
     
+    <!-- Email Templates -->
+    <div class="email-section">
+        <h2 class="subtitle has-text-light">Quick Email Templates</h2>
+        <div class="content has-text-light">
+            <div class="buttons">
+                <button class="button is-small is-light" onclick="loadTemplate('welcome')">Welcome Message</button>
+                <button class="button is-small is-light" onclick="loadTemplate('update')">System Update</button>
+                <button class="button is-small is-light" onclick="loadTemplate('promotion')">Promotion</button>
+                <button class="button is-small is-light" onclick="loadTemplate('maintenance')">Maintenance Notice</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Send Newsletter -->
     <div class="email-section">
         <h2 class="subtitle has-text-light">Send Newsletter</h2>
@@ -369,46 +382,6 @@ ob_start();
                 <span>Send Newsletter to All Active Users</span>
             </button>
         </form>
-    </div>
-    
-    <!-- Email Templates -->
-    <div class="email-section">
-        <h2 class="subtitle has-text-light">Quick Email Templates</h2>
-        <div class="content has-text-light">
-            <div class="buttons">
-                <button class="button is-small is-light" onclick="loadTemplate('welcome')">Welcome Message</button>
-                <button class="button is-small is-light" onclick="loadTemplate('update')">System Update</button>
-                <button class="button is-small is-light" onclick="loadTemplate('promotion')">Promotion</button>
-                <button class="button is-small is-light" onclick="loadTemplate('maintenance')">Maintenance Notice</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Statistics -->
-    <div class="email-section">
-        <h2 class="subtitle has-text-light">User Statistics</h2>
-        <div class="content has-text-light">
-            <div class="columns">
-                <div class="column">
-                    <div class="box has-background-grey-darker">
-                        <p class="title has-text-light"><?= count($allUsers) ?></p>
-                        <p class="subtitle has-text-light">Total Users</p>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="box has-background-grey-darker">
-                        <p class="title has-text-light"><?= count(array_filter($allUsers, function($u) { return $u['is_active']; })) ?></p>
-                        <p class="subtitle has-text-light">Active Users</p>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="box has-background-grey-darker">
-                        <p class="title has-text-light"><?= count(array_filter($allUsers, function($u) { return $u['is_admin']; })) ?></p>
-                        <p class="subtitle has-text-light">Admin Users</p>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
