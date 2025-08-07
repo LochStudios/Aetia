@@ -1,5 +1,5 @@
 <?php
-// services/DiscordOAuth.php - Discord OAuth integration for Aetia Talant Agency
+// services/DiscordOAuth.php - Discord OAuth integration for Aetia Talent Agency
 
 require_once '/home/aetiacom/web-config/config.php';
 
