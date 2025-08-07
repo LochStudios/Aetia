@@ -489,7 +489,7 @@ class EmailService {
         
         <p>We appreciate your patience during the approval process. Our team will be in touch with you soon.</p>
         
-        <p>If you have any immediate questions, please contact us at <a href='mailto:talant@aetia.com.au'>talant@aetia.com.au</a></p>
+        <p>If you have any immediate questions, please contact us at <a href='mailto:talent@aetia.com.au'>talent@aetia.com.au</a></p>
         
         <br>
         <p>Best regards,<br>The Aetia Team</p>
