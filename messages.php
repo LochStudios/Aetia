@@ -115,19 +115,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'create_team_message':
                 $subject = trim($_POST['subject']);
                 $messageText = trim($_POST['message']);
-                // Internal messages to Talant Team are always urgent priority
+                // Internal messages to Talent Team are always urgent priority
                 
                 if (!empty($subject) && !empty($messageText)) {
                     // Find the first admin user to send the message to
                     $adminUser = $userModel->getFirstAdmin();
                     if ($adminUser) {
-                        // Internal messages to Talant Team are always urgent priority
+                        // Internal messages to Talent Team are always urgent priority
                         $result = $messageModel->createMessage($adminUser['id'], $subject, $messageText, $userId, 'urgent', 'Internal');
                         if ($result['success']) {
                             // Mark the new message as read by the sender (user who created it)
                             $messageModel->updateMessageStatus($result['message_id'], 'read');
                             
-                            $message = 'Message sent to Talant Team successfully!';
+                            $message = 'Message sent to Talent Team successfully!';
                             // Redirect to view the new message
                             header('Location: messages.php?id=' . $result['message_id']);
                             exit;
@@ -339,11 +339,11 @@ ob_start();
                     <?php endif; ?>
                 </div>
                 
-                <!-- New Talant Team Message Button -->
+                <!-- New Talent Team Message Button -->
                 <div class="field mb-4">
                     <button class="button is-primary is-fullwidth" onclick="showNewMessageModal()">
                         <span class="icon"><i class="fas fa-plus"></i></span>
-                        <span>New Talant Team Message</span>
+                        <span>New Talent Team Message</span>
                     </button>
                 </div>
                 
@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function showNewMessageModal() {
     const { value: formValues } = await Swal.fire({
-        title: 'Message Our Talant Team Directly',
+        title: 'Message Our Talent Team Directly',
         html: `
             <div class="field">
                 <label class="label has-text-left has-text-dark">Subject</label>
@@ -1087,7 +1087,7 @@ async function showNewMessageModal() {
             <div class="field">
                 <label class="label has-text-left has-text-dark">Message</label>
                 <div class="control">
-                    <textarea id="swal-message" class="textarea swal-light-input" rows="5" placeholder="Enter your message to the Talant Team"></textarea>
+                    <textarea id="swal-message" class="textarea swal-light-input" rows="5" placeholder="Enter your message to the Talent Team"></textarea>
                 </div>
             </div>
         `,
