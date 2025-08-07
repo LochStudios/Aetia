@@ -76,7 +76,7 @@ b) Keep their login credentials for the Platform confidential and secure.
 c) Not use the Services for any illegal, unethical, or unauthorised purpose.
 
 4. NO REPRESENTATION OR COMMISSION
-4.1. Disclaimer of Agency: For the avoidance of doubt, this is a technology and communications service agreement only. The Provider is not the User's agent, manager, or representative. The Provider has no authority to act on behalf of the User and has no obligation to seek, solicit, negotiate, or secure employment or engagements for the User.
+4.1. Disclaimer of Agency: For the avoidance of doubt, this is a technology and communications service agreement only. While the Provider may respond to external communications on behalf of the User using pre-approved information and responses provided by the User, the Provider is not the User's agent, manager, or representative for business, employment, or contractual matters. The Provider has no authority to enter into agreements, contracts, or commitments on behalf of the User and has no obligation to seek, solicit, negotiate, or secure employment or engagements for the User.
 4.2. No Commission: The Provider is not entitled to any commission, fee, or percentage of any income or compensation earned by the User, regardless of whether the Services were used to facilitate the opportunity.
 
 5. FEES AND BILLING
