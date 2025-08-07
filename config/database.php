@@ -151,6 +151,10 @@ class Database {
                 priority ENUM('low', 'normal', 'high', 'urgent') DEFAULT 'normal',
                 status ENUM('unread', 'read', 'responded', 'closed', 'archived') DEFAULT 'unread',
                 tags VARCHAR(255) DEFAULT NULL,
+                manual_review BOOLEAN DEFAULT FALSE,
+                manual_review_by INT NULL,
+                manual_review_at TIMESTAMP NULL,
+                manual_review_reason TEXT NULL,
                 created_by INT NOT NULL,
                 archived_by INT NULL,
                 archived_at TIMESTAMP NULL,
@@ -160,9 +164,11 @@ class Database {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (created_by) REFERENCES users(id),
                 FOREIGN KEY (archived_by) REFERENCES users(id),
+                FOREIGN KEY (manual_review_by) REFERENCES users(id),
                 INDEX idx_user_status (user_id, status),
                 INDEX idx_tags (tags),
-                INDEX idx_created_at (created_at)
+                INDEX idx_created_at (created_at),
+                INDEX idx_manual_review (manual_review, manual_review_at)
             )";
             
             $this->mysqli->query($createMessagesTable);
@@ -471,6 +477,10 @@ class Database {
             // Check if columns exist and add them if they don't
             $columnsToAdd = [
                 'tags' => 'VARCHAR(255) DEFAULT NULL',
+                'manual_review' => 'BOOLEAN DEFAULT FALSE',
+                'manual_review_by' => 'INT NULL',
+                'manual_review_at' => 'TIMESTAMP NULL',
+                'manual_review_reason' => 'TEXT NULL',
                 'archived_by' => 'INT NULL',
                 'archived_at' => 'TIMESTAMP NULL',
                 'archive_reason' => 'TEXT NULL'
@@ -491,6 +501,18 @@ class Database {
                         if ($columnName === 'tags') {
                             $indexQuery = "ALTER TABLE messages ADD INDEX idx_tags (tags)";
                             $this->mysqli->query($indexQuery);
+                        }
+                        
+                        // Add index for manual_review column
+                        if ($columnName === 'manual_review') {
+                            $indexQuery = "ALTER TABLE messages ADD INDEX idx_manual_review (manual_review, manual_review_at)";
+                            $this->mysqli->query($indexQuery);
+                        }
+                        
+                        // Add foreign key constraint for manual_review_by
+                        if ($columnName === 'manual_review_by') {
+                            $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (manual_review_by) REFERENCES users(id)";
+                            $this->mysqli->query($fkQuery);
                         }
                         
                         // Add foreign key for archived_by column
