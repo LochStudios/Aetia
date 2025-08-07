@@ -50,7 +50,7 @@ ob_start();
     
     <div class="level">
         <div class="level-left">
-            <h2 class="title is-2 has-text-black">
+            <h2 class="title is-2 has-text-white">
                 <span class="icon"><i class="fas fa-file-contract"></i></span>
                 My Documents
             </h2>
