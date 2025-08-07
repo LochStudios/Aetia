@@ -64,14 +64,22 @@ ob_start();
 ?>
 
 <div class="content">
-    <?php if (isset($_SESSION['message'])): ?>
-    <div class="notification is-success is-light">
-        <button class="delete"></button>
-        <?= htmlspecialchars($_SESSION['message']) ?>
-    </div>
-    <?php unset($_SESSION['message']); endif; ?>
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived</span></a></li>
+        </ul>
+    </nav>
     
-    <?php if (isset($_SESSION['error'])): ?>
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="notification is-success is-light">
+            <button class="delete"></button>
+            <?= htmlspecialchars($_SESSION['message']) ?>
+        </div>
+        <?php unset($_SESSION['message']); endif; ?>    <?php if (isset($_SESSION['error'])): ?>
     <div class="notification is-danger is-light">
         <button class="delete"></button>
         <?= htmlspecialchars($_SESSION['error']) ?>

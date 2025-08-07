@@ -667,3 +667,34 @@ button[disabled], input[disabled] {
     color: #fff;
     font-weight: bold;
 }
+
+/* Breadcrumb styling for dark theme */
+.breadcrumb {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb a {
+    color: #dbdbdb;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    color: #209cee;
+}
+
+.breadcrumb li.is-active a {
+    color: #209cee;
+    cursor: default;
+}
+
+.breadcrumb li + li::before {
+    color: #7a7a7a;
+}
+
+.breadcrumb .icon {
+    margin-right: 0.25rem;
+}

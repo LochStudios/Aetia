@@ -188,14 +188,20 @@ ob_start();
 ?>
 
 <div class="content">
-    <?php if ($message): ?>
-    <div class="notification is-success is-light">
-        <button class="delete"></button>
-        <?= htmlspecialchars($message) ?>
-    </div>
-    <?php endif; ?>
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+        </ul>
+    </nav>
     
-    <?php if ($error): ?>
+    <?php if ($message): ?>
+        <div class="notification is-success is-light">
+            <button class="delete"></button>
+            <?= htmlspecialchars($message) ?>
+        </div>
+    <?php endif; ?>    <?php if ($error): ?>
     <div class="notification is-danger is-light">
         <button class="delete"></button>
         <?= htmlspecialchars($error) ?>

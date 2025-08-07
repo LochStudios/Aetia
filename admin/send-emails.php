@@ -222,6 +222,15 @@ ob_start();
 </style>
 
 <div class="email-container">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
+        </ul>
+    </nav>
+    
     <h1 class="title has-text-light">Send Emails to Clients</h1>
     <p class="subtitle has-text-light">Send custom emails and newsletters to your users</p>
     
