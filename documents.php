@@ -101,8 +101,7 @@ ob_start();
                     </p>
                     <p class="content">
                         <strong>Need a document uploaded?</strong><br>
-                        Contact our team through the <a href="messages.php" class="has-text-info">messages system</a> 
-                        or reach out to your account manager.
+                        Contact our team through the <a href="messages.php">messages system</a> or reach out to your account manager.
                     </p>
                 </div>
             </div>
