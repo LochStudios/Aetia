@@ -92,7 +92,7 @@ ob_start();
             <div id="no-documents" class="notification is-info" style="display: none;">
                 <div class="has-text-centered">
                     <span class="icon is-large has-text-info">
-                        <i class="fas fa-folder-open fa-3x"></i>
+                        <i class="fa-solid fa-folder-open fa-3x"></i>
                     </span>
                     <h3 class="title is-5 mt-3">No Documents Yet</h3>
                     <p class="subtitle is-6">
