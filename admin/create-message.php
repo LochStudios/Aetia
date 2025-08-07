@@ -65,7 +65,7 @@ ob_start();
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
             <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Messages</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>Create Message</span></a></li>
         </ul>

@@ -3,8 +3,14 @@
 session_start();
 
 // Include timezone utilities
-require_once __DIR__ . '/../includes/timezone.php';
-
+require_once __DIR__ . '/../includes/timezone    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
+        </ul>
+    </nav>
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
     header('Location: ../login.php');
@@ -171,7 +177,7 @@ ob_start();
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="users.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Email Logs</span></a></li>
         </ul>
     </nav>

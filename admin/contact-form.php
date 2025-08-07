@@ -2,8 +2,14 @@
 // admin/contact-form.php - Admin interface for managing contact form submissions
 session_start();
 
-// Include timezone utilities
-require_once __DIR__ . '/../includes/timezone.php';
+// Include timezone util    <!-- Breadcrumbs -->
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
+        <ul>
+            <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
+            <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
+        </ul>
+    </nav>equire_once __DIR__ . '/../includes/timezone.php';
 require_once __DIR__ . '/../includes/FormTokenManager.php';
 
 // Redirect if not logged in
@@ -136,7 +142,7 @@ ob_start();
     <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs" style="margin-bottom: 20px;">
         <ul>
             <li><a href="../index.php"><span class="icon is-small"><i class="fas fa-home"></i></span><span>Home</span></a></li>
-            <li><a href="messages.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
+            <li><a href="users.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-envelope-open-text"></i></span><span>Contact Forms</span></a></li>
         </ul>
     </nav>
