@@ -213,6 +213,23 @@ function getStatusColor($status) {
     }
 }
 
+// Helper function to get detailed status info
+function getDetailedStatus($contract) {
+    $status = $contract['status'];
+    $companyAccepted = !empty($contract['company_accepted_date']);
+    $userAccepted = !empty($contract['user_accepted_date']);
+    
+    if ($status === 'signed' && $companyAccepted && $userAccepted) {
+        return ['text' => 'Fully Executed', 'color' => 'success'];
+    } elseif ($status === 'sent' && $companyAccepted && !$userAccepted) {
+        return ['text' => 'Awaiting User', 'color' => 'warning'];
+    } elseif ($status === 'draft' && !$companyAccepted) {
+        return ['text' => 'Draft', 'color' => 'dark'];
+    } else {
+        return ['text' => ucfirst($status), 'color' => getStatusColor($status)];
+    }
+}
+
 $pageTitle = 'Contract Management | Aetia Admin';
 ob_start();
 ?>
@@ -365,6 +382,8 @@ ob_start();
                             <th>User</th>
                             <th>Talent Name</th>
                             <th>Status</th>
+                            <th>Company Accepted</th>
+                            <th>User Accepted</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -383,9 +402,39 @@ ob_start();
                                 </td>
                                 <td><?= htmlspecialchars($contract['client_name']) ?></td>
                                 <td>
-                                    <span class="tag is-<?= getStatusColor($contract['status']) ?>">
-                                        <?= ucfirst($contract['status']) ?>
+                                    <?php $detailedStatus = getDetailedStatus($contract); ?>
+                                    <span class="tag is-<?= $detailedStatus['color'] ?>">
+                                        <?= $detailedStatus['text'] ?>
                                     </span>
+                                    <?php if ($contract['status'] !== $detailedStatus['text']): ?>
+                                        <br><small class="has-text-grey">Status: <?= ucfirst($contract['status']) ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($contract['company_accepted_date'])): ?>
+                                        <span class="tag is-success">
+                                            <span class="icon"><i class="fas fa-check"></i></span>
+                                            <span><?= date('M j, Y', strtotime($contract['company_accepted_date'])) ?></span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">
+                                            <span class="icon"><i class="fas fa-clock"></i></span>
+                                            <span>Pending</span>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($contract['user_accepted_date'])): ?>
+                                        <span class="tag is-success">
+                                            <span class="icon"><i class="fas fa-check"></i></span>
+                                            <span><?= date('M j, Y', strtotime($contract['user_accepted_date'])) ?></span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">
+                                            <span class="icon"><i class="fas fa-clock"></i></span>
+                                            <span>Pending</span>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= date('M j, Y', strtotime($contract['created_at'])) ?></td>
                                 <td>
