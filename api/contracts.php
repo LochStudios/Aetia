@@ -21,20 +21,31 @@ $contractService = new ContractService();
 // Check if current user is admin
 $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
 
-if (!$isAdmin) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Admin privileges required']);
-    exit;
-}
-
 // Get request parameters
 $action = $_GET['action'] ?? 'list';
+
+// Check permissions based on action
+if ($action === 'list' || $action === 'get') {
+    // Users can view their own contracts, admins can view all
+    // Permission check will be done within each case
+} else {
+    // All other actions require admin privileges
+    if (!$isAdmin) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Admin privileges required']);
+        exit;
+    }
+}
 
 try {
     switch ($action) {
         case 'list':
-            // Get all contracts
-            $contracts = $contractService->getAllContracts();
+            // Admins get all contracts, users get their own
+            if ($isAdmin) {
+                $contracts = $contractService->getAllContracts();
+            } else {
+                $contracts = $contractService->getUserContracts($_SESSION['user_id']);
+            }
             echo json_encode([
                 'success' => true,
                 'contracts' => $contracts
@@ -54,6 +65,13 @@ try {
             if (!$contract) {
                 http_response_code(404);
                 echo json_encode(['error' => 'Contract not found']);
+                exit;
+            }
+            
+            // Check if user has permission to view this contract
+            if (!$isAdmin && $contract['user_id'] != $_SESSION['user_id']) {
+                http_response_code(403);
+                echo json_encode(['error' => 'You can only view your own contracts']);
                 exit;
             }
             
