@@ -86,9 +86,15 @@ if (file_exists($document['s3_url'])) {
             header('Content-Type: ' . $document['mime_type']);
             header('Content-Disposition: inline; filename="' . $document['original_filename'] . '"');
         } else {
-            // For download, force attachment - use multiple techniques to bypass browser plugins
-            header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+            // For PDF files, use proper MIME type to prevent corruption
+            if ($document['mime_type'] === 'application/pdf') {
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+            } else {
+                // For other files, force download with octet-stream to bypass browser plugins
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+            }
             header('Content-Transfer-Encoding: binary');
             header('Content-Description: File Transfer');
             header('X-Content-Type-Options: nosniff');
