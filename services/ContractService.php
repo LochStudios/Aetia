@@ -909,139 +909,95 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
      */
     private function htmlToPdf($htmlFile, $outputFile) {
         try {
-            error_log("Using mPDF for PDF generation");
+            error_log("Creating simple PDF (mPDF incompatible with PHP version)");
             
-            // Check if mPDF is available
-            if (!class_exists('Mpdf\\Mpdf')) {
-                // Load mPDF autoloader
-                $autoloadPath = '/home/aetiacom/vendors/mpdf/autoload.php';
-                if (file_exists($autoloadPath)) {
-                    require_once $autoloadPath;
-                    error_log("mPDF autoloader loaded from: " . $autoloadPath);
-                    // Debug: Check what classes are available
-                    $declaredClasses = get_declared_classes();
-                    $mpdfClasses = array_filter($declaredClasses, function($class) {
-                        return stripos($class, 'mpdf') !== false;
-                    });
-                    error_log("Available mPDF classes: " . implode(', ', $mpdfClasses));
-                    // Try alternative class names
-                    $possibleClasses = [
-                        'Mpdf\\Mpdf',
-                        'mPDF',
-                        'MPDF',
-                        'Mpdf',
-                        'mpdf'
-                    ];
-                    $foundClass = null;
-                    foreach ($possibleClasses as $className) {
-                        if (class_exists($className)) {
-                            $foundClass = $className;
-                            error_log("Found mPDF class: " . $className);
-                            break;
-                        }
-                    }
-                    if (!$foundClass) {
-                        error_log("No mPDF class found. Available classes count: " . count($declaredClasses));
-                        return false;
-                    }
-                } else {
-                    error_log("mPDF not found at: " . $autoloadPath);
-                    return false;
-                }
-            }
-            
-            // Read HTML content
+            // Read HTML content and convert to text
             $htmlContent = file_get_contents($htmlFile);
+            $textContent = $this->htmlToText($htmlContent);
             
-            if (empty(trim($htmlContent))) {
-                error_log("No HTML content available for PDF generation");
+            if (empty(trim($textContent))) {
+                error_log("No content available for PDF generation");
                 return false;
             }
             
-            // Configure mPDF
-            $config = [
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'default_font_size' => 11,
-                'default_font' => 'helvetica',
-                'margin_left' => 20,
-                'margin_right' => 20,
-                'margin_top' => 20,
-                'margin_bottom' => 20,
-                'margin_header' => 10,
-                'margin_footer' => 10,
-                'orientation' => 'P'
-            ];
+            // Create a basic but valid PDF structure
+            $pdf = "%PDF-1.4\n";
             
-            // Create mPDF instance using the found class
-            $mpdfClass = $foundClass ?? 'Mpdf\\Mpdf';
-            error_log("Creating mPDF instance using class: " . $mpdfClass);
+            // Object 1: Catalog
+            $pdf .= "1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n";
             
-            if ($mpdfClass === 'Mpdf\\Mpdf') {
-                $mpdf = new \Mpdf\Mpdf($config);
-            } else {
-                // For older versions of mPDF, try without config array
-                try {
-                    $mpdf = new $mpdfClass($config);
-                } catch (Exception $e) {
-                    error_log("Failed with config, trying without: " . $e->getMessage());
-                    $mpdf = new $mpdfClass();
+            // Object 2: Pages
+            $pdf .= "2 0 obj\n<</Type/Pages/Kids[3 0 R]/Count 1>>\nendobj\n";
+            
+            // Object 3: Page
+            $pdf .= "3 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>\nendobj\n";
+            
+            // Prepare content stream
+            $lines = explode("\n", $textContent);
+            $yPos = 750;
+            $content = "BT /F1 11 Tf ";
+            
+            foreach ($lines as $line) {
+                if ($yPos < 50) break; // Prevent text from going off page
+                $line = substr(trim($line), 0, 85); // Limit line length
+                if (empty($line)) {
+                    $yPos -= 8; // Smaller gap for empty lines
+                    continue;
                 }
+                
+                // Escape special PDF characters
+                $line = str_replace(['(', ')', '\\'], ['\\(', '\\)', '\\\\'], $line);
+                $content .= "50 {$yPos} Td ({$line}) Tj 0 -14 Td ";
+                $yPos -= 14;
             }
+            $content .= "ET";
             
-            // Set document properties
-            if (method_exists($mpdf, 'SetCreator')) {
-                $mpdf->SetCreator('Aetia Talent Agency');
-                $mpdf->SetAuthor('LochStudios');
-                $mpdf->SetTitle('Communications Services Agreement');
-                $mpdf->SetSubject('Professional Services Contract');
-            }
+            $contentLength = strlen($content);
             
-            // Add basic CSS for better formatting
-            $css = '
-                body { font-family: helvetica, arial, sans-serif; font-size: 11pt; line-height: 1.4; }
-                h1, h2, h3 { color: #333; margin-top: 20px; margin-bottom: 10px; }
-                h1 { font-size: 18pt; }
-                h2 { font-size: 14pt; }
-                h3 { font-size: 12pt; }
-                p { margin-bottom: 10px; }
-                .contract-header { text-align: center; margin-bottom: 30px; }
-                .contract-section { margin-bottom: 20px; }
-                .signature-section { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; }
-                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                td, th { padding: 8px; border: 1px solid #ddd; }
-                th { background-color: #f5f5f5; font-weight: bold; }
-            ';
+            // Object 4: Content Stream
+            $pdf .= "4 0 obj\n<</Length {$contentLength}>>\nstream\n{$content}\nendstream\nendobj\n";
             
-            // Write CSS and HTML with version compatibility
-            if (method_exists($mpdf, 'WriteHTML') && defined('Mpdf\\HTMLParserMode::HEADER_CSS')) {
-                $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
-                $mpdf->WriteHTML($htmlContent, \Mpdf\HTMLParserMode::HTML_BODY);
-            } else {
-                // Fallback for older mPDF versions
-                $mpdf->WriteHTML($css, 1); // 1 = CSS mode
-                $mpdf->WriteHTML($htmlContent, 2); // 2 = HTML mode
-            }
+            // Object 5: Font
+            $pdf .= "5 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>\nendobj\n";
             
-            // Output PDF to file with version compatibility
-            if (method_exists($mpdf, 'Output') && defined('Mpdf\\Output\\Destination::FILE')) {
-                $mpdf->Output($outputFile, \Mpdf\Output\Destination::FILE);
-            } else {
-                // Fallback for older mPDF versions
-                $mpdf->Output($outputFile, 'F'); // 'F' = save to file
+            // Calculate xref positions
+            $xrefPos = strlen($pdf);
+            
+            // Cross-reference table
+            $pdf .= "xref\n0 6\n";
+            $pdf .= "0000000000 65535 f \n";
+            $pdf .= "0000000009 00000 n \n";
+            $pdf .= "0000000058 00000 n \n";
+            $pdf .= "0000000115 00000 n \n";
+            
+            // Calculate position of object 4
+            $obj4Pos = strpos($pdf, "4 0 obj");
+            $pdf .= sprintf("%010d 00000 n \n", $obj4Pos);
+            
+            // Calculate position of object 5
+            $obj5Pos = strpos($pdf, "5 0 obj");
+            $pdf .= sprintf("%010d 00000 n \n", $obj5Pos);
+            
+            // Trailer
+            $pdf .= "trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n{$xrefPos}\n%%EOF";
+            
+            // Write PDF to file
+            if (file_put_contents($outputFile, $pdf) === false) {
+                error_log("Failed to write PDF file");
+                return false;
             }
             
             // Validate the generated file
             if (!file_exists($outputFile) || filesize($outputFile) == 0) {
-                error_log("mPDF file was not created or is empty");
+                error_log("PDF file was not created or is empty");
                 return false;
             }
             
-            error_log("mPDF generated successfully: " . filesize($outputFile) . " bytes");
+            error_log("Simple PDF generated successfully: " . filesize($outputFile) . " bytes");
             return true;
             
         } catch (Exception $e) {
-            error_log("mPDF generation error: " . $e->getMessage());
+            error_log("PDF generation error: " . $e->getMessage());
             return false;
         }
     }
