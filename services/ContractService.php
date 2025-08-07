@@ -94,6 +94,7 @@ c) Not use the Services for any illegal, unethical, or unauthorised purpose.
 7. LIMITATION OF LIABILITY
 7.1. The Provider offers the Services on an \"as-is\" basis and does not guarantee uninterrupted or error-free operation. The Provider is not liable for any lost data or missed business opportunities resulting from the use or inability to use the Services.
 7.2. Message Processing Schedule: Incoming message communications are processed and added to the User's message platform between the hours of 12:00 PM - 1:00 PM AEST/AEDT Monday through Friday. Messages received outside these hours will be processed during the next scheduled processing window.
+7.3. Manual Review Service: The User may request a manual review of messages if they are expecting an incoming message outside the standard processing hours. This service incurs an additional fee of One United States Dollar (US$1.00) per email processed outside of the standard schedule.
 
 8. GOVERNING LAW
 8.1. This Agreement shall be governed by and construed in accordance with the laws of the state of New South Wales, Australia.
