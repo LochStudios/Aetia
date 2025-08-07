@@ -125,6 +125,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             }
             break;
+            
+        case 'update_user_profile':
+            $userId = intval($_POST['edit_user_id'] ?? 0);
+            $firstName = trim($_POST['edit_first_name'] ?? '');
+            $lastName = trim($_POST['edit_last_name'] ?? '');
+            $address = trim($_POST['edit_address'] ?? '');
+            $abnAcn = trim($_POST['edit_abn_acn'] ?? '');
+            
+            if ($userId > 0) {
+                $profileData = [];
+                if (!empty($firstName)) $profileData['first_name'] = $firstName;
+                if (!empty($lastName)) $profileData['last_name'] = $lastName;
+                if (!empty($address)) $profileData['address'] = $address;
+                if (!empty($abnAcn)) $profileData['abn_acn'] = $abnAcn;
+                
+                if (!empty($profileData)) {
+                    $result = $userModel->updateUserProfile($userId, $profileData);
+                    $message = $result['message'];
+                    $messageType = $result['success'] ? 'success' : 'error';
+                } else {
+                    $message = 'No profile data provided for update.';
+                    $messageType = 'error';
+                }
+            } else {
+                $message = 'Invalid user ID.';
+                $messageType = 'error';
+            }
+            break;
     }
 }
 
@@ -291,7 +319,11 @@ ob_start();
                                 <td><?= $contract['id'] ?></td>
                                 <td>
                                     <strong><?= htmlspecialchars($contract['user_username']) ?></strong><br>
-                                    <small><?= htmlspecialchars($contract['user_email']) ?></small>
+                                    <small><?= htmlspecialchars($contract['user_email']) ?></small><br>
+                                    <button class="button is-small is-link mt-1" onclick="editUserProfile(<?= $contract['user_id'] ?>, '<?= htmlspecialchars($contract['user_username']) ?>')">
+                                        <span class="icon is-small"><i class="fas fa-user-edit"></i></span>
+                                        <span>Edit Profile</span>
+                                    </button>
                                 </td>
                                 <td><?= htmlspecialchars($contract['client_name']) ?></td>
                                 <td>
@@ -410,6 +442,68 @@ ob_start();
         <footer class="modal-card-foot">
             <button class="button is-primary" onclick="saveContract()">Save Changes</button>
             <button class="button" onclick="closeEditModal()">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Edit User Profile Modal -->
+<div class="modal" id="edit-profile-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 90%; max-width: 600px;">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Edit User Profile</p>
+            <button class="delete" aria-label="close" onclick="closeEditProfileModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form id="edit-profile-form" method="POST" action="">
+                <input type="hidden" name="action" value="update_user_profile">
+                <input type="hidden" name="edit_user_id" id="edit-profile-user-id">
+                
+                <div class="field">
+                    <label class="label">Username</label>
+                    <div class="control">
+                        <input class="input" type="text" id="edit-profile-username" readonly>
+                        <p class="help">Username cannot be changed</p>
+                    </div>
+                </div>
+                
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">First Name</label>
+                            <div class="control">
+                                <input class="input" type="text" name="edit_first_name" id="edit-profile-first-name" placeholder="Enter first name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Last Name</label>
+                            <div class="control">
+                                <input class="input" type="text" name="edit_last_name" id="edit-profile-last-name" placeholder="Enter last name">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Address</label>
+                    <div class="control">
+                        <textarea class="textarea" name="edit_address" id="edit-profile-address" rows="3" placeholder="Enter full address"></textarea>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">ABN/ACN (Optional)</label>
+                    <div class="control">
+                        <input class="input" type="text" name="edit_abn_acn" id="edit-profile-abn" placeholder="Enter ABN or ACN if applicable">
+                    </div>
+                </div>
+            </form>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-primary" onclick="saveUserProfile()">Save Changes</button>
+            <button class="button" onclick="closeEditProfileModal()">Cancel</button>
         </footer>
     </div>
 </div>
@@ -613,6 +707,54 @@ function closeModal() {
 
 function closeEditModal() {
     document.getElementById('edit-modal').classList.remove('is-active');
+}
+
+function closeEditProfileModal() {
+    document.getElementById('edit-profile-modal').classList.remove('is-active');
+}
+
+// Edit user profile
+async function editUserProfile(userId, username) {
+    try {
+        // Get user data - we'll use the existing user data from the page or fetch it
+        const response = await fetch(`../api/users.php?action=get&id=${userId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const user = data.user;
+            document.getElementById('edit-profile-user-id').value = userId;
+            document.getElementById('edit-profile-username').value = username;
+            document.getElementById('edit-profile-first-name').value = user.first_name || '';
+            document.getElementById('edit-profile-last-name').value = user.last_name || '';
+            document.getElementById('edit-profile-address').value = user.address || '';
+            document.getElementById('edit-profile-abn').value = user.abn_acn || '';
+            document.getElementById('edit-profile-modal').classList.add('is-active');
+        } else {
+            // Fallback - open modal with empty fields except username
+            document.getElementById('edit-profile-user-id').value = userId;
+            document.getElementById('edit-profile-username').value = username;
+            document.getElementById('edit-profile-first-name').value = '';
+            document.getElementById('edit-profile-last-name').value = '';
+            document.getElementById('edit-profile-address').value = '';
+            document.getElementById('edit-profile-abn').value = '';
+            document.getElementById('edit-profile-modal').classList.add('is-active');
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        // Fallback - open modal with empty fields except username
+        document.getElementById('edit-profile-user-id').value = userId;
+        document.getElementById('edit-profile-username').value = username;
+        document.getElementById('edit-profile-first-name').value = '';
+        document.getElementById('edit-profile-last-name').value = '';
+        document.getElementById('edit-profile-address').value = '';
+        document.getElementById('edit-profile-abn').value = '';
+        document.getElementById('edit-profile-modal').classList.add('is-active');
+    }
+}
+
+// Save user profile
+function saveUserProfile() {
+    document.getElementById('edit-profile-form').submit();
 }
 
 // Close modal on background click
