@@ -193,33 +193,6 @@ ob_start();
             <span>No messages are currently marked for manual review.</span>
         </div>
     <?php endif; ?>
-
-    <!-- Information Box -->
-    <div class="box">
-        <h3 class="title is-5">
-            <span class="icon"><i class="fas fa-info-circle"></i></span>
-            Manual Review Information
-        </h3>
-        <div class="content">
-            <h6 class="title is-6">Contract Terms - Section 5.6: Manual Review Fee</h6>
-            <blockquote>
-                "Manual review services requested outside standard processing hours incur an additional fee of One United States Dollar (US$1.00) per email processed. These fees will be included in the monthly invoice along with standard service fees."
-            </blockquote>
-            
-            <h6 class="title is-6 mt-4">How Manual Review Works</h6>
-            <ul>
-                <li><strong>Additional Fee:</strong> Each message marked for manual review incurs a $1.00 fee</li>
-                <li><strong>Billing:</strong> Manual review fees are added to the monthly invoice alongside standard service fees</li>
-                <li><strong>Processing:</strong> These messages require additional handling outside normal processing hours</li>
-                <li><strong>Tracking:</strong> All manual review requests are logged with timestamp, reason, and reviewer</li>
-                <li><strong>Reporting:</strong> Manual review fees appear separately in billing reports for transparency</li>
-            </ul>
-            
-            <div class="notification is-warning is-light">
-                <strong>Note:</strong> Only administrators can mark messages for manual review. This ensures proper authorization and fee tracking.
-            </div>
-        </div>
-    </div>
 </div>
 
 <?php
