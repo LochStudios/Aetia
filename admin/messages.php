@@ -151,38 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = $result['message'] ?? 'Failed to archive message';
                 }
                 break;
-                
-            case 'toggle_manual_review':
-                $messageId = intval($_POST['message_id']);
-                $reason = isset($_POST['manual_review_reason']) ? trim($_POST['manual_review_reason']) : null;
-                
-                $result = $messageModel->toggleManualReview($messageId, $_SESSION['user_id'], $reason);
-                if ($result['success']) {
-                    // Check if this is an AJAX request
-                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                        // For AJAX requests, return JSON response
-                        header('Content-Type: application/json');
-                        echo json_encode([
-                            'success' => true, 
-                            'manual_review' => $result['manual_review'],
-                            'message' => $result['message']
-                        ]);
-                        exit;
-                    } else {
-                        // For regular form submissions, redirect
-                        $message = $result['message'];
-                        header('Location: messages.php?id=' . $messageId);
-                        exit;
-                    }
-                } else {
-                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                        header('Content-Type: application/json');
-                        echo json_encode(['success' => false, 'message' => $result['message']]);
-                        exit;
-                    }
-                    $error = $result['message'] ?? 'Failed to toggle manual review status';
-                }
-                break;
             }
         }
     }
@@ -697,18 +665,8 @@ ob_start();
                         <div class="field">
                             <div class="control is-flex is-justify-content-space-between">
                                 <div class="buttons">
-                                    <!-- Manual Review Toggle Button -->
-                                    <?php if ($currentMessage['status'] !== 'closed'): ?>
-                                    <button class="button is-<?= $manualReviewStatus && $manualReviewStatus['manual_review'] ? 'success' : 'primary' ?>" 
-                                            type="button" 
-                                            onclick="toggleManualReview(<?= $currentMessage['id'] ?>, <?= $manualReviewStatus && $manualReviewStatus['manual_review'] ? 'true' : 'false' ?>)">
-                                        <span class="icon">
-                                            <i class="fas fa-<?= $manualReviewStatus && $manualReviewStatus['manual_review'] ? 'check-circle' : 'dollar-sign' ?>"></i>
-                                        </span>
-                                        <span><?= $manualReviewStatus && $manualReviewStatus['manual_review'] ? 'Remove Manual Review' : 'Mark Manual Review' ?></span>
-                                    </button>
-                                    
                                     <!-- Archive Message Button -->
+                                    <?php if ($currentMessage['status'] !== 'closed'): ?>
                                     <button class="button is-warning" type="button" onclick="archiveMessage(<?= $currentMessage['id'] ?>)">
                                         <span class="icon"><i class="fas fa-archive"></i></span>
                                         <span>Archive Message</span>
@@ -1121,89 +1079,6 @@ function archiveMessage(messageId) {
                 Swal.fire({
                     title: 'Error!',
                     text: 'Failed to archive the message. Please try again.',
-                    icon: 'error',
-                    customClass: {
-                        popup: 'has-text-dark',
-                        title: 'has-text-dark',
-                        htmlContainer: 'has-text-dark'
-                    }
-                });
-            });
-        }
-    });
-}
-
-// Toggle manual review function
-function toggleManualReview(messageId, currentStatus) {
-    const action = currentStatus ? 'Remove Manual Review' : 'Mark for Manual Review';
-    const confirmText = currentStatus ? 'Remove Manual Review' : 'Mark for Manual Review';
-    
-    Swal.fire({
-        title: action,
-        text: currentStatus 
-            ? 'This will remove the manual review fee charge for this message.' 
-            : 'This will add a $1.00 manual review fee to this message as per contract terms.',
-        input: currentStatus ? null : 'textarea',
-        inputPlaceholder: currentStatus ? null : 'Optional: Reason for manual review...',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: confirmText,
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: currentStatus ? '#48c774' : '#3273dc',
-        cancelButtonColor: '#d33',
-        customClass: {
-            popup: 'has-text-dark',
-            title: 'has-text-dark',
-            htmlContainer: 'has-text-dark',
-            input: 'has-text-dark'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Create form data
-            const formData = new FormData();
-            formData.append('action', 'toggle_manual_review');
-            formData.append('message_id', messageId);
-            if (result.value && !currentStatus) {
-                formData.append('manual_review_reason', result.value);
-            }
-            
-            // Add form token (reuse archive token for now)
-            formData.append('form_token', formTokens.archiveMessage.token);
-            formData.append('form_name', formTokens.archiveMessage.name);
-            
-            // Submit form
-            fetch(window.location.href, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('Manual review toggle failed');
-                }
-            }).then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: data.message,
-                        icon: 'success',
-                        customClass: {
-                            popup: 'has-text-dark',
-                            title: 'has-text-dark',
-                            htmlContainer: 'has-text-dark'
-                        }
-                    }).then(() => {
-                        // Reload the page to update the UI
-                        window.location.reload();
-                    });
-                } else {
-                    throw new Error(data.message || 'Unknown error');
-                }
-            }).catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.message || 'Failed to toggle manual review status. Please try again.',
                     icon: 'error',
                     customClass: {
                         popup: 'has-text-dark',
