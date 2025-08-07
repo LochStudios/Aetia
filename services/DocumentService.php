@@ -316,8 +316,6 @@ class DocumentService {
      */
     private function uploadToS3($filePath, $s3Key, $mimeType) {
         try {
-            error_log("DocumentService: Starting S3 upload for key: " . $s3Key);
-            
             $result = $this->s3Client->putObject([
                 'Bucket' => $this->bucketName,
                 'Key' => $s3Key,
@@ -326,7 +324,6 @@ class DocumentService {
                 'ACL' => 'private',
             ]);
             
-            error_log("DocumentService: S3 upload successful. Object URL: " . $result['ObjectURL']);
             return $result['ObjectURL'];
             
         } catch (AwsException $e) {

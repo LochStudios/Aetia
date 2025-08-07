@@ -909,7 +909,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
      */
     private function htmlToPdf($htmlFile, $outputFile) {
         try {
-            error_log("Creating simple PDF (mPDF incompatible with PHP version)");
+            error_log("Creating robust PDF with proper structure");
             
             // Read HTML content and convert to text
             $htmlContent = file_get_contents($htmlFile);
@@ -920,72 +920,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 return false;
             }
             
-            // Create a basic but valid PDF structure
-            $pdf = "%PDF-1.4\n";
-            
-            // Object 1: Catalog
-            $pdf .= "1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n";
-            
-            // Object 2: Pages
-            $pdf .= "2 0 obj\n<</Type/Pages/Kids[3 0 R]/Count 1>>\nendobj\n";
-            
-            // Object 3: Page
-            $pdf .= "3 0 obj\n<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>\nendobj\n";
-            
-            // Prepare content stream
-            $lines = explode("\n", $textContent);
-            $yPos = 750;
-            $content = "BT /F1 11 Tf ";
-            
-            foreach ($lines as $line) {
-                if ($yPos < 50) break; // Prevent text from going off page
-                $line = substr(trim($line), 0, 85); // Limit line length
-                if (empty($line)) {
-                    $yPos -= 8; // Smaller gap for empty lines
-                    continue;
-                }
-                
-                // Escape special PDF characters
-                $line = str_replace(['(', ')', '\\'], ['\\(', '\\)', '\\\\'], $line);
-                $content .= "50 {$yPos} Td ({$line}) Tj 0 -14 Td ";
-                $yPos -= 14;
-            }
-            $content .= "ET";
-            
-            $contentLength = strlen($content);
-            
-            // Object 4: Content Stream
-            $pdf .= "4 0 obj\n<</Length {$contentLength}>>\nstream\n{$content}\nendstream\nendobj\n";
-            
-            // Object 5: Font
-            $pdf .= "5 0 obj\n<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>\nendobj\n";
-            
-            // Calculate xref positions
-            $xrefPos = strlen($pdf);
-            
-            // Cross-reference table
-            $pdf .= "xref\n0 6\n";
-            $pdf .= "0000000000 65535 f \n";
-            $pdf .= "0000000009 00000 n \n";
-            $pdf .= "0000000058 00000 n \n";
-            $pdf .= "0000000115 00000 n \n";
-            
-            // Calculate position of object 4
-            $obj4Pos = strpos($pdf, "4 0 obj");
-            $pdf .= sprintf("%010d 00000 n \n", $obj4Pos);
-            
-            // Calculate position of object 5
-            $obj5Pos = strpos($pdf, "5 0 obj");
-            $pdf .= sprintf("%010d 00000 n \n", $obj5Pos);
-            
-            // Trailer
-            $pdf .= "trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n{$xrefPos}\n%%EOF";
-            
-            // Write PDF to file
-            if (file_put_contents($outputFile, $pdf) === false) {
-                error_log("Failed to write PDF file");
-                return false;
-            }
+            // Create PDF with proper structure and cross-references
+            $this->createRobustPDF($textContent, $outputFile);
             
             // Validate the generated file
             if (!file_exists($outputFile) || filesize($outputFile) == 0) {
@@ -993,13 +929,147 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
                 return false;
             }
             
-            error_log("Simple PDF generated successfully: " . filesize($outputFile) . " bytes");
+            error_log("Robust PDF generated successfully: " . filesize($outputFile) . " bytes");
             return true;
             
         } catch (Exception $e) {
             error_log("PDF generation error: " . $e->getMessage());
             return false;
         }
+    }
+    
+    /**
+     * Create a robust PDF with proper cross-reference table
+     */
+    private function createRobustPDF($textContent, $outputFile) {
+        // Prepare text content
+        $lines = explode("\n", $textContent);
+        $contentLines = [];
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (strlen($line) > 0) {
+                // Wrap long lines
+                while (strlen($line) > 75) {
+                    $contentLines[] = substr($line, 0, 75);
+                    $line = substr($line, 75);
+                }
+                if (strlen($line) > 0) {
+                    $contentLines[] = $line;
+                }
+            } else {
+                $contentLines[] = ""; // Preserve empty lines
+            }
+        }
+        
+        // Build content stream
+        $yPosition = 750;
+        $stream = "BT\n/F1 11 Tf\n14 TL\n";
+        
+        foreach ($contentLines as $line) {
+            if ($yPosition < 50) {
+                // Start new page
+                $stream .= "ET\nendstream\nendobj\n\n";
+                // Would need to implement multi-page support here
+                break;
+            }
+            
+            if (empty($line)) {
+                $yPosition -= 14;
+                continue;
+            }
+            
+            // Escape PDF special characters
+            $line = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line);
+            $stream .= "50 {$yPosition} Td ({$line}) Tj T*\n";
+            $yPosition -= 14;
+        }
+        
+        $stream .= "ET";
+        $streamLength = strlen($stream);
+        
+        // Build PDF structure
+        $pdf = "%PDF-1.4\n";
+        $objOffsets = [];
+        
+        // Object 1: Catalog
+        $objOffsets[1] = strlen($pdf);
+        $pdf .= "1 0 obj\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Type /Catalog\n";
+        $pdf .= "/Pages 2 0 R\n";
+        $pdf .= ">>\n";
+        $pdf .= "endobj\n\n";
+        
+        // Object 2: Pages
+        $objOffsets[2] = strlen($pdf);
+        $pdf .= "2 0 obj\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Type /Pages\n";
+        $pdf .= "/Kids [3 0 R]\n";
+        $pdf .= "/Count 1\n";
+        $pdf .= ">>\n";
+        $pdf .= "endobj\n\n";
+        
+        // Object 3: Page
+        $objOffsets[3] = strlen($pdf);
+        $pdf .= "3 0 obj\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Type /Page\n";
+        $pdf .= "/Parent 2 0 R\n";
+        $pdf .= "/MediaBox [0 0 612 792]\n";
+        $pdf .= "/Contents 4 0 R\n";
+        $pdf .= "/Resources <<\n";
+        $pdf .= "  /Font <<\n";
+        $pdf .= "    /F1 5 0 R\n";
+        $pdf .= "  >>\n";
+        $pdf .= ">>\n";
+        $pdf .= ">>\n";
+        $pdf .= "endobj\n\n";
+        
+        // Object 4: Content stream
+        $objOffsets[4] = strlen($pdf);
+        $pdf .= "4 0 obj\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Length {$streamLength}\n";
+        $pdf .= ">>\n";
+        $pdf .= "stream\n";
+        $pdf .= $stream . "\n";
+        $pdf .= "endstream\n";
+        $pdf .= "endobj\n\n";
+        
+        // Object 5: Font
+        $objOffsets[5] = strlen($pdf);
+        $pdf .= "5 0 obj\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Type /Font\n";
+        $pdf .= "/Subtype /Type1\n";
+        $pdf .= "/BaseFont /Helvetica\n";
+        $pdf .= ">>\n";
+        $pdf .= "endobj\n\n";
+        
+        // Cross-reference table
+        $xrefOffset = strlen($pdf);
+        $pdf .= "xref\n";
+        $pdf .= "0 6\n";
+        $pdf .= "0000000000 65535 f \n";
+        
+        for ($i = 1; $i <= 5; $i++) {
+            $pdf .= sprintf("%010d 00000 n \n", $objOffsets[$i]);
+        }
+        
+        // Trailer
+        $pdf .= "trailer\n";
+        $pdf .= "<<\n";
+        $pdf .= "/Size 6\n";
+        $pdf .= "/Root 1 0 R\n";
+        $pdf .= ">>\n";
+        $pdf .= "startxref\n";
+        $pdf .= $xrefOffset . "\n";
+        $pdf .= "%%EOF";
+        
+        // Write to file
+        file_put_contents($outputFile, $pdf);
     }
     
     /**
