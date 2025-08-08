@@ -128,11 +128,17 @@ class SecurityManager {
     
     /**
      * Initialize session security
+     * Note: CSRF token is only generated if one doesn't exist to prevent
+     * invalidating forms that are already rendered on the page
      */
     public function initializeSecureSession() {
         $_SESSION['fingerprint'] = $this->generateSessionFingerprint();
         $_SESSION['last_activity'] = time();
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        
+        // Only generate a new CSRF token if one doesn't exist
+        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
     }
     
     /**
@@ -214,6 +220,13 @@ class SecurityManager {
      */
     public function getCsrfToken() {
         return $_SESSION['csrf_token'] ?? '';
+    }
+    
+    /**
+     * Regenerate CSRF token (call after successful form submission)
+     */
+    public function regenerateCsrfToken() {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
     
     /**

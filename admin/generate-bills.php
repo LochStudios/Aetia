@@ -127,6 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     number_format($stripeResults['total_amount'], 2),
                                     count($stripeResults['errors'])
                                 );
+                                // Regenerate CSRF token after successful operation
+                                $securityManager->regenerateCsrfToken();
                             } else {
                                 $error = 'Failed to create any Stripe invoices. Check error log for details.';
                             }
@@ -159,6 +161,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         $testResult['business_profile'],
                         $testResult['account_id']
                     );
+                    // Regenerate CSRF token after successful operation
+                    $securityManager->regenerateCsrfToken();
                 } else {
                     $error = 'Stripe connection failed. Please check your configuration.';
                 }
