@@ -555,9 +555,7 @@ class Database {
                 $columnResult = $this->mysqli->query($checkColumn);
                 if ($columnResult && $columnResult->num_rows > 0) {
                     $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (manual_review_by) REFERENCES users(id)";
-                    if ($this->mysqli->query($fkQuery)) {
-                        error_log("Added foreign key 'manual_review_by' to messages table");
-                    }
+                    if ($this->mysqli->query($fkQuery)) {}
                 }
             }
             
@@ -575,9 +573,7 @@ class Database {
                 $columnResult = $this->mysqli->query($checkColumn);
                 if ($columnResult && $columnResult->num_rows > 0) {
                     $fkQuery = "ALTER TABLE messages ADD FOREIGN KEY (archived_by) REFERENCES users(id)";
-                    if ($this->mysqli->query($fkQuery)) {
-                        error_log("Added foreign key 'archived_by' to messages table");
-                    }
+                    if ($this->mysqli->query($fkQuery)) {}
                 }
             }
             
