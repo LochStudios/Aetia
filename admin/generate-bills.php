@@ -191,9 +191,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Default to previous month for the form
-$defaultMonth = date('n', strtotime('last month'));
-$defaultYear = date('Y', strtotime('last month'));
+// Project started in August 2025 - default to current month/year or August 2025 if before
+$projectStartMonth = 8; // August
+$projectStartYear = 2025;
+$currentMonth = date('n');
+$currentYear = date('Y');
+
+// Default to current month if we're past project start, otherwise August 2025
+if ($currentYear > $projectStartYear || ($currentYear == $projectStartYear && $currentMonth >= $projectStartMonth)) {
+    $defaultMonth = $currentMonth;
+    $defaultYear = $currentYear;
+} else {
+    $defaultMonth = $projectStartMonth;
+    $defaultYear = $projectStartYear;
+}
 
 // Initialize variables for display
 $firstDay = '';
@@ -267,8 +278,14 @@ ob_start();
                         <label class="label">Month</label>
                         <div class="control">
                             <div class="select is-fullwidth">
-                                <select name="month" required>
-                                    <?php for ($i = 1; $i <= 12; $i++): ?>
+                                <select name="month" id="monthSelect" required>
+                                    <?php 
+                                    // Show months based on project start (August 2025)
+                                    $startMonth = ($defaultYear == $projectStartYear) ? $projectStartMonth : 1;
+                                    $endMonth = ($defaultYear == $currentYear) ? $currentMonth : 12;
+                                    
+                                    for ($i = $startMonth; $i <= $endMonth; $i++): 
+                                    ?>
                                         <option value="<?= $i ?>" <?= $i == $defaultMonth ? 'selected' : '' ?>>
                                             <?= date('F', mktime(0, 0, 0, $i, 1)) ?>
                                         </option>
@@ -284,8 +301,11 @@ ob_start();
                         <label class="label">Year</label>
                         <div class="control">
                             <div class="select is-fullwidth">
-                                <select name="year" required>
-                                    <?php for ($year = date('Y') - 2; $year <= date('Y'); $year++): ?>
+                                <select name="year" id="yearSelect" required onchange="updateMonthOptions()">
+                                    <?php 
+                                    // Show years from project start (2025) to current year + 1 (for future planning)
+                                    for ($year = $projectStartYear; $year <= $currentYear + 1; $year++): 
+                                    ?>
                                         <option value="<?= $year ?>" <?= $year == $defaultYear ? 'selected' : '' ?>>
                                             <?= $year ?>
                                         </option>
@@ -750,6 +770,71 @@ ob_start();
 </div>
 
 <script>
+// Project configuration
+const PROJECT_START_YEAR = <?= $projectStartYear ?>;
+const PROJECT_START_MONTH = <?= $projectStartMonth ?>;
+const CURRENT_YEAR = <?= $currentYear ?>;
+const CURRENT_MONTH = <?= $currentMonth ?>;
+
+// Month names
+const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+// Update month options based on selected year
+function updateMonthOptions() {
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    const selectedYear = parseInt(yearSelect.value);
+    
+    // Clear existing options
+    monthSelect.innerHTML = '';
+    
+    // Determine valid month range
+    let startMonth = 1;
+    let endMonth = 12;
+    
+    if (selectedYear === PROJECT_START_YEAR) {
+        startMonth = PROJECT_START_MONTH; // August 2025
+    }
+    
+    if (selectedYear === CURRENT_YEAR) {
+        endMonth = CURRENT_MONTH; // Don't show future months in current year
+    }
+    
+    // If selected year is in the future, limit to all months
+    if (selectedYear > CURRENT_YEAR) {
+        startMonth = 1;
+        endMonth = 12;
+    }
+    
+    // Add valid month options
+    for (let month = startMonth; month <= endMonth; month++) {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = MONTH_NAMES[month - 1];
+        
+        // Select current month if it's available, otherwise select the last available month
+        if ((selectedYear === CURRENT_YEAR && month === CURRENT_MONTH) || 
+            (selectedYear === PROJECT_START_YEAR && month === PROJECT_START_MONTH && CURRENT_YEAR > PROJECT_START_YEAR) ||
+            (month === endMonth && selectedYear < CURRENT_YEAR)) {
+            option.selected = true;
+        }
+        
+        monthSelect.appendChild(option);
+    }
+    
+    // If no months are available (shouldn't happen with our logic), add a placeholder
+    if (monthSelect.children.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No valid months available';
+        option.disabled = true;
+        monthSelect.appendChild(option);
+    }
+}
+
 // Export to CSV functionality
 function exportToCSV() {
     const table = document.getElementById('billTable');
@@ -810,6 +895,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             button.parentElement.remove();
         });
     });
+    
+    // Initialize month options on page load
+    updateMonthOptions();
 });
 </script>
 
