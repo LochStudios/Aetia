@@ -74,9 +74,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'update_contract':
             $contractId = intval($_POST['contract_id'] ?? 0);
             $contractContent = trim($_POST['contract_content'] ?? '');
+            $status = trim($_POST['status'] ?? '');
             
             if ($contractId > 0 && !empty($contractContent)) {
+                // Update contract content
                 $result = $contractService->updateContract($contractId, $contractContent);
+                
+                // Also update status if provided
+                if (!empty($status) && $result['success']) {
+                    $statusResult = $contractService->updateContractStatus($contractId, $status);
+                    if (!$statusResult['success']) {
+                        $result['message'] .= ' Status update failed: ' . $statusResult['message'];
+                    } else {
+                        $result['message'] .= ' Contract and status updated successfully.';
+                    }
+                }
+                
                 $message = $result['message'];
                 $messageType = $result['success'] ? 'success' : 'error';
             } else {
@@ -536,7 +549,7 @@ ob_start();
                             <label class="label">Status</label>
                             <div class="control">
                                 <div class="select is-fullwidth">
-                                    <select id="edit-status">
+                                    <select id="edit-status" name="status">
                                         <option value="draft">Draft</option>
                                         <option value="sent">Sent</option>
                                         <option value="signed">Signed</option>
