@@ -203,6 +203,9 @@ class StripeService {
      */
     public function createInvoice($clientData, $billingPeriod) {
         try {
+            // Debug: Log the billing data being processed
+            error_log("STRIPE DEBUG: Creating invoice for user {$clientData['user_id']} - Standard Fee: $" . number_format($clientData['standard_fee'], 2) . ", Manual Review Fee: $" . number_format($clientData['manual_review_fee'], 2) . ", Total: $" . number_format($clientData['total_fee'], 2));
+            
             // Create or update customer first
             $customer = $this->createOrUpdateCustomer($clientData);
 
@@ -211,6 +214,7 @@ class StripeService {
 
             // Add service fee item
             if ($clientData['standard_fee'] > 0) {
+                error_log("STRIPE DEBUG: Creating service fee item - Amount: $" . number_format($clientData['standard_fee'], 2) . " (" . ($clientData['standard_fee'] * 100) . " cents)");
                 $serviceItem = InvoiceItem::create([
                     'customer' => $customer->id,
                     'amount' => $clientData['standard_fee'] * 100, // Convert to cents
@@ -224,10 +228,14 @@ class StripeService {
                     ]
                 ]);
                 $invoiceItems[] = $serviceItem;
+                error_log("STRIPE DEBUG: Service fee item created with ID: " . $serviceItem->id);
+            } else {
+                error_log("STRIPE DEBUG: Skipping service fee item - amount is $0");
             }
 
             // Add manual review fee item if applicable
             if ($clientData['manual_review_fee'] > 0) {
+                error_log("STRIPE DEBUG: Creating manual review fee item - Amount: $" . number_format($clientData['manual_review_fee'], 2) . " (" . ($clientData['manual_review_fee'] * 100) . " cents)");
                 $reviewItem = InvoiceItem::create([
                     'customer' => $customer->id,
                     'amount' => $clientData['manual_review_fee'] * 100, // Convert to cents
@@ -241,6 +249,9 @@ class StripeService {
                     ]
                 ]);
                 $invoiceItems[] = $reviewItem;
+                error_log("STRIPE DEBUG: Manual review fee item created with ID: " . $reviewItem->id);
+            } else {
+                error_log("STRIPE DEBUG: Skipping manual review fee item - amount is $0");
             }
 
             // Create the invoice
