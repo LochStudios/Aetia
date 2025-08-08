@@ -259,7 +259,6 @@ class Message {
                        CASE WHEN u.is_admin = 1 THEN 1 ELSE 0 END as is_admin_comment, 
                        ma.uploaded_at as created_at,
                        u.id as user_id, u.username, u.social_username, u.profile_image,
-                       u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
                        ma.id as attachment_id, ma.filename, ma.original_filename,
                        ma.file_size, ma.mime_type, ma.file_path
