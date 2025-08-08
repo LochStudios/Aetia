@@ -625,99 +625,97 @@ ob_start();
                 <table class="table is-fullwidth is-striped is-hoverable" id="billTable">
                     <thead>
                         <tr>
-                            <th><abbr title="User ID">ID</abbr></th>
-                            <th>Client Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Account Type</th>
-                            <th><abbr title="Number of Messages">Messages</abbr></th>
-                            <th><abbr title="Manual Reviews">Manual Reviews</abbr></th>
-                            <th><abbr title="Service Fee">Service Fee</abbr></th>
-                            <th><abbr title="Manual Review Fee">Review Fee</abbr></th>
-                            <th><abbr title="Total Fee">Total Fee</abbr></th>
-                            <th>First Message</th>
-                            <th>Last Message</th>
-                            <th>Message Details</th>
+                            <th class="col-id"><abbr title="User ID">ID</abbr></th>
+                            <th class="col-client">Client</th>
+                            <th class="col-contact">Contact</th>
+                            <th class="col-type has-text-centered"><abbr title="Account Type">Type</abbr></th>
+                            <th class="col-messages has-text-centered"><abbr title="Messages">Msgs</abbr></th>
+                            <th class="col-review has-text-centered"><abbr title="Manual Reviews">MR</abbr></th>
+                            <th class="col-service has-text-right"><abbr title="Service Fee">Service</abbr></th>
+                            <th class="col-review-fee has-text-right"><abbr title="Review Fee">Review</abbr></th>
+                            <th class="col-total has-text-right"><abbr title="Total Fee">Total</abbr></th>
+                            <th class="col-period has-text-centered">Period</th>
+                            <th class="col-details has-text-centered">Details</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($billData as $client): ?>
                             <tr>
-                                <td><?= htmlspecialchars($client['user_id']) ?></td>
+                                <td class="has-text-weight-bold"><?= htmlspecialchars($client['user_id']) ?></td>
                                 <td>
-                                    <strong>
-                                        <?php if (!empty($client['first_name']) || !empty($client['last_name'])): ?>
-                                            <?= htmlspecialchars(trim($client['first_name'] . ' ' . $client['last_name'])) ?>
-                                        <?php else: ?>
-                                            <?= htmlspecialchars($client['username']) ?>
-                                        <?php endif; ?>
-                                    </strong>
+                                    <div class="is-size-7">
+                                        <div class="has-text-weight-bold">
+                                            <?php if (!empty($client['first_name']) || !empty($client['last_name'])): ?>
+                                                <?= htmlspecialchars(trim($client['first_name'] . ' ' . $client['last_name'])) ?>
+                                            <?php else: ?>
+                                                <?= htmlspecialchars($client['username']) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="has-text-grey is-size-7">
+                                            <a href="users.php?user_id=<?= $client['user_id'] ?>" target="_blank" class="has-text-grey">
+                                                @<?= htmlspecialchars($client['username']) ?>
+                                            </a>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                    <a href="users.php?user_id=<?= $client['user_id'] ?>" target="_blank">
-                                        <?= htmlspecialchars($client['username']) ?>
-                                    </a>
+                                    <div class="is-size-7">
+                                        <a href="mailto:<?= htmlspecialchars($client['email']) ?>" class="has-text-link">
+                                            <?= htmlspecialchars($client['email']) ?>
+                                        </a>
+                                    </div>
                                 </td>
-                                <td>
-                                    <a href="mailto:<?= htmlspecialchars($client['email']) ?>">
-                                        <?= htmlspecialchars($client['email']) ?>
-                                    </a>
-                                </td>
-                                <td>
-                                    <span class="tag is-<?= $client['account_type'] === 'manual' ? 'primary' : 'info' ?>">
+                                <td class="has-text-centered">
+                                    <span class="tag is-small is-<?= $client['account_type'] === 'manual' ? 'primary' : 'info' ?>">
                                         <?= ucfirst(htmlspecialchars($client['account_type'])) ?>
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="tag is-success is-large">
+                                <td class="has-text-centered">
+                                    <span class="tag is-success is-small-compact">
                                         <?= $client['total_message_count'] ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td class="has-text-centered">
                                     <?php if ($client['manual_review_count'] > 0): ?>
-                                        <span class="tag is-warning is-medium" title="Manual Review Messages">
-                                            <span class="icon"><i class="fas fa-dollar-sign"></i></span>
-                                            <span><?= $client['manual_review_count'] ?></span>
+                                        <span class="tag is-warning is-small-compact" title="Manual Review Messages">
+                                            <?= $client['manual_review_count'] ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-dark">0</span>
+                                        <span class="tag is-light is-small-compact">0</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <span class="tag is-info is-medium">
+                                <td class="has-text-right">
+                                    <span class="has-text-weight-semibold has-text-info is-size-7">
                                         $<?= number_format($client['standard_fee'], 2) ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td class="has-text-right">
                                     <?php if ($client['manual_review_fee'] > 0): ?>
-                                        <span class="tag is-warning is-medium">
+                                        <span class="has-text-weight-semibold has-text-warning is-size-7">
                                             $<?= number_format($client['manual_review_fee'], 2) ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-dark">$0.00</span>
+                                        <span class="has-text-grey is-size-7">$0.00</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <span class="tag is-success is-large">
-                                        <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
+                                <td class="has-text-right">
+                                    <span class="has-text-weight-bold has-text-success is-size-6">
+                                        $<?= number_format($client['total_fee'], 2) ?>
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="is-size-7">
-                                        <?= isset($client['first_message_date']) ? date('M j, Y', strtotime($client['first_message_date'])) : 'N/A' ?>
-                                    </span>
+                                <td class="has-text-centered">
+                                    <div class="is-size-7">
+                                        <div><?= isset($client['first_message_date']) ? date('M j', strtotime($client['first_message_date'])) : 'N/A' ?></div>
+                                        <div class="has-text-grey">to</div>
+                                        <div><?= isset($client['last_message_date']) ? date('M j', strtotime($client['last_message_date'])) : 'N/A' ?></div>
+                                    </div>
                                 </td>
-                                <td>
-                                    <span class="is-size-7">
-                                        <?= isset($client['last_message_date']) ? date('M j, Y', strtotime($client['last_message_date'])) : 'N/A' ?>
-                                    </span>
-                                </td>
-                                <td class="message-details">
+                                <td class="has-text-centered" style="position: relative;">
                                     <details>
-                                        <summary class="button is-small is-dark">
-                                            View Details (<?= $client['total_message_count'] ?> messages<?= $client['manual_review_count'] > 0 ? ', ' . $client['manual_review_count'] . ' manual review' : '' ?>)
+                                        <summary class="button is-small is-outlined">
+                                            <span class="icon is-small"><i class="fas fa-eye"></i></span>
                                         </summary>
-                                        <div class="content mt-2 p-2" style="background: #f5f5f5; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                                        <div class="details-popup p-3">
                                             <?php if ($client['manual_review_count'] > 0 && !empty($client['manual_review_details'])): ?>
                                                 <h6 class="title is-6 has-text-warning mb-2">
                                                     <span class="icon"><i class="fas fa-dollar-sign"></i></span>
@@ -736,10 +734,7 @@ ob_start();
                                                 <hr class="my-2">
                                             <?php endif; ?>
                                             
-                                            <h6 class="title is-6 mb-2">All Messages:</h6>
-                                            <?php 
-                                            // For now, show summary since we changed the data structure
-                                            ?>
+                                            <h6 class="title is-6 mb-2">Billing Summary:</h6>
                                             <p class="is-size-7 mb-1">
                                                 <strong>Period:</strong> <?= date('M j, Y', strtotime($client['first_message_date'])) ?> - <?= date('M j, Y', strtotime($client['last_message_date'])) ?>
                                             </p>
@@ -900,41 +895,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     updateMonthOptions();
 });
 </script>
-
-<style>
-@media print {
-    .button, .breadcrumb, .level .level-right {
-        display: none !important;
-    }
-    
-    .box {
-        box-shadow: none !important;
-        border: 1px solid #ddd !important;
-    }
-    
-    .message-details details {
-        display: block !important;
-    }
-    
-    .message-details summary {
-        display: none !important;
-    }
-    
-    .message-details .content {
-        display: block !important;
-        max-height: none !important;
-        overflow: visible !important;
-    }
-}
-
-.message-details details summary {
-    cursor: pointer;
-}
-
-.message-details details[open] summary {
-    margin-bottom: 0.5rem;
-}
-</style>
 
 <?php
 $content = ob_get_clean();

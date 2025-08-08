@@ -862,3 +862,217 @@ button[disabled], input[disabled] {
 .status-responded { background: #48c78e; color: white; }
 .status-closed { background: #666; color: white; }
 .status-approved { background: #48c78e; color: white; }
+
+/* Billing Table Styling */
+.billing-table {
+    font-size: 0.875rem;
+}
+
+.billing-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.5rem !important;
+    border-bottom: 2px solid #363636;
+}
+
+.billing-table td {
+    padding: 0.5rem !important;
+    vertical-align: middle;
+}
+
+.billing-table .tag.is-small-compact {
+    font-size: 0.65rem;
+    height: 1.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+/* Details popup styling */
+.details-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #2c2c2c;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    min-width: 300px;
+    max-width: 400px;
+    color: #fff;
+    font-size: 0.875rem;
+}
+
+.details-popup h6 {
+    color: #fff !important;
+}
+
+.details-popup hr {
+    background-color: #4a4a4a;
+    margin: 0.75rem 0;
+}
+
+/* Responsive column sizing */
+.col-id { width: 60px; }
+.col-client { width: 200px; }
+.col-email { width: 180px; }
+.col-type { width: 80px; }
+.col-messages { width: 80px; }
+.col-manual { width: 80px; }
+.col-fee { width: 80px; }
+.col-manual-fee { width: 80px; }
+.col-total { width: 100px; }
+.col-period { width: 120px; }
+.col-actions { width: 60px; }
+
+@media screen and (max-width: 1200px) {
+    .col-email { width: 150px; }
+    .col-client { width: 160px; }
+}
+
+@media screen and (max-width: 992px) {
+    .billing-table {
+        font-size: 0.8rem;
+    }
+    
+    .billing-table th,
+    .billing-table td {
+        padding: 0.375rem !important;
+    }
+}
+
+/* Generate Bills Page Specific Styling */
+#billTable {
+    font-size: 0.875rem;
+}
+
+#billTable th,
+#billTable td {
+    padding: 0.5rem 0.25rem;
+    vertical-align: middle;
+}
+
+#billTable th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Column widths for better space utilization */
+#billTable .col-id { width: 50px; }
+#billTable .col-client { width: 180px; }
+#billTable .col-contact { width: 200px; }
+#billTable .col-type { width: 70px; }
+#billTable .col-messages { width: 60px; }
+#billTable .col-review { width: 50px; }
+#billTable .col-service { width: 80px; }
+#billTable .col-review-fee { width: 80px; }
+#billTable .col-total { width: 100px; }
+#billTable .col-period { width: 100px; }
+#billTable .col-details { width: 80px; }
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    #billTable .col-contact { width: 150px; }
+    #billTable .col-client { width: 140px; }
+}
+
+@media (max-width: 1200px) {
+    #billTable {
+        font-size: 0.8rem;
+    }
+    #billTable th,
+    #billTable td {
+        padding: 0.4rem 0.2rem;
+    }
+}
+
+/* Details popup styling with arrow */
+.details-popup-with-arrow {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 350px;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+}
+
+.details-popup-with-arrow::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #ddd;
+}
+
+.details-popup-with-arrow::after {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+}
+
+/* Compact tags */
+.tag.is-small-compact {
+    font-size: 0.65rem;
+    height: 1.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+}
+
+/* Print styles for billing */
+@media print {
+    .button, .breadcrumb, .level .level-right {
+        display: none !important;
+    }
+    
+    .box {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .message-details details {
+        display: block !important;
+    }
+    
+    .message-details summary {
+        display: none !important;
+    }
+    
+    .message-details .content {
+        display: block !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}
+
+/* Message details styling */
+.message-details details summary {
+    cursor: pointer;
+}
+
+.message-details details[open] summary {
+    margin-bottom: 0.5rem;
+}
+
+/* Fix table container to prevent horizontal scroll issues */
+.table-container {
+    overflow-x: auto;
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+}
