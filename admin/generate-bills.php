@@ -354,7 +354,7 @@ ob_start();
             <div class="column is-4">
                 <div class="field">
                     <?php if ($stripeInitError): ?>
-                    <div class="notification is-danger is-light">
+                    <div class="notification is-danger is-dark">
                         <p class="has-text-weight-bold">Stripe Configuration Issue:</p>
                         <p><?= htmlspecialchars($stripeInitError) ?></p>
                         
@@ -388,7 +388,7 @@ ob_start();
                         </div>
                     </div>
                     <?php elseif (!$stripeService): ?>
-                    <div class="notification is-warning is-light">
+                    <div class="notification is-warning is-dark">
                         <p class="has-text-weight-bold">Stripe Service Unavailable</p>
                         <p>Stripe functionality is not available. Please check configuration.</p>
                     </div>
@@ -680,7 +680,7 @@ ob_start();
                                             <span><?= $client['manual_review_count'] ?></span>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">0</span>
+                                        <span class="tag is-dark">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -694,7 +694,7 @@ ob_start();
                                             $<?= number_format($client['manual_review_fee'], 2) ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">$0.00</span>
+                                        <span class="tag is-dark">$0.00</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -714,7 +714,7 @@ ob_start();
                                 </td>
                                 <td class="message-details">
                                     <details>
-                                        <summary class="button is-small is-light">
+                                        <summary class="button is-small is-dark">
                                             View Details (<?= $client['total_message_count'] ?> messages<?= $client['manual_review_count'] > 0 ? ', ' . $client['manual_review_count'] . ' manual review' : '' ?>)
                                         </summary>
                                         <div class="content mt-2 p-2" style="background: #f5f5f5; border-radius: 4px; max-height: 200px; overflow-y: auto;">
