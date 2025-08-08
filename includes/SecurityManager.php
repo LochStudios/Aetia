@@ -148,6 +148,7 @@ class SecurityManager {
         $limits = [
             'stripe_create_invoices' => ['count' => 5, 'window' => 3600], // 5 per hour
             'stripe_test_connection' => ['count' => 10, 'window' => 3600], // 10 per hour
+            'stripe_send_invoice' => ['count' => 100, 'window' => 3600], // 100 per hour
             'stripe_access' => ['count' => 50, 'window' => 3600] // 50 per hour
         ];
         

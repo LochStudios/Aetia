@@ -121,10 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         } else {
                             $billingPeriod = date('F Y', strtotime($firstDay));
                             $stripeResults = $stripeService->createBatchInvoices($billData, $billingPeriod);
-                            
                             if (count($stripeResults['success']) > 0) {
                                 $message = sprintf(
-                                    'Successfully created %d Stripe invoices totaling $%s. %d errors occurred.',
+                                    'Successfully created %d Stripe invoices totaling $%s. %d errors occurred. All invoice emails were automatically sent by Stripe.',
                                     count($stripeResults['success']),
                                     number_format($stripeResults['total_amount'], 2),
                                     count($stripeResults['errors'])
@@ -345,7 +344,7 @@ ob_start();
                         <li>Create or update customer records in Stripe</li>
                         <li>Generate itemized invoices with service and manual review fees</li>
                         <li>Set payment terms to Net 30 days</li>
-                        <li>Prepare invoices for email delivery to clients</li>
+                        <li>Automatically send invoice emails to clients via Stripe</li>
                     </ul>
                 </div>
             </div>
@@ -404,12 +403,12 @@ ob_start();
                         
                         <?php if (!empty($billData)): ?>
                         <form method="POST" action="" style="display: inline-block;" 
-                              onsubmit="return confirm('Create Stripe invoices for <?= count($billData) ?> clients? This action cannot be undone.');">
+                              onsubmit="return confirm('Create Stripe invoices for <?= count($billData) ?> clients? Invoices will be automatically emailed by Stripe. This action cannot be undone.');">
                             <input type="hidden" name="action" value="create_stripe_invoices">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
                             <button type="submit" class="button is-success is-medium" <?= !$stripeService ? 'disabled title="Stripe service not available"' : '' ?>>
                                 <span class="icon"><i class="fab fa-stripe-s"></i></span>
-                                <span>Create Stripe Invoices</span>
+                                <span>Create & Send Stripe Invoices</span>
                             </button>
                         </form>
                         <?php else: ?>
@@ -475,6 +474,12 @@ ob_start();
                         <p class="title has-text-success">$<?= number_format($stripeResults['total_amount'], 2) ?></p>
                     </div>
                 </div>
+                <div class="level-item">
+                    <div>
+                        <p class="heading">Emails Sent</p>
+                        <p class="title has-text-info"><?= count($stripeResults['success']) ?></p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -491,6 +496,7 @@ ob_start();
                         <th>Email</th>
                         <th>Invoice ID</th>
                         <th>Amount</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -504,6 +510,12 @@ ob_start();
                         </td>
                         <td>
                             <span class="tag is-success">$<?= number_format($success['amount'], 2) ?></span>
+                        </td>
+                        <td>
+                            <span class="tag is-success is-small">
+                                <span class="icon"><i class="fas fa-check"></i></span>
+                                <span>Sent via Stripe</span>
+                            </span>
                         </td>
                         <td>
                             <a href="<?= htmlspecialchars($success['invoice_url']) ?>" target="_blank" class="button is-small is-info">
@@ -826,6 +838,32 @@ function updateMonthOptions() {
         option.disabled = true;
         monthSelect.appendChild(option);
     }
+}
+
+// Show notification helper
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification is-${type}`;
+    notification.innerHTML = `
+        <button class="delete"></button>
+        ${message}
+    `;
+    
+    // Insert at the top of the content area
+    const content = document.querySelector('.content');
+    content.insertBefore(notification, content.firstChild);
+    
+    // Add delete functionality
+    notification.querySelector('.delete').addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
 }
 
 // Export to CSV functionality

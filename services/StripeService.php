@@ -284,7 +284,10 @@ class StripeService {
             // Finalize the invoice to make it ready to send
             $invoice->finalizeInvoice();
             error_log("STRIPE DEBUG: Finalized invoice. Final amount: " . ($invoice->total / 100) . " USD");
-            error_log("Created Stripe invoice: {$invoice->id} for user ID: {$clientData['user_id']} - Amount: $" . number_format($clientData['total_fee'], 2));
+            // Send the invoice via Stripe's email system
+            $invoice->sendInvoice();
+            error_log("STRIPE DEBUG: Invoice email sent via Stripe for invoice: " . $invoice->id);
+            error_log("Created Stripe invoice: {$invoice->id} for user ID: {$clientData['user_id']} - Amount: $" . number_format($clientData['total_fee'], 2) . " (email sent)");
             return $invoice;
         } catch (ApiErrorException $e) {
             error_log("Stripe invoice creation error for user ID {$clientData['user_id']}: " . $e->getMessage());
@@ -354,13 +357,14 @@ class StripeService {
                     'email' => filter_var($clientData['email'], FILTER_SANITIZE_EMAIL),
                     'invoice_id' => $invoice->id,
                     'amount' => (float)$clientData['total_fee'],
-                    'invoice_url' => $invoice->hosted_invoice_url
+                    'invoice_url' => $invoice->hosted_invoice_url,
+                    'email_sent' => true // Stripe sends email automatically when invoice is created
                 ];
                 
                 $results['total_amount'] += (float)$clientData['total_fee'];
                 
                 // Log successful invoice creation
-                error_log("Invoice created successfully: {$invoice->id} for user {$clientData['user_id']} by admin {$_SESSION['user_id']}");
+                error_log("Invoice created and sent successfully: {$invoice->id} for user {$clientData['user_id']} by admin {$_SESSION['user_id']}");
                 
             } catch (Exception $e) {
                 $results['errors'][] = [
@@ -376,7 +380,7 @@ class StripeService {
         }
 
         // Log batch operation summary
-        error_log("Batch invoice operation completed by admin {$_SESSION['user_id']}: {$results['total_processed']} processed, " . count($results['success']) . " successful, " . count($results['errors']) . " errors");
+        error_log("Batch invoice operation completed by admin {$_SESSION['user_id']}: {$results['total_processed']} processed, " . count($results['success']) . " successful, " . count($results['errors']) . " errors. All successful invoices automatically emailed by Stripe.");
 
         return $results;
     }
