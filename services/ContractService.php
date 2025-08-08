@@ -1135,7 +1135,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             }
             
             // Fix any template issues in the stored contract content
-            $fixedContent = $this->fixContractTemplateIssues($contract['contract_content']);
+            $fixedContent = $this->fixContractTemplateIssues($contract['contract_content'], $contract);
             // Update the database with the fixed content
             $stmt = $this->mysqli->prepare("
                 UPDATE user_contracts 
@@ -1144,6 +1144,7 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             ");
             $stmt->bind_param("si", $fixedContent, $contractId);
             $stmt->execute();
+            $stmt->close();
             
             // Delete any existing PDF documents for this contract (since we're fixing issues)
             $this->deleteContractDocuments($contract['user_id']);
@@ -1173,13 +1174,34 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
     /**
      * Fix template issues in existing contract content
      */
-    private function fixContractTemplateIssues($contractContent) {
-        // Fix the USER_ACCEPTANCE_DATE template issue
-        $fixedContent = str_replace(
-            '{{USER_ACCEPTANCE_DATE}}', 
-            '_____________________', 
-            $contractContent
-        );
+    private function fixContractTemplateIssues($contractContent, $contract = null) {
+        // If we have contract data and user has accepted, use the actual acceptance date
+        if ($contract && !empty($contract['user_accepted_date']) && $contract['user_accepted_date'] !== '0000-00-00 00:00:00') {
+            $userAcceptanceDate = date('F j, Y', strtotime($contract['user_accepted_date']));
+            $fixedContent = str_replace(
+                ['{{USER_ACCEPTANCE_DATE}}', 'Date of Acceptance: _____________________'],
+                [$userAcceptanceDate, 'Date of Acceptance: ' . $userAcceptanceDate],
+                $contractContent
+            );
+        } else {
+            // User hasn't accepted yet, replace placeholder with underscores
+            $fixedContent = str_replace(
+                '{{USER_ACCEPTANCE_DATE}}', 
+                '_____________________', 
+                $contractContent
+            );
+        }
+        
+        // Also fix company acceptance date if it exists
+        if ($contract && !empty($contract['company_accepted_date']) && $contract['company_accepted_date'] !== '0000-00-00 00:00:00') {
+            $companyAcceptanceDate = date('F j, Y', strtotime($contract['company_accepted_date']));
+            $fixedContent = str_replace(
+                '{{COMPANY_ACCEPTANCE_DATE}}',
+                $companyAcceptanceDate,
+                $fixedContent
+            );
+        }
+        
         return $fixedContent;
     }
     
