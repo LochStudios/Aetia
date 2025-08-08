@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 }
 
 require_once __DIR__ . '/models/Message.php';
+require_once __DIR__ . '/services/ImageUploadService.php';
 
 // Helper function to process profile image URLs
 function processProfileImageUrl($profileImage, $userId = null) {
@@ -23,14 +24,28 @@ function processProfileImageUrl($profileImage, $userId = null) {
     if (strpos($profileImage, 'http') === 0) {
         return $profileImage;
     }
-    // If it's a flag pattern like "user-X-has-image", convert to proper URL
+    // If it's a flag pattern like "user-X-has-image", get S3 presigned URL directly
     if (preg_match('/^user-(\d+)-has-image/', $profileImage, $matches)) {
         $imageUserId = $matches[1];
-        return 'view-profile-image.php?user_id=' . $imageUserId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($imageUserId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$imageUserId}: " . $e->getMessage());
+            return null;
+        }
     }
-    // If it looks like a file path and we have a user ID
+    // If it looks like a file path and we have a user ID, try S3
     if ($userId && !strpos($profileImage, '/')) {
-        return 'view-profile-image.php?user_id=' . $userId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($userId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$userId}: " . $e->getMessage());
+            return null;
+        }
     }
     // Default case - treat as relative path
     return $profileImage;

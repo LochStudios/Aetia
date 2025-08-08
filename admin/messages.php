@@ -16,6 +16,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../services/ImageUploadService.php';
 
 // Helper function to process profile image URLs
 function processProfileImageUrl($profileImage, $userId = null) {
@@ -26,14 +27,28 @@ function processProfileImageUrl($profileImage, $userId = null) {
     if (strpos($profileImage, 'http') === 0) {
         return $profileImage;
     }
-    // If it's a flag pattern like "user-X-has-image", convert to proper URL
+    // If it's a flag pattern like "user-X-has-image", get S3 presigned URL directly
     if (preg_match('/^user-(\d+)-has-image/', $profileImage, $matches)) {
         $imageUserId = $matches[1];
-        return 'view-user-profile-image.php?user_id=' . $imageUserId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($imageUserId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$imageUserId}: " . $e->getMessage());
+            return null;
+        }
     }
-    // If it looks like a file path and we have a user ID
+    // If it looks like a file path and we have a user ID, try S3
     if ($userId && !strpos($profileImage, '/')) {
-        return 'view-user-profile-image.php?user_id=' . $userId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($userId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$userId}: " . $e->getMessage());
+            return null;
+        }
     }
     // Default case - treat as relative path
     return $profileImage;
@@ -750,30 +765,25 @@ const formTokens = {
 };
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to process profile image URLs in JavaScript
-    function processProfileImageUrlJS(profileImage, userId) {
+    async function processProfileImageUrlJS(profileImage, userId) {
         if (!profileImage) {
             return null;
         }
         
-        // If it's already a proper URL (starts with http), return as-is
-        if (profileImage.startsWith('http')) {
-            return profileImage;
+        try {
+            const response = await fetch(`../api/get-profile-image-url.php?profile_image=${encodeURIComponent(profileImage)}&user_id=${userId || ''}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                return data.image_url;
+            } else {
+                console.warn('Failed to get profile image URL:', data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching profile image URL:', error);
+            return null;
         }
-        
-        // If it's a flag pattern like "user-X-has-image", convert to proper URL
-        const flagMatch = profileImage.match(/^user-(\d+)-has-image/);
-        if (flagMatch) {
-            const imageUserId = flagMatch[1];
-            return 'view-user-profile-image.php?user_id=' + imageUserId;
-        }
-        
-        // If it looks like a file path and we have a user ID
-        if (userId && profileImage.indexOf('/') === -1) {
-            return 'view-user-profile-image.php?user_id=' + userId;
-        }
-        
-        // Default case - treat as relative path
-        return profileImage;
     }
     
     // Real-time message updates

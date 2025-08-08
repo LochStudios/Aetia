@@ -16,6 +16,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 
 require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/services/ImageUploadService.php';
 
 // Helper function to process profile image URLs
 function processProfileImageUrl($profileImage, $userId = null) {
@@ -28,15 +29,29 @@ function processProfileImageUrl($profileImage, $userId = null) {
         return $profileImage;
     }
     
-    // If it's a flag pattern like "user-X-has-image", convert to proper URL
+    // If it's a flag pattern like "user-X-has-image", get S3 presigned URL directly
     if (preg_match('/^user-(\d+)-has-image/', $profileImage, $matches)) {
         $imageUserId = $matches[1];
-        return 'view-profile-image.php?user_id=' . $imageUserId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($imageUserId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$imageUserId}: " . $e->getMessage());
+            return null;
+        }
     }
     
-    // If it looks like a file path and we have a user ID
+    // If it looks like a file path and we have a user ID, try S3
     if ($userId && !strpos($profileImage, '/')) {
-        return 'view-profile-image.php?user_id=' . $userId;
+        try {
+            $imageUploadService = new ImageUploadService();
+            $presignedUrl = $imageUploadService->getPresignedProfileImageUrl($userId, 'jpeg', 30);
+            return $presignedUrl ?: null;
+        } catch (Exception $e) {
+            error_log("Failed to get profile image URL for user {$userId}: " . $e->getMessage());
+            return null;
+        }
     }
     
     // Default case - treat as relative path
@@ -840,30 +855,25 @@ const formTokens = {
 
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to process profile image URLs in JavaScript
-    function processProfileImageUrlJS(profileImage, userId) {
+    async function processProfileImageUrlJS(profileImage, userId) {
         if (!profileImage) {
             return null;
         }
         
-        // If it's already a proper URL (starts with http), return as-is
-        if (profileImage.startsWith('http')) {
-            return profileImage;
+        try {
+            const response = await fetch(`api/get-profile-image-url.php?profile_image=${encodeURIComponent(profileImage)}&user_id=${userId || ''}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                return data.image_url;
+            } else {
+                console.warn('Failed to get profile image URL:', data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching profile image URL:', error);
+            return null;
         }
-        
-        // If it's a flag pattern like "user-X-has-image", convert to proper URL
-        const flagMatch = profileImage.match(/^user-(\d+)-has-image/);
-        if (flagMatch) {
-            const imageUserId = flagMatch[1];
-            return 'view-profile-image.php?user_id=' + imageUserId;
-        }
-        
-        // If it looks like a file path and we have a user ID
-        if (userId && profileImage.indexOf('/') === -1) {
-            return 'view-profile-image.php?user_id=' + userId;
-        }
-        
-        // Default case - treat as relative path
-        return profileImage;
     }
     
     // Auto-refresh message counts every 30 seconds
@@ -909,19 +919,19 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function appendNewMessages(newItems) {
+    async function appendNewMessages(newItems) {
         const discussionContainer = document.querySelector('.content h4.title').parentElement;
         
-        newItems.forEach(item => {
-            const messageHtml = createMessageHTML(item);
+        for (const item of newItems) {
+            const messageHtml = await createMessageHTML(item);
             discussionContainer.insertAdjacentHTML('beforeend', messageHtml);
-        });
+        }
         
         // Scroll to bottom to show new messages
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
     
-    function createMessageHTML(item) {
+    async function createMessageHTML(item) {
         const isAdmin = item.is_admin_comment;
         const displayName = item.display_name === 'admin' ? 'System Administrator' : item.display_name;
         
@@ -945,11 +955,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        const profileImage = item.profile_image ? 
-            processProfileImageUrlJS(item.profile_image, item.user_id) : null;
-        
-        const profileImageHTML = profileImage ? 
-            `<img src="${profileImage}" alt="Profile Picture" class="profile-image">` :
+        const profileImageUrl = await processProfileImageUrlJS(item.profile_image, item.user_id);
+        const profileImageHTML = profileImageUrl ? 
+            `<img src="${profileImageUrl}" alt="Profile Picture" class="profile-image">` :
             `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
             `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
         
