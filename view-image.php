@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 }
 
 require_once __DIR__ . '/models/Message.php';
+require_once __DIR__ . '/includes/FileUploader.php';
 
 // Get attachment ID from URL
 $attachmentId = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -35,14 +36,32 @@ if (strpos($attachment['mime_type'], 'image/') !== 0) {
     exit('File is not an image');
 }
 
-// Check if file exists
-if (!file_exists($attachment['file_path'])) {
+// Handle S3 images vs local images
+if (strpos($attachment['file_path'], 's3_document_') === 0) {
+    // This is an S3 image - redirect to signed URL
+    $fileUploader = new FileUploader();
+    $signedUrl = $fileUploader->getSignedUrl($attachment['file_path'], 60);
+    
+    if ($signedUrl) {
+        // Redirect to the signed URL
+        header('Location: ' . $signedUrl);
+        exit();
+    } else {
+        http_response_code(404);
+        exit('Unable to generate signed URL for S3 image');
+    }
+}
+
+// Handle local images (fallback for non-image files or legacy images)
+$filePath = $attachment['file_path'];
+
+// Check if local file exists
+if (!file_exists($filePath)) {
     http_response_code(404);
     exit('File not found');
 }
 
 // Get file info
-$filePath = $attachment['file_path'];
 $mimeType = $attachment['mime_type'];
 $fileSize = $attachment['file_size'];
 

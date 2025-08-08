@@ -1,6 +1,8 @@
 <?php
 // includes/FileUploader.php - File upload utility for message attachments
 
+require_once __DIR__ . '/../services/DocumentService.php';
+
 class FileUploader {
     private $baseUploadPath;
     private $allowedTypes;
@@ -43,8 +45,36 @@ class FileUploader {
             if (!$validation['success']) {
                 return $validation;
             }
-            
-            // Create directory structure: /home/aetiacom/message-attachments/{userId}/{messageId}/
+            // Use DocumentService for image uploads to S3
+            $mimeType = $this->getMimeType($file['tmp_name'], $file['name']);
+            if (self::isImage($mimeType)) {
+                $documentService = new DocumentService();
+                $documentType = 'message-image';
+                $description = 'Message image attachment';
+                $result = $documentService->uploadUserDocument($userId, $file, $documentType, $description, $userId, false);
+                if ($result['success']) {
+                    // Get the most recently uploaded document by document_id
+                    $documentId = $result['document_id'];
+                    $document = $documentService->getDocument($documentId);
+                    $s3Key = $document ? $document['s3_key'] : null;
+                    // Generate signed URL for secure access
+                    $signedUrl = $s3Key ? $documentService->getSignedUrl($s3Key, 60) : null;
+                    return [
+                        'success' => true,
+                        'filename' => $file['name'],
+                        'original_filename' => $file['name'],
+                        'file_path' => 's3_document_' . $result['document_id'],
+                        'file_size' => $file['size'],
+                        'mime_type' => $mimeType,
+                        's3_url' => $signedUrl,
+                        's3_key' => $s3Key,
+                        'document_id' => $result['document_id']
+                    ];
+                } else {
+                    return ['success' => false, 'message' => $result['message']];
+                }
+            }
+            // For non-image files, fallback to local storage
             $userDir = $this->baseUploadPath . '/' . $userId;
             $messageDir = $userDir . '/' . $messageId;
             
@@ -146,10 +176,22 @@ class FileUploader {
     
     /**
      * Delete attachment file
-     * @param string $filePath - Full path to file
+     * @param string $filePath - Full path to file or S3 document ID
      * @return bool - Success status
      */
     public function deleteAttachment($filePath) {
+        // Check if this is an S3 document (indicated by s3_document_ prefix)
+        if (strpos($filePath, 's3_document_') === 0) {
+            $documentId = str_replace('s3_document_', '', $filePath);
+            try {
+                $documentService = new DocumentService();
+                return $documentService->deleteUserDocument($documentId, 0); // 0 as system deletion
+            } catch (Exception $e) {
+                error_log("S3 attachment deletion error: " . $e->getMessage());
+                return false;
+            }
+        }
+        // Handle local file deletion
         if (file_exists($filePath)) {
             return unlink($filePath);
         }
@@ -237,6 +279,29 @@ class FileUploader {
      */
     public static function isImage($mimeType) {
         return strpos($mimeType, 'image/') === 0;
+    }
+    
+    /**
+     * Get signed URL for S3 attachment
+     * @param string $filePath - S3 document ID or file path
+     * @param int $expirationMinutes - URL expiration time in minutes
+     * @return string|null - Signed URL or null if not S3 or error
+     */
+    public function getSignedUrl($filePath, $expirationMinutes = 60) {
+        // Check if this is an S3 document (indicated by s3_document_ prefix)
+        if (strpos($filePath, 's3_document_') === 0) {
+            $documentId = str_replace('s3_document_', '', $filePath);
+            try {
+                $documentService = new DocumentService();
+                $document = $documentService->getDocument($documentId);
+                if ($document && isset($document['s3_key'])) {
+                    return $documentService->getSignedUrl($document['s3_key'], $expirationMinutes);
+                }
+            } catch (Exception $e) {
+                error_log("S3 signed URL generation error: " . $e->getMessage());
+            }
+        }
+        return null; // Not an S3 document or error occurred
     }
 }
 ?>

@@ -876,13 +876,11 @@ class Message {
             $stmt->bind_param("i", $attachmentId);
             $result = $stmt->execute();
             $stmt->close();
-            
             if ($result) {
-                // Delete physical file
-                if (file_exists($attachment['file_path'])) {
-                    unlink($attachment['file_path']);
-                }
-                
+                // Delete physical file using FileUploader (handles both S3 and local files)
+                require_once __DIR__ . '/../includes/FileUploader.php';
+                $fileUploader = new FileUploader();
+                $fileUploader->deleteAttachment($attachment['file_path']);
                 return ['success' => true];
             } else {
                 return ['success' => false, 'message' => 'Failed to delete attachment'];
