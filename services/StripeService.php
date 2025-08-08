@@ -209,52 +209,10 @@ class StripeService {
             // Create or update customer first
             $customer = $this->createOrUpdateCustomer($clientData);
 
-            // Create invoice items
+            // Initialize invoice items array for tracking
             $invoiceItems = [];
 
-            // Add service fee item
-            if ($clientData['standard_fee'] > 0) {
-                error_log("STRIPE DEBUG: Creating service fee item - Amount: $" . number_format($clientData['standard_fee'], 2) . " (" . ($clientData['standard_fee'] * 100) . " cents)");
-                $serviceItem = InvoiceItem::create([
-                    'customer' => $customer->id,
-                    'amount' => $clientData['standard_fee'] * 100, // Convert to cents
-                    'currency' => $this->defaultCurrency,
-                    'description' => $this->serviceFeeDescription . " - {$billingPeriod}",
-                    'metadata' => [
-                        'user_id' => $clientData['user_id'],
-                        'message_count' => $clientData['total_message_count'],
-                        'billing_period' => $billingPeriod,
-                        'fee_type' => 'service_fee'
-                    ]
-                ]);
-                $invoiceItems[] = $serviceItem;
-                error_log("STRIPE DEBUG: Service fee item created with ID: " . $serviceItem->id);
-            } else {
-                error_log("STRIPE DEBUG: Skipping service fee item - amount is $0");
-            }
-
-            // Add manual review fee item if applicable
-            if ($clientData['manual_review_fee'] > 0) {
-                error_log("STRIPE DEBUG: Creating manual review fee item - Amount: $" . number_format($clientData['manual_review_fee'], 2) . " (" . ($clientData['manual_review_fee'] * 100) . " cents)");
-                $reviewItem = InvoiceItem::create([
-                    'customer' => $customer->id,
-                    'amount' => $clientData['manual_review_fee'] * 100, // Convert to cents
-                    'currency' => $this->defaultCurrency,
-                    'description' => $this->manualReviewFeeDescription . " - {$billingPeriod}",
-                    'metadata' => [
-                        'user_id' => $clientData['user_id'],
-                        'manual_review_count' => $clientData['manual_review_count'],
-                        'billing_period' => $billingPeriod,
-                        'fee_type' => 'manual_review_fee'
-                    ]
-                ]);
-                $invoiceItems[] = $reviewItem;
-                error_log("STRIPE DEBUG: Manual review fee item created with ID: " . $reviewItem->id);
-            } else {
-                error_log("STRIPE DEBUG: Skipping manual review fee item - amount is $0");
-            }
-
-            // Create the invoice
+            // Create the invoice first (in draft state)
             $invoice = Invoice::create([
                 'customer' => $customer->id,
                 'collection_method' => 'send_invoice',
@@ -277,12 +235,56 @@ class StripeService {
                     ]
                 ]
             ]);
-
+            error_log("STRIPE DEBUG: Created draft invoice with ID: " . $invoice->id);
+            // Add service fee item to the specific invoice
+            if ($clientData['standard_fee'] > 0) {
+                error_log("STRIPE DEBUG: Creating service fee item - Amount: $" . number_format($clientData['standard_fee'], 2) . " (" . ($clientData['standard_fee'] * 100) . " cents)");
+                $serviceItem = InvoiceItem::create([
+                    'customer' => $customer->id,
+                    'invoice' => $invoice->id, // Explicitly attach to this invoice
+                    'amount' => $clientData['standard_fee'] * 100, // Convert to cents
+                    'currency' => $this->defaultCurrency,
+                    'description' => $this->serviceFeeDescription . " - {$billingPeriod}",
+                    'metadata' => [
+                        'user_id' => $clientData['user_id'],
+                        'message_count' => $clientData['total_message_count'],
+                        'billing_period' => $billingPeriod,
+                        'fee_type' => 'service_fee'
+                    ]
+                ]);
+                $invoiceItems[] = $serviceItem;
+                error_log("STRIPE DEBUG: Service fee item created with ID: " . $serviceItem->id . " attached to invoice: " . $invoice->id);
+            } else {
+                error_log("STRIPE DEBUG: Skipping service fee item - amount is $0");
+            }
+            // Add manual review fee item to the specific invoice if applicable
+            if ($clientData['manual_review_fee'] > 0) {
+                error_log("STRIPE DEBUG: Creating manual review fee item - Amount: $" . number_format($clientData['manual_review_fee'], 2) . " (" . ($clientData['manual_review_fee'] * 100) . " cents)");
+                $reviewItem = InvoiceItem::create([
+                    'customer' => $customer->id,
+                    'invoice' => $invoice->id, // Explicitly attach to this invoice
+                    'amount' => $clientData['manual_review_fee'] * 100, // Convert to cents
+                    'currency' => $this->defaultCurrency,
+                    'description' => $this->manualReviewFeeDescription . " - {$billingPeriod}",
+                    'metadata' => [
+                        'user_id' => $clientData['user_id'],
+                        'manual_review_count' => $clientData['manual_review_count'],
+                        'billing_period' => $billingPeriod,
+                        'fee_type' => 'manual_review_fee'
+                    ]
+                ]);
+                $invoiceItems[] = $reviewItem;
+                error_log("STRIPE DEBUG: Manual review fee item created with ID: " . $reviewItem->id . " attached to invoice: " . $invoice->id);
+            } else {
+                error_log("STRIPE DEBUG: Skipping manual review fee item - amount is $0");
+            }
+            // Refresh the invoice to get the latest data including the items
+            $invoice = Invoice::retrieve($invoice->id);
+            error_log("STRIPE DEBUG: Retrieved invoice after adding items. Total amount: " . ($invoice->total / 100) . " USD");
             // Finalize the invoice to make it ready to send
             $invoice->finalizeInvoice();
-
+            error_log("STRIPE DEBUG: Finalized invoice. Final amount: " . ($invoice->total / 100) . " USD");
             error_log("Created Stripe invoice: {$invoice->id} for user ID: {$clientData['user_id']} - Amount: $" . number_format($clientData['total_fee'], 2));
-
             return $invoice;
         } catch (ApiErrorException $e) {
             error_log("Stripe invoice creation error for user ID {$clientData['user_id']}: " . $e->getMessage());
