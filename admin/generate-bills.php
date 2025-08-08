@@ -100,6 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = 'Stripe service is not available. Please check your Stripe configuration.';
         } else {
             try {
+                // Debug: Check each security requirement individually
+                $userId = $_SESSION['user_id'];
+                $action = 'stripe_create_invoices';
+                // Check session validity
+                if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
+                    throw new SecurityException('Session invalid: user not logged in');
+                }
+                if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] != $userId) {
+                    throw new SecurityException('Session invalid: user ID mismatch');
+                }
+                // Check session timeout (4 hours for admin operations)
+                if (!isset($_SESSION['last_activity']) || (time() - $_SESSION['last_activity']) > 14400) {
+                    throw new SecurityException('Session expired: last activity too old');
+                }
+                // Check CSRF token
+                $submittedToken = $_POST['csrf_token'] ?? '';
+                $sessionToken = $_SESSION['csrf_token'] ?? '';
+                if (empty($submittedToken)) {
+                    throw new SecurityException('CSRF token missing in form submission');
+                }
+                if (empty($sessionToken)) {
+                    throw new SecurityException('CSRF token missing in session');
+                }
+                if (!hash_equals($sessionToken, $submittedToken)) {
+                    throw new SecurityException('CSRF token mismatch');
+                }
                 // Verify admin access and security
                 if (!$securityManager->verifyAdminAccess($_SESSION['user_id'], 'stripe_create_invoices')) {
                     throw new SecurityException('Access denied for Stripe invoice creation');
