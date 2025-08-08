@@ -1111,7 +1111,9 @@ class Message {
                 ORDER BY total_message_count DESC, u.username ASC
             ");
             
-            $stmt->bind_param("ss", $startDate, $endDate . ' 23:59:59');
+            // Prepare the end date with time component
+            $endDateTime = $endDate . ' 23:59:59';
+            $stmt->bind_param("ss", $startDate, $endDateTime);
             $stmt->execute();
             $result = $stmt->get_result();
             
