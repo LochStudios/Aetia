@@ -156,11 +156,11 @@ class StripeService {
         try {
             $customerData = [
                 'email' => filter_var($clientData['email'], FILTER_SANITIZE_EMAIL),
-                'name' => $this->sanitizeName($clientData['first_name'] . ' ' . $clientData['last_name']),
+                'name' => $this->sanitizeName(($clientData['first_name'] ?? '') . ' ' . ($clientData['last_name'] ?? '')),
                 'metadata' => [
                     'user_id' => (int)$clientData['user_id'],
-                    'username' => preg_replace('/[^a-zA-Z0-9_.-]/', '', $clientData['username']),
-                    'account_type' => preg_replace('/[^a-zA-Z]/', '', $clientData['account_type']),
+                    'username' => preg_replace('/[^a-zA-Z0-9_.-]/', '', $clientData['username'] ?? ''),
+                    'account_type' => preg_replace('/[^a-zA-Z]/', '', $clientData['account_type'] ?? 'manual'),
                     'created_by_admin' => $_SESSION['user_id'],
                     'creation_timestamp' => time()
                 ]
@@ -491,7 +491,8 @@ class StripeService {
                     'email' => $user['email'],
                     'username' => $user['username'],
                     'first_name' => $user['first_name'] ?? '',
-                    'last_name' => $user['last_name'] ?? ''
+                    'last_name' => $user['last_name'] ?? '',
+                    'account_type' => $user['account_type'] ?? 'manual'
                 ];
                 $customer = $this->createOrUpdateCustomer($clientData);
                 error_log("Created new Stripe customer for portal access: {$customer->id} for user ID: {$_SESSION['user_id']}");
@@ -545,6 +546,9 @@ class StripeService {
      * Sanitize name fields
      */
     private function sanitizeName($name) {
+        if ($name === null) {
+            return '';
+        }
         $name = trim($name);
         $name = preg_replace('/[^a-zA-Z\s\'-]/', '', $name);
         $name = preg_replace('/\s+/', ' ', $name);
