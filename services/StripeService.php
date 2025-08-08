@@ -26,6 +26,8 @@ class StripeService {
         $this->securityManager = new SecurityManager();
         $this->loadConfiguration();
         Stripe::setApiKey($this->secretKey);
+        $keyPrefix = substr($this->secretKey, 0, 8) . '...';
+        error_log("Stripe API key set: {$keyPrefix} (length: " . strlen($this->secretKey) . ")");
     }
 
     /**
@@ -46,8 +48,27 @@ class StripeService {
             throw new Exception("Stripe configuration file must define \$stripeSecretKey and \$stripePublishableKey variables");
         }
         
-        $this->secretKey = $stripeSecretKey;
-        $this->publishableKey = $stripePublishableKey;
+        // Validate the secret key format
+        if (empty(trim($stripeSecretKey))) {
+            throw new Exception("Stripe secret key is empty or contains only whitespace");
+        }
+        
+        // Check if it looks like a valid Stripe secret key
+        if (!preg_match('/^sk_(test_|live_)?[a-zA-Z0-9]{24,}$/', trim($stripeSecretKey))) {
+            throw new Exception("Stripe secret key format appears invalid. Should start with 'sk_test_' or 'sk_live_' followed by alphanumeric characters");
+        }
+        
+        // Validate publishable key format
+        if (empty(trim($stripePublishableKey))) {
+            throw new Exception("Stripe publishable key is empty or contains only whitespace");
+        }
+        
+        if (!preg_match('/^pk_(test_|live_)?[a-zA-Z0-9]{24,}$/', trim($stripePublishableKey))) {
+            throw new Exception("Stripe publishable key format appears invalid. Should start with 'pk_test_' or 'pk_live_' followed by alphanumeric characters");
+        }
+
+        $this->secretKey = trim($stripeSecretKey);
+        $this->publishableKey = trim($stripePublishableKey);
         $this->webhookSecret = $stripeWebhookSecret ?? '';
         $this->companyInfo = $companyInfo ?? [];
         $this->defaultCurrency = $defaultCurrency ?? 'usd';
@@ -85,15 +106,33 @@ class StripeService {
             // Check configuration variables
             include $configFile;
             
-            $status['secret_key_defined'] = isset($stripeSecretKey) && !empty($stripeSecretKey);
-            $status['publishable_key_defined'] = isset($stripePublishableKey) && !empty($stripePublishableKey);
+            $status['secret_key_defined'] = isset($stripeSecretKey) && !empty(trim($stripeSecretKey));
+            $status['publishable_key_defined'] = isset($stripePublishableKey) && !empty(trim($stripePublishableKey));
             
             if (!$status['secret_key_defined']) {
                 $status['errors'][] = "Variable \$stripeSecretKey is not defined or empty in config file";
+            } else {
+                // Check secret key format
+                $trimmedSecretKey = trim($stripeSecretKey);
+                if (!preg_match('/^sk_(test_|live_)?[a-zA-Z0-9]{24,}$/', $trimmedSecretKey)) {
+                    $status['errors'][] = "Secret key format appears invalid (should start with 'sk_test_' or 'sk_live_')";
+                    $status['secret_key_defined'] = false;
+                } else {
+                    // Log key info for debugging
+                    $keyPrefix = substr($trimmedSecretKey, 0, 8) . '...';
+                    error_log("Config check - Secret key: {$keyPrefix} (length: " . strlen($trimmedSecretKey) . ")");
+                }
             }
             
             if (!$status['publishable_key_defined']) {
                 $status['errors'][] = "Variable \$stripePublishableKey is not defined or empty in config file";
+            } else {
+                // Check publishable key format
+                $trimmedPublishableKey = trim($stripePublishableKey);
+                if (!preg_match('/^pk_(test_|live_)?[a-zA-Z0-9]{24,}$/', $trimmedPublishableKey)) {
+                    $status['errors'][] = "Publishable key format appears invalid (should start with 'pk_test_' or 'pk_live_')";
+                    $status['publishable_key_defined'] = false;
+                }
             }
         }
 
@@ -372,6 +411,10 @@ class StripeService {
         }
 
         try {
+            // Log some debugging info (without exposing the actual key)
+            $keyPrefix = substr($this->secretKey, 0, 8) . '...';
+            error_log("Attempting Stripe connection test with key: {$keyPrefix}");
+            
             // Try to retrieve account information
             $account = \Stripe\Account::retrieve();
             

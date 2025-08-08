@@ -176,6 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     if (isset($testResult['error'])) {
                         $error .= ' Error: ' . htmlspecialchars($testResult['error']);
                     }
+                    if (isset($testResult['details'])) {
+                        $error .= ' Details: ' . htmlspecialchars($testResult['details']);
+                    }
                 }
             } catch (SecurityException $e) {
                 error_log("Security violation in Stripe connection test: " . $e->getMessage());
