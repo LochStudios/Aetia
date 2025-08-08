@@ -307,8 +307,8 @@ Date of Acceptance: {{USER_ACCEPTANCE_DATE}}";
             // Update contract with user acceptance date
             $userAcceptanceDate = date('F j, Y');
             $updatedContent = str_replace(
-                '{{USER_ACCEPTANCE_DATE}}',
-                $userAcceptanceDate,
+                ['{{USER_ACCEPTANCE_DATE}}', 'Date of Acceptance: _____________________'],
+                [$userAcceptanceDate, 'Date of Acceptance: ' . $userAcceptanceDate],
                 $contract['contract_content']
             );
             
