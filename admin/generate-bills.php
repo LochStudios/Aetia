@@ -879,7 +879,179 @@ function exportToCSV() {
 
 // Print functionality
 function printBills() {
-    window.print();
+    // Get the billing data from the table
+    const table = document.getElementById('billTable');
+    const rows = table.querySelectorAll('tr');
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    // Start building the print document
+    let printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Aetia Billing Report</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                color: #333;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #209cee;
+                padding-bottom: 15px;
+            }
+            .header h1 {
+                color: #209cee;
+                margin: 0;
+                font-size: 24px;
+            }
+            .header p {
+                margin: 5px 0;
+                color: #666;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+                font-size: 12px;
+            }
+            th {
+                background-color: #f8f9fa;
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+                font-weight: bold;
+                color: #333;
+            }
+            td {
+                border: 1px solid #ddd;
+                padding: 6px 8px;
+                text-align: left;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .number {
+                text-align: right;
+            }
+            .center {
+                text-align: center;
+            }
+            .total-row {
+                font-weight: bold;
+                background-color: #e3f2fd !important;
+            }
+            .footer {
+                margin-top: 30px;
+                padding-top: 15px;
+                border-top: 1px solid #ddd;
+                font-size: 10px;
+                color: #666;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Aetia Talent Agency - Billing Report</h1>
+            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+            <p>Period: ${document.querySelector('select[name="month"]').selectedOptions[0].text} ${document.querySelector('select[name="year"]').value}</p>
+        </div>
+        <table>
+    `;
+    
+    // Process table headers (first row)
+    const headerRow = rows[0];
+    const headerCols = headerRow.querySelectorAll('th');
+    printContent += '<thead><tr>';
+    
+    headerCols.forEach((col, index) => {
+        if (index < headerCols.length - 1) { // Skip the last column (Actions)
+            let headerText = col.textContent.trim();
+            printContent += `<th>${headerText}</th>`;
+        }
+    });
+    
+    printContent += '</tr></thead><tbody>';
+    
+    // Process data rows
+    let totalAmount = 0;
+    let totalMessages = 0;
+    let totalClients = 0;
+    
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cols = row.querySelectorAll('td');
+        
+        if (cols.length === 0) continue;
+        
+        printContent += '<tr>';
+        
+        for (let j = 0; j < cols.length - 1; j++) { // Skip the last column (Actions)
+            const col = cols[j];
+            let cellData = '';
+            
+            // Extract clean text data
+            if (j === 4 || j === 5) { // Message count columns
+                const tag = col.querySelector('.tag');
+                cellData = tag ? tag.textContent.trim() : col.textContent.trim();
+                if (j === 4 && !isNaN(cellData)) {
+                    totalMessages += parseInt(cellData) || 0;
+                }
+            } else if (j === 6 || j === 7 || j === 8) { // Fee columns
+                const cleanText = col.textContent.trim().replace(/[^0-9.]/g, '');
+                cellData = cleanText ? '$' + parseFloat(cleanText).toFixed(2) : '$0.00';
+                if (j === 8 && !isNaN(parseFloat(cleanText))) { // Total column
+                    totalAmount += parseFloat(cleanText) || 0;
+                }
+            } else {
+                // For other columns, extract plain text
+                cellData = col.textContent.trim().replace(/\\s+/g, ' ');
+            }
+            
+            const className = (j === 6 || j === 7 || j === 8) ? 'number' : (j === 3 || j === 4 || j === 5) ? 'center' : '';
+            printContent += `<td class="${className}">${cellData}</td>`;
+        }
+        
+        printContent += '</tr>';
+        totalClients++;
+    }
+    
+    // Add totals row
+    printContent += `
+        <tr class="total-row">
+            <td colspan="4"><strong>TOTALS:</strong></td>
+            <td class="center"><strong>${totalMessages}</strong></td>
+            <td class="center">-</td>
+            <td class="number">-</td>
+            <td class="number">-</td>
+            <td class="number"><strong>$${totalAmount.toFixed(2)}</strong></td>
+            <td class="center">-</td>
+        </tr>
+    `;
+    
+    printContent += `
+        </tbody>
+        </table>
+        <div class="footer">
+            <p><strong>Summary:</strong> ${totalClients} clients, ${totalMessages} total messages, $${totalAmount.toFixed(2)} total billing</p>
+            <p>Aetia Talent Agency | Generated via Admin Dashboard</p>
+        </div>
+    </body>
+    </html>
+    `;
+    
+    // Write content to print window and print
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+    };
 }
 
 // Delete notification functionality
