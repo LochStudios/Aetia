@@ -27,9 +27,13 @@ $securityManager->initializeSecureSession();
 
 // Initialize Stripe service (only if config exists)
 $stripeService = null;
+$stripeInitError = null;
+$stripeConfigStatus = StripeService::checkConfiguration();
+
 try {
     $stripeService = new StripeService();
 } catch (Exception $e) {
+    $stripeInitError = $e->getMessage();
     error_log("Stripe service initialization failed: " . $e->getMessage());
     // Continue without Stripe functionality
 }
@@ -146,7 +150,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     } elseif ($_POST['action'] === 'test_stripe_connection') {
         // Test Stripe connection with security
         if (!$stripeService) {
-            $error = 'Stripe service is not available. Please check your Stripe configuration.';
+            if ($stripeInitError) {
+                $error = 'Stripe service initialization failed: ' . htmlspecialchars($stripeInitError);
+            } else {
+                $error = 'Stripe service is not available. Please check your Stripe configuration.';
+            }
         } else {
             try {
                 // Verify admin access
@@ -165,12 +173,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $securityManager->regenerateCsrfToken();
                 } else {
                     $error = 'Stripe connection failed. Please check your configuration.';
+                    if (isset($testResult['error'])) {
+                        $error .= ' Error: ' . htmlspecialchars($testResult['error']);
+                    }
                 }
             } catch (SecurityException $e) {
                 error_log("Security violation in Stripe connection test: " . $e->getMessage());
                 $error = 'Security violation detected. Access denied.';
             } catch (Exception $e) {
-                $error = 'Error testing Stripe connection. Please try again.';
+                error_log("Exception in Stripe connection test: " . $e->getMessage());
+                $error = 'Error testing Stripe connection: ' . htmlspecialchars($e->getMessage());
             }
         }
     }
@@ -318,11 +330,52 @@ ob_start();
             </div>
             <div class="column is-4">
                 <div class="field">
+                    <?php if ($stripeInitError): ?>
+                    <div class="notification is-danger is-light">
+                        <p class="has-text-weight-bold">Stripe Configuration Issue:</p>
+                        <p><?= htmlspecialchars($stripeInitError) ?></p>
+                        
+                        <?php if (!empty($stripeConfigStatus['errors'])): ?>
+                        <hr>
+                        <p class="has-text-weight-bold">Diagnostic Details:</p>
+                        <ul class="is-size-7">
+                            <?php foreach ($stripeConfigStatus['errors'] as $error): ?>
+                            <li>• <?= htmlspecialchars($error) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+                        
+                        <hr>
+                        <div class="is-size-7">
+                            <p><strong>Configuration Status:</strong></p>
+                            <p>
+                                Config file: <span class="<?= $stripeConfigStatus['config_file_exists'] ? 'has-text-success' : 'has-text-danger' ?>">
+                                    <?= $stripeConfigStatus['config_file_exists'] ? '✓' : '✗' ?>
+                                </span>
+                                | Vendor library: <span class="<?= $stripeConfigStatus['vendor_library_exists'] ? 'has-text-success' : 'has-text-danger' ?>">
+                                    <?= $stripeConfigStatus['vendor_library_exists'] ? '✓' : '✗' ?>
+                                </span>
+                                | Secret key: <span class="<?= $stripeConfigStatus['secret_key_defined'] ? 'has-text-success' : 'has-text-danger' ?>">
+                                    <?= $stripeConfigStatus['secret_key_defined'] ? '✓' : '✗' ?>
+                                </span>
+                                | Publishable key: <span class="<?= $stripeConfigStatus['publishable_key_defined'] ? 'has-text-success' : 'has-text-danger' ?>">
+                                    <?= $stripeConfigStatus['publishable_key_defined'] ? '✓' : '✗' ?>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <?php elseif (!$stripeService): ?>
+                    <div class="notification is-warning is-light">
+                        <p class="has-text-weight-bold">Stripe Service Unavailable</p>
+                        <p>Stripe functionality is not available. Please check configuration.</p>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="control">
                         <form method="POST" action="" style="display: inline-block; margin-right: 10px;">
                             <input type="hidden" name="action" value="test_stripe_connection">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                            <button type="submit" class="button is-info is-small">
+                            <button type="submit" class="button is-info is-small" <?= !$stripeService ? 'disabled title="Stripe service not available"' : '' ?>>
                                 <span class="icon"><i class="fas fa-plug"></i></span>
                                 <span>Test Connection</span>
                             </button>
@@ -333,7 +386,7 @@ ob_start();
                               onsubmit="return confirm('Create Stripe invoices for <?= count($billData) ?> clients? This action cannot be undone.');">
                             <input type="hidden" name="action" value="create_stripe_invoices">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                            <button type="submit" class="button is-success is-medium">
+                            <button type="submit" class="button is-success is-medium" <?= !$stripeService ? 'disabled title="Stripe service not available"' : '' ?>>
                                 <span class="icon"><i class="fab fa-stripe-s"></i></span>
                                 <span>Create Stripe Invoices</span>
                             </button>

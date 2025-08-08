@@ -57,6 +57,50 @@ class StripeService {
     }
 
     /**
+     * Check Stripe configuration status without initializing the service
+     */
+    public static function checkConfiguration() {
+        $status = [
+            'config_file_exists' => false,
+            'vendor_library_exists' => false,
+            'secret_key_defined' => false,
+            'publishable_key_defined' => false,
+            'errors' => []
+        ];
+
+        // Check vendor library
+        $vendorPath = '/home/aetiacom/vendors/stripe/init.php';
+        $status['vendor_library_exists'] = file_exists($vendorPath);
+        if (!$status['vendor_library_exists']) {
+            $status['errors'][] = "Stripe vendor library not found at: {$vendorPath}";
+        }
+
+        // Check config file
+        $configFile = '/home/aetiacom/web-config/stripe.php';
+        $status['config_file_exists'] = file_exists($configFile);
+        
+        if (!$status['config_file_exists']) {
+            $status['errors'][] = "Stripe configuration file not found at: {$configFile}";
+        } else {
+            // Check configuration variables
+            include $configFile;
+            
+            $status['secret_key_defined'] = isset($stripeSecretKey) && !empty($stripeSecretKey);
+            $status['publishable_key_defined'] = isset($stripePublishableKey) && !empty($stripePublishableKey);
+            
+            if (!$status['secret_key_defined']) {
+                $status['errors'][] = "Variable \$stripeSecretKey is not defined or empty in config file";
+            }
+            
+            if (!$status['publishable_key_defined']) {
+                $status['errors'][] = "Variable \$stripePublishableKey is not defined or empty in config file";
+            }
+        }
+
+        return $status;
+    }
+
+    /**
      * Create or update a Stripe customer
      */
     public function createOrUpdateCustomer($clientData) {
@@ -343,9 +387,24 @@ class StripeService {
             ];
         } catch (ApiErrorException $e) {
             error_log("Stripe connection test failed by admin {$_SESSION['user_id']}: " . $e->getMessage());
+            
+            // Provide more specific error information
+            $errorMessage = 'Connection failed - check configuration';
+            if ($e->getStripeCode()) {
+                $errorMessage .= ' (Code: ' . $e->getStripeCode() . ')';
+            }
+            
             return [
                 'success' => false,
-                'error' => 'Connection failed - check configuration'
+                'error' => $errorMessage,
+                'details' => $e->getMessage()
+            ];
+        } catch (Exception $e) {
+            error_log("Stripe connection test error by admin {$_SESSION['user_id']}: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Unexpected error occurred',
+                'details' => $e->getMessage()
             ];
         }
     }
