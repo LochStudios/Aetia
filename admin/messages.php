@@ -568,10 +568,10 @@ ob_start();
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>
                                                 <figure class="image discussion-image">
-                                                    <img src="../view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                    <img src="../api/view-image.php?id=<?= $item['attachment_id'] ?>" 
                                                          alt="<?= htmlspecialchars($item['original_filename']) ?>"
                                                          class="discussion-image img"
-                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../api/view-image.php?id=<?= $item['attachment_id'] ?>')">
                                                 </figure>
                                                 <p class="is-size-7 has-text-grey mt-2">
                                                     <?= htmlspecialchars($item['original_filename']) ?> 
@@ -605,10 +605,10 @@ ob_start();
                                             <div class="has-text-centered">
                                                 <p class="mb-2"><strong>Shared an image:</strong></p>
                                                 <figure class="image discussion-image">
-                                                    <img src="../view-image.php?id=<?= $item['attachment_id'] ?>" 
+                                                    <img src="../api/view-image.php?id=<?= $item['attachment_id'] ?>" 
                                                          alt="<?= htmlspecialchars($item['original_filename']) ?>"
                                                          class="discussion-image img"
-                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../view-image.php?id=<?= $item['attachment_id'] ?>')">
+                                                         onclick="showImageModal('<?= htmlspecialchars($item['original_filename']) ?>', '../api/view-image.php?id=<?= $item['attachment_id'] ?>')">
                                                 </figure>
                                                 <p class="is-size-7 has-text-grey mt-2">
                                                     <?= htmlspecialchars($item['original_filename']) ?> 
@@ -848,10 +848,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="has-text-centered">
                     <p class="mb-2"><strong>Shared an image:</strong></p>
                     <figure class="image discussion-image">
-                        <img src="../view-image.php?id=${item.attachment_id}" 
+                        <img src="../api/view-image.php?id=${item.attachment_id}" 
                              alt="${item.original_filename}"
                              class="discussion-image img"
-                             onclick="showImageModal('${item.original_filename}', '../view-image.php?id=${item.attachment_id}')">
+                             onclick="showImageModal('${item.original_filename}', '../api/view-image.php?id=${item.attachment_id}')">
                     </figure>
                     <p class="is-size-7 has-text-grey mt-2">
                         ${item.original_filename} (${item.formatted_file_size})

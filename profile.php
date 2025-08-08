@@ -250,7 +250,7 @@ ob_start();
                             <?php if ($user['profile_image']): ?>
                                 <?php if ($user['account_type'] === 'manual'): ?>
                                     <!-- Manual account - use secure S3 endpoint -->
-                                    <img id="profile-image-display" src="view-profile-image.php?user_id=<?= $_SESSION['user_id'] ?>" alt="Profile Picture" class="profile-image-preview" onerror="this.style.display='none'; document.getElementById('profile-placeholder').style.display='flex';">
+                                    <img id="profile-image-display" src="api/view-profile-image.php?user_id=<?= $_SESSION['user_id'] ?>" alt="Profile Picture" class="profile-image-preview" onerror="this.style.display='none'; document.getElementById('profile-placeholder').style.display='flex';">
                                     <div id="profile-placeholder" class="profile-image-placeholder" style="display:none;">
                                         <span class="icon is-large has-text-grey-light">
                                             <i class="fas fa-user fa-3x"></i>

@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayUserWelcome(user) {
         const userWelcome = document.getElementById('user-welcome');
         const profileImageSrc = user.account_type === 'manual' && user.profile_image 
-            ? `view-profile-image.php?user_id=${user.id}`
+            ? `api/view-profile-image.php?user_id=${user.id}`
             : (user.profile_image || '');
             
         userWelcome.innerHTML = `

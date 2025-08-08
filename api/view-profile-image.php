@@ -1,6 +1,11 @@
 <?php
-// view-profile-image.php - Secure profile image viewer with access control
+// api/view-profile-image.php - Secure profile image API with access control
 session_start();
+
+// Set security headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('X-XSS-Protection: 1; mode=block');
 
 // Security check - user must be logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -10,8 +15,8 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
     exit;
 }
 
-require_once __DIR__ . '/models/User.php';
-require_once __DIR__ . '/services/ImageUploadService.php';
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../services/ImageUploadService.php';
 
 // Get parameters
 $userId = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
