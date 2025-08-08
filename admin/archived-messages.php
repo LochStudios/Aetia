@@ -15,6 +15,28 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../models/User.php';
 
+// Helper function to process profile image URLs
+function processProfileImageUrl($profileImage, $userId = null) {
+    if (empty($profileImage)) {
+        return null;
+    }
+    // If it's already a proper URL (starts with http), return as-is
+    if (strpos($profileImage, 'http') === 0) {
+        return $profileImage;
+    }
+    // If it's a flag pattern like "user-X-has-image", convert to proper URL
+    if (preg_match('/^user-(\d+)-has-image/', $profileImage, $matches)) {
+        $imageUserId = $matches[1];
+        return 'view-user-profile-image.php?user_id=' . $imageUserId;
+    }
+    // If it looks like a file path and we have a user ID
+    if ($userId && !strpos($profileImage, '/')) {
+        return 'view-user-profile-image.php?user_id=' . $userId;
+    }
+    // Default case - treat as relative path
+    return $profileImage;
+}
+
 $messageModel = new Message();
 $userModel = new User();
 

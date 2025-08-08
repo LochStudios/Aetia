@@ -212,7 +212,7 @@ class Message {
             
             $stmt = $this->mysqli->prepare("
                 SELECT mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
-                       u.username, u.social_username, u.profile_image,
+                       u.id as user_id, u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name
                 FROM message_comments mc
                 LEFT JOIN users u ON mc.user_id = u.id
@@ -245,7 +245,7 @@ class Message {
             // Get comments
             $stmt = $this->mysqli->prepare("
                 SELECT 'comment' as type, mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
-                       u.username, u.social_username, u.profile_image,
+                       u.id as user_id, u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
                        NULL as attachment_id, NULL as filename, NULL as original_filename, 
                        NULL as file_size, NULL as mime_type, NULL as file_path
@@ -258,6 +258,7 @@ class Message {
                 SELECT 'image' as type, ma.id, NULL as comment, 
                        CASE WHEN u.is_admin = 1 THEN 1 ELSE 0 END as is_admin_comment, 
                        ma.uploaded_at as created_at,
+                       u.id as user_id, u.username, u.social_username, u.profile_image,
                        u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
                        ma.id as attachment_id, ma.filename, ma.original_filename,
@@ -293,7 +294,7 @@ class Message {
             
             $stmt = $this->mysqli->prepare("
                 SELECT 'comment' as type, mc.id, mc.comment, mc.is_admin_comment, mc.created_at,
-                       u.username, u.social_username, u.profile_image,
+                       u.id as user_id, u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
                        NULL as attachment_id, NULL as filename, NULL as original_filename, 
                        NULL as file_size, NULL as mime_type, NULL as file_path
@@ -306,7 +307,7 @@ class Message {
                 SELECT 'image' as type, ma.id, NULL as comment, 
                        CASE WHEN u.is_admin = 1 THEN 1 ELSE 0 END as is_admin_comment, 
                        ma.uploaded_at as created_at,
-                       u.username, u.social_username, u.profile_image,
+                       u.id as user_id, u.username, u.social_username, u.profile_image,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as display_name,
                        ma.id as attachment_id, ma.filename, ma.original_filename,
                        ma.file_size, ma.mime_type, ma.file_path

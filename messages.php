@@ -17,6 +17,32 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/models/User.php';
 
+// Helper function to process profile image URLs
+function processProfileImageUrl($profileImage, $userId = null) {
+    if (empty($profileImage)) {
+        return null;
+    }
+    
+    // If it's already a proper URL (starts with http), return as-is
+    if (strpos($profileImage, 'http') === 0) {
+        return $profileImage;
+    }
+    
+    // If it's a flag pattern like "user-X-has-image", convert to proper URL
+    if (preg_match('/^user-(\d+)-has-image/', $profileImage, $matches)) {
+        $imageUserId = $matches[1];
+        return 'view-profile-image.php?user_id=' . $imageUserId;
+    }
+    
+    // If it looks like a file path and we have a user ID
+    if ($userId && !strpos($profileImage, '/')) {
+        return 'view-profile-image.php?user_id=' . $userId;
+    }
+    
+    // Default case - treat as relative path
+    return $profileImage;
+}
+
 $messageModel = new Message();
 $userModel = new User();
 $userId = $_SESSION['user_id'];
@@ -211,6 +237,12 @@ if ($messageId) {
         $messageComments = $messageModel->getMessageComments($messageId);
         $messageDiscussion = $messageModel->getMessageDiscussion($messageId);
         $messageAttachments = $messageModel->getMessageAttachments($messageId);
+        
+        // Process profile images for discussion items
+        foreach ($messageDiscussion as &$item) {
+            $item['processed_profile_image'] = processProfileImageUrl($item['profile_image'], $item['user_id'] ?? null);
+        }
+        
         // Mark as read if it's unread
         if ($currentMessage['status'] === 'unread') {
             $messageModel->updateMessageStatus($messageId, 'read', $userId);
@@ -582,8 +614,8 @@ ob_start();
                         <!-- Admin item - icon on left -->
                         <figure class="media-left">
                             <p class="image is-48x48">
-                                <?php if ($item['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
+                                <?php if ($item['processed_profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($item['processed_profile_image']) ?>" 
                                          alt="Profile Picture" 
                                          class="profile-image">
                                 <?php else: ?>
@@ -668,8 +700,8 @@ ob_start();
                         </div>
                         <figure class="media-right">
                             <p class="image is-48x48">
-                                <?php if ($item['profile_image']): ?>
-                                    <img src="<?= htmlspecialchars($item['profile_image']) ?>" 
+                                <?php if ($item['processed_profile_image']): ?>
+                                    <img src="<?= htmlspecialchars($item['processed_profile_image']) ?>" 
                                          alt="Profile Picture" 
                                          class="profile-image">
                                 <?php else: ?>
@@ -807,6 +839,33 @@ const formTokens = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Helper function to process profile image URLs in JavaScript
+    function processProfileImageUrlJS(profileImage, userId) {
+        if (!profileImage) {
+            return null;
+        }
+        
+        // If it's already a proper URL (starts with http), return as-is
+        if (profileImage.startsWith('http')) {
+            return profileImage;
+        }
+        
+        // If it's a flag pattern like "user-X-has-image", convert to proper URL
+        const flagMatch = profileImage.match(/^user-(\d+)-has-image/);
+        if (flagMatch) {
+            const imageUserId = flagMatch[1];
+            return 'view-profile-image.php?user_id=' + imageUserId;
+        }
+        
+        // If it looks like a file path and we have a user ID
+        if (userId && profileImage.indexOf('/') === -1) {
+            return 'view-profile-image.php?user_id=' + userId;
+        }
+        
+        // Default case - treat as relative path
+        return profileImage;
+    }
+    
     // Auto-refresh message counts every 30 seconds
     setInterval(function() {
         // You could implement AJAX refresh here if needed
@@ -887,14 +946,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const profileImage = item.profile_image ? 
-            `<img src="${item.profile_image}" alt="Profile Picture" class="profile-image">` :
+            processProfileImageUrlJS(item.profile_image, item.user_id) : null;
+        
+        const profileImageHTML = profileImage ? 
+            `<img src="${profileImage}" alt="Profile Picture" class="profile-image">` :
+            `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
             `<span class="icon is-large has-text-grey"><i class="fas fa-user-circle fa-2x"></i></span>`;
         
         if (isAdmin) {
             return `
                 <article class="media fade-in-new">
                     <figure class="media-left">
-                        <p class="image is-48x48">${profileImage}</p>
+                        <p class="image is-48x48">${profileImageHTML}</p>
                     </figure>
                     <div class="media-content">
                         <div class="content">
@@ -929,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <figure class="media-right">
-                        <p class="image is-48x48">${profileImage}</p>
+                        <p class="image is-48x48">${profileImageHTML}</p>
                     </figure>
                 </article>
             `;
