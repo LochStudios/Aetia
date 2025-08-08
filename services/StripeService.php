@@ -4,11 +4,13 @@
 require_once '/home/aetiacom/vendors/stripe/init.php';
 require_once __DIR__ . '/../includes/SecurityManager.php';
 require_once __DIR__ . '/../includes/SecurityException.php';
+require_once __DIR__ . '/../models/User.php';
 
 use Stripe\Stripe;
 use Stripe\Customer;
 use Stripe\Invoice;
 use Stripe\InvoiceItem;
+use Stripe\BillingPortal\Session as BillingPortalSession;
 use Stripe\Exception\ApiErrorException;
 
 class StripeService {
@@ -466,6 +468,48 @@ class StripeService {
                 'error' => 'Unexpected error occurred',
                 'details' => $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Create a customer portal session for billing management
+     */
+    public function createCustomerPortalSession($customerEmail, $returnUrl) {
+        // Security check
+        if (!isset($_SESSION['user_id'])) {
+            throw new SecurityException('Unauthorized access - no valid session');
+        }
+        try {
+            // Find or create customer
+            $customer = $this->findCustomerByEmail($customerEmail);
+            if (!$customer) {
+                // Create customer if they don't exist
+                $userModel = new User();
+                $user = $userModel->getUserById($_SESSION['user_id']);
+                $clientData = [
+                    'user_id' => $_SESSION['user_id'],
+                    'email' => $user['email'],
+                    'username' => $user['username'],
+                    'first_name' => $user['first_name'] ?? '',
+                    'last_name' => $user['last_name'] ?? ''
+                ];
+                $customer = $this->createOrUpdateCustomer($clientData);
+                error_log("Created new Stripe customer for portal access: {$customer->id} for user ID: {$_SESSION['user_id']}");
+            }
+            // Create billing portal session
+            $session = BillingPortalSession::create([
+                'customer' => $customer->id,
+                'return_url' => $returnUrl,
+            ]);
+            error_log("Created customer portal session for user ID {$_SESSION['user_id']}: {$session->id}");
+            return [
+                'success' => true,
+                'url' => $session->url,
+                'customer_id' => $customer->id
+            ];
+        } catch (ApiErrorException $e) {
+            error_log("Error creating customer portal session for user ID {$_SESSION['user_id']}: " . $e->getMessage());
+            throw new Exception("Failed to create billing portal session: " . $e->getMessage());
         }
     }
 

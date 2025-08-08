@@ -44,6 +44,24 @@
     padding: 0.25rem 0.75rem;
 }
 
+/* Profile page billing portal styling */
+.billing-portal-card .button.is-info {
+    background: linear-gradient(135deg, #209cee 0%, #3273dc 100%);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.billing-portal-card .button.is-info:hover {
+    background: linear-gradient(135deg, #3273dc 0%, #209cee 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(32, 156, 238, 0.3);
+}
+
+.billing-portal-card .button.is-info:active {
+    transform: translateY(0);
+}
+
 /* Navigation dropdown fixes */
 .navbar {
     overflow: visible !important;
