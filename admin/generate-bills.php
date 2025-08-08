@@ -681,7 +681,7 @@ ob_start();
                                             <?= $client['manual_review_count'] ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light is-small-compact">0</span>
+                                        <span class="tag is-dark is-small-compact">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
