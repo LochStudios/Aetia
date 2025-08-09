@@ -37,70 +37,67 @@ if (isset($_SESSION['link_error'])) {
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
 
-// Get user billing information for the last 6 months
-$userBillingData = [];
-$totalBillingAmount = 0;
-$totalMessages = 0;
-$totalManualReviews = 0;
+// Get user billing information for the current month
+$currentMonthData = null;
+$currentMonthBilling = 0;
+$currentMonthMessages = 0;
+$currentMonthReviews = 0;
 
 if ($user['approval_status'] === 'approved') {
     try {
-        // Get billing data for the last 6 months
-        for ($i = 0; $i < 6; $i++) {
-            $monthDate = new DateTime();
-            $monthDate->modify("-$i months");
-            $year = $monthDate->format('Y');
-            $month = $monthDate->format('m');
-            
-            $firstDay = sprintf('%04d-%02d-01', $year, $month);
-            $lastDay = $monthDate->format('Y-m-t');
-            
-            // Try to get saved billing report first
-            $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
-            if ($savedReport) {
-                // Find this user in the report data
-                foreach ($savedReport['report_data'] as $clientData) {
-                    if ($clientData['user_id'] == $_SESSION['user_id']) {
-                        $userBillingData[] = [
-                            'month' => $monthDate->format('F Y'),
-                            'month_short' => $monthDate->format('M Y'),
-                            'first_day' => $firstDay,
-                            'last_day' => $lastDay,
-                            'message_count' => $clientData['total_message_count'],
-                            'manual_review_count' => $clientData['manual_review_count'],
-                            'standard_fee' => $clientData['standard_fee'],
-                            'manual_review_fee' => $clientData['manual_review_fee'],
-                            'total_fee' => $clientData['total_fee']
-                        ];
-                        
-                        $totalBillingAmount += $clientData['total_fee'];
-                        $totalMessages += $clientData['total_message_count'];
-                        $totalManualReviews += $clientData['manual_review_count'];
-                        break;
-                    }
+        // Get billing data for current month only
+        $currentDate = new DateTime();
+        $year = $currentDate->format('Y');
+        $month = $currentDate->format('m');
+        
+        $firstDay = sprintf('%04d-%02d-01', $year, $month);
+        $lastDay = $currentDate->format('Y-m-t');
+        
+        // Try to get saved billing report first
+        $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+        if ($savedReport) {
+            // Find this user in the report data
+            foreach ($savedReport['report_data'] as $clientData) {
+                if ($clientData['user_id'] == $_SESSION['user_id']) {
+                    $currentMonthData = [
+                        'month' => $currentDate->format('F Y'),
+                        'month_short' => $currentDate->format('M Y'),
+                        'first_day' => $firstDay,
+                        'last_day' => $lastDay,
+                        'message_count' => $clientData['total_message_count'],
+                        'manual_review_count' => $clientData['manual_review_count'],
+                        'standard_fee' => $clientData['standard_fee'],
+                        'manual_review_fee' => $clientData['manual_review_fee'],
+                        'total_fee' => $clientData['total_fee']
+                    ];
+                    
+                    $currentMonthBilling = $clientData['total_fee'];
+                    $currentMonthMessages = $clientData['total_message_count'];
+                    $currentMonthReviews = $clientData['manual_review_count'];
+                    break;
                 }
-            } else {
-                // No saved report, try to generate billing data on the fly
-                $billingData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
-                foreach ($billingData as $clientData) {
-                    if ($clientData['user_id'] == $_SESSION['user_id']) {
-                        $userBillingData[] = [
-                            'month' => $monthDate->format('F Y'),
-                            'month_short' => $monthDate->format('M Y'),
-                            'first_day' => $firstDay,
-                            'last_day' => $lastDay,
-                            'message_count' => $clientData['total_message_count'],
-                            'manual_review_count' => $clientData['manual_review_count'],
-                            'standard_fee' => $clientData['standard_fee'],
-                            'manual_review_fee' => $clientData['manual_review_fee'],
-                            'total_fee' => $clientData['total_fee']
-                        ];
-                        
-                        $totalBillingAmount += $clientData['total_fee'];
-                        $totalMessages += $clientData['total_message_count'];
-                        $totalManualReviews += $clientData['manual_review_count'];
-                        break;
-                    }
+            }
+        } else {
+            // No saved report, try to generate billing data on the fly
+            $billingData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+            foreach ($billingData as $clientData) {
+                if ($clientData['user_id'] == $_SESSION['user_id']) {
+                    $currentMonthData = [
+                        'month' => $currentDate->format('F Y'),
+                        'month_short' => $currentDate->format('M Y'),
+                        'first_day' => $firstDay,
+                        'last_day' => $lastDay,
+                        'message_count' => $clientData['total_message_count'],
+                        'manual_review_count' => $clientData['manual_review_count'],
+                        'standard_fee' => $clientData['standard_fee'],
+                        'manual_review_fee' => $clientData['manual_review_fee'],
+                        'total_fee' => $clientData['total_fee']
+                    ];
+                    
+                    $currentMonthBilling = $clientData['total_fee'];
+                    $currentMonthMessages = $clientData['total_message_count'];
+                    $currentMonthReviews = $clientData['manual_review_count'];
+                    break;
                 }
             }
         }
@@ -415,95 +412,45 @@ ob_start();
                 <div class="card-content">
                     <h4 class="title is-6 has-text-light mb-3">
                         <span class="icon has-text-success"><i class="fas fa-chart-line"></i></span>
-                        Activity Summary (Last 6 Months)
+                        This Month's Activity
                     </h4>
                     
-                    <!-- Summary Stats -->
+                    <!-- Current Month Stats -->
                     <div class="columns is-mobile mb-3">
                         <div class="column has-text-centered">
                             <p class="heading has-text-grey-light is-size-7">Messages</p>
-                            <p class="title is-6 has-text-info mb-0"><?= $totalMessages ?></p>
+                            <p class="title is-6 has-text-info mb-0"><?= $currentMonthMessages ?></p>
                         </div>
                         <div class="column has-text-centered">
                             <p class="heading has-text-grey-light is-size-7">Reviews</p>
-                            <p class="title is-6 has-text-warning mb-0"><?= $totalManualReviews ?></p>
+                            <p class="title is-6 has-text-warning mb-0"><?= $currentMonthReviews ?></p>
                         </div>
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light is-size-7">Total Value</p>
-                            <p class="title is-6 has-text-success mb-0">$<?= number_format($totalBillingAmount, 2) ?></p>
+                            <p class="heading has-text-grey-light is-size-7">Expected</p>
+                            <p class="title is-6 has-text-success mb-0">$<?= number_format($currentMonthBilling, 2) ?></p>
                         </div>
                     </div>
                     
-                    <!-- Monthly Breakdown -->
+                    <!-- Current Month Details -->
                     <div class="content">
-                        <p class="has-text-grey-light is-size-7 mb-2">Monthly Activity:</p>
-                        <?php if (!empty($userBillingData)): ?>
-                            <?php foreach (array_slice($userBillingData, 0, 3) as $monthData): ?>
-                            <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
-                                <div class="level-left">
-                                    <div class="level-item">
-                                        <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= $monthData['month_short'] ?></span>
-                                    </div>
-                                </div>
-                                <div class="level-right">
-                                    <div class="level-item">
-                                        <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
-                                        <?php if ($monthData['manual_review_count'] > 0): ?>
-                                            <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
-                                        <?php endif; ?>
-                                        <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$<?= number_format($monthData['total_fee'], 2) ?></span>
-                                    </div>
+                        <div class="level is-mobile mb-2 has-background-grey-darker" style="padding: 12px 16px; border-radius: 6px;">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <span class="has-text-light is-size-6 has-text-weight-semibold">
+                                        <?= $currentMonthData ? $currentMonthData['month_short'] : date('M Y') ?>
+                                    </span>
                                 </div>
                             </div>
-                            <?php endforeach; ?>
-                            
-                            <?php if (count($userBillingData) > 3): ?>
-                            <details class="mt-2">
-                                <summary class="has-text-info is-size-7" style="cursor: pointer;">Show more months (<?= count($userBillingData) - 3 ?> more)</summary>
-                                <div class="mt-2">
-                                    <?php foreach (array_slice($userBillingData, 3) as $monthData): ?>
-                                    <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
-                                        <div class="level-left">
-                                            <div class="level-item">
-                                                <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= $monthData['month_short'] ?></span>
-                                            </div>
-                                        </div>
-                                        <div class="level-right">
-                                            <div class="level-item">
-                                                <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
-                                                <?php if ($monthData['manual_review_count'] > 0): ?>
-                                                    <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
-                                                <?php endif; ?>
-                                                <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$<?= number_format($monthData['total_fee'], 2) ?></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </details>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
-                                <div class="level-left">
-                                    <div class="level-item">
-                                        <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= date('M Y') ?></span>
-                                    </div>
-                                </div>
-                                <div class="level-right">
-                                    <div class="level-item">
-                                        <span class="tag is-small is-info">0 msgs</span>
-                                        <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$0.00</span>
-                                    </div>
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <span class="tag is-info"><?= $currentMonthMessages ?> msgs</span>
+                                    <?php if ($currentMonthReviews > 0): ?>
+                                        <span class="tag is-warning ml-1"><?= $currentMonthReviews ?> reviews</span>
+                                    <?php endif; ?>
+                                    <span class="has-text-success is-size-6 ml-3 has-text-weight-bold">$<?= number_format($currentMonthBilling, 2) ?></span>
                                 </div>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <div class="has-text-centered mt-3">
-                        <a href="messages.php" class="button is-small is-info is-outlined">
-                            <span class="icon"><i class="fas fa-envelope"></i></span>
-                            <span>View Messages</span>
-                        </a>
+                        </div>
                     </div>
                 </div>
             </div>
