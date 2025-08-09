@@ -991,46 +991,51 @@ button[disabled], input[disabled] {
 #billTable .col-period { width: 100px; }
 #billTable .col-details { width: 80px; }
 
-/* Billing details dropdown styling */
-#billTable .dropdown {
-    position: relative;
+/* Billing Details Modal Styling */
+#billingDetailsModal .modal-card {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-#billTable .dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 1000;
-    margin-top: 0.25rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    border-radius: 0.5rem;
+#billingDetailsModal .modal-card-body {
+    background-color: #181a1b;
+    color: #ffffff;
 }
 
-#billTable .dropdown-content {
+#billingDetailsModal .modal-card-head,
+#billingDetailsModal .modal-card-foot {
+    background-color: #1f2223;
+    border-color: #363636;
+}
+
+#billingDetailsModal .modal-card-title {
+    color: #ffffff;
+}
+
+#billingDetailsModal .box {
     background-color: #2c2c2c;
     border: 1px solid #4a4a4a;
-    border-radius: 0.5rem;
-    color: #fff;
-    padding: 1rem;
 }
 
-#billTable .dropdown-item {
-    padding: 0;
-    background: transparent;
-    color: #fff;
+#billingDetailsModal .table {
+    background-color: transparent;
+    color: #ffffff;
 }
 
-#billTable .dropdown-item:hover {
-    background: transparent;
+#billingDetailsModal .table td,
+#billingDetailsModal .table th {
+    border-color: #4a4a4a;
+    color: #ffffff;
 }
 
-#billTable .dropdown-item .title {
-    color: #fff !important;
+#billingDetailsModal .has-background-warning-light {
+    background-color: rgba(255, 221, 87, 0.1) !important;
+    border: 1px solid rgba(255, 221, 87, 0.3);
 }
 
-#billTable .dropdown-item hr {
-    background-color: #4a4a4a;
-    margin: 0.75rem 0;
+#billingDetailsModal .has-background-success-light {
+    background-color: rgba(72, 199, 142, 0.1) !important;
 }
 
 /* Responsive adjustments */
@@ -1047,22 +1052,20 @@ button[disabled], input[disabled] {
     #billTable td {
         padding: 0.4rem 0.2rem;
     }
-    
-    /* Adjust dropdown size on smaller screens */
-    #billTable .dropdown-content {
-        min-width: 300px !important;
-        max-width: 320px !important;
-    }
 }
 
 @media (max-width: 768px) {
-    #billTable .dropdown-menu {
-        right: -50px;
+    #billingDetailsModal .modal-card {
+        max-width: 95vw;
+        margin: 1rem;
     }
     
-    #billTable .dropdown-content {
-        min-width: 280px !important;
-        max-width: 300px !important;
+    #billingDetailsModal .columns {
+        display: block;
+    }
+    
+    #billingDetailsModal .column {
+        width: 100% !important;
     }
 }
 

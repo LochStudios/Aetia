@@ -505,55 +505,9 @@ ob_start();
                                     </div>
                                 </td>
                                 <td class="has-text-centered">
-                                    <div class="dropdown is-right" id="details-dropdown-<?= $client['user_id'] ?>">
-                                        <div class="dropdown-trigger">
-                                            <button class="button is-small is-outlined" aria-haspopup="true" aria-controls="dropdown-menu-<?= $client['user_id'] ?>" onclick="toggleDetails(<?= $client['user_id'] ?>)">
-                                                <span class="icon is-small"><i class="fas fa-eye"></i></span>
-                                            </button>
-                                        </div>
-                                        <div class="dropdown-menu" id="dropdown-menu-<?= $client['user_id'] ?>" role="menu">
-                                            <div class="dropdown-content" style="min-width: 350px; max-width: 400px;">
-                                                <div class="dropdown-item">
-                                                    <?php if ($client['manual_review_count'] > 0 && !empty($client['manual_review_details'])): ?>
-                                                        <h6 class="title is-6 has-text-warning mb-2">
-                                                            <span class="icon"><i class="fas fa-dollar-sign"></i></span>
-                                                            Manual Review Messages (<?= $client['manual_review_count'] ?>):
-                                                        </h6>
-                                                        <?php 
-                                                        $manualReviewDetails = explode('; ', $client['manual_review_details']);
-                                                        foreach ($manualReviewDetails as $detail): 
-                                                            if (!empty(trim($detail))):
-                                                        ?>
-                                                            <p class="is-size-7 mb-1 has-text-warning">• <?= htmlspecialchars($detail) ?> <strong>[+$1.00]</strong></p>
-                                                        <?php 
-                                                            endif;
-                                                        endforeach;
-                                                        ?>
-                                                        <hr class="my-2">
-                                                    <?php endif; ?>
-                                                    
-                                                    <h6 class="title is-6 mb-2">Billing Summary:</h6>
-                                                    <p class="is-size-7 mb-1">
-                                                        <strong>Period:</strong> <?= date('M j, Y', strtotime($client['first_message_date'])) ?> - <?= date('M j, Y', strtotime($client['last_message_date'])) ?>
-                                                    </p>
-                                                    <p class="is-size-7 mb-1">
-                                                        <strong>Total Messages:</strong> <?= $client['total_message_count'] ?>
-                                                    </p>
-                                                    <p class="is-size-7 mb-1">
-                                                        <strong>Service Fee:</strong> $<?= number_format($client['standard_fee'], 2) ?> (<?= $client['total_message_count'] ?> × $1.00)
-                                                    </p>
-                                                    <?php if ($client['manual_review_count'] > 0): ?>
-                                                    <p class="is-size-7 mb-1">
-                                                        <strong>Manual Review Fee:</strong> $<?= number_format($client['manual_review_fee'], 2) ?> (<?= $client['manual_review_count'] ?> × $1.00)
-                                                    </p>
-                                                    <?php endif; ?>
-                                                    <p class="is-size-7 mb-1">
-                                                        <strong>Total Amount Due:</strong> <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <button class="button is-small is-outlined" onclick="showBillingDetails(<?= $client['user_id'] ?>)">
+                                        <span class="icon is-small"><i class="fas fa-eye"></i></span>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -562,9 +516,193 @@ ob_start();
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- Billing Details Modal -->
+    <div class="modal" id="billingDetailsModal">
+        <div class="modal-background" onclick="closeBillingModal()"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">
+                    <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                    Billing Details
+                </p>
+                <button class="delete" aria-label="close" onclick="closeBillingModal()"></button>
+            </header>
+            <section class="modal-card-body">
+                <div id="modalClientInfo" class="mb-4">
+                    <!-- Client info will be populated here -->
+                </div>
+                
+                <div id="modalManualReviews" class="mb-4" style="display: none;">
+                    <h5 class="title is-5 has-text-warning">
+                        <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                        Manual Review Messages
+                    </h5>
+                    <div class="box has-background-warning-light">
+                        <div id="modalManualReviewList">
+                            <!-- Manual review details will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="columns">
+                    <div class="column is-6">
+                        <div class="box">
+                            <h6 class="title is-6 has-text-info">
+                                <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                                Activity Period
+                            </h6>
+                            <div id="modalPeriodInfo">
+                                <!-- Period info will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="box">
+                            <h6 class="title is-6 has-text-success">
+                                <span class="icon"><i class="fas fa-calculator"></i></span>
+                                Billing Breakdown
+                            </h6>
+                            <div id="modalBillingBreakdown">
+                                <!-- Billing breakdown will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-primary" onclick="closeBillingModal()">
+                    <span class="icon"><i class="fas fa-check"></i></span>
+                    <span>Close</span>
+                </button>
+            </footer>
+        </div>
+    </div>
 </div>
 
 <script>
+// Store billing data for modal display
+const billingData = <?= json_encode($billData) ?>;
+
+// Show billing details modal
+function showBillingDetails(userId) {
+    const client = billingData.find(c => c.user_id == userId);
+    if (!client) return;
+    
+    // Populate client info
+    const clientName = (client.first_name || client.last_name) 
+        ? `${client.first_name || ''} ${client.last_name || ''}`.trim()
+        : client.username;
+    
+    document.getElementById('modalClientInfo').innerHTML = `
+        <div class="media">
+            <div class="media-left">
+                <figure class="image is-64x64">
+                    <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" style="width: 64px; height: 64px; border-radius: 50%;">
+                        <span class="icon is-large has-text-info">
+                            <i class="fas fa-user fa-2x"></i>
+                        </span>
+                    </div>
+                </figure>
+            </div>
+            <div class="media-content">
+                <h4 class="title is-4">${clientName}</h4>
+                <p class="subtitle is-6">
+                    <span class="icon"><i class="fas fa-at"></i></span>
+                    @${client.username}
+                </p>
+                <p class="is-size-6">
+                    <span class="icon"><i class="fas fa-envelope"></i></span>
+                    <a href="mailto:${client.email}" class="has-text-link">${client.email}</a>
+                </p>
+                <p class="is-size-6">
+                    <span class="icon"><i class="fas fa-id-badge"></i></span>
+                    User ID: <strong>${client.user_id}</strong>
+                </p>
+                <div class="tags mt-2">
+                    <span class="tag is-${client.account_type === 'manual' ? 'primary' : 'info'}">
+                        ${client.account_type.charAt(0).toUpperCase() + client.account_type.slice(1)} Account
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Populate manual reviews if any
+    if (client.manual_review_count > 0 && client.manual_review_details) {
+        document.getElementById('modalManualReviews').style.display = 'block';
+        const reviews = client.manual_review_details.split('; ').filter(r => r.trim());
+        document.getElementById('modalManualReviewList').innerHTML = reviews.map(review => 
+            `<p class="mb-2">
+                <span class="icon has-text-warning"><i class="fas fa-exclamation-circle"></i></span>
+                ${review} <strong class="has-text-warning">[+$1.00]</strong>
+            </p>`
+        ).join('');
+    } else {
+        document.getElementById('modalManualReviews').style.display = 'none';
+    }
+    
+    // Populate period info
+    document.getElementById('modalPeriodInfo').innerHTML = `
+        <div class="content">
+            <p><strong>Start Date:</strong> ${new Date(client.first_message_date).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            })}</p>
+            <p><strong>End Date:</strong> ${new Date(client.last_message_date).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            })}</p>
+            <p><strong>Duration:</strong> ${Math.ceil((new Date(client.last_message_date) - new Date(client.first_message_date)) / (1000 * 60 * 60 * 24))} days</p>
+        </div>
+    `;
+    
+    // Populate billing breakdown
+    document.getElementById('modalBillingBreakdown').innerHTML = `
+        <div class="content">
+            <table class="table is-fullwidth">
+                <tbody>
+                    <tr>
+                        <td><strong>Total Messages:</strong></td>
+                        <td class="has-text-right">${client.total_message_count}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service Fee:</strong></td>
+                        <td class="has-text-right has-text-info">$${parseFloat(client.standard_fee).toFixed(2)}</td>
+                    </tr>
+                    ${client.manual_review_count > 0 ? `
+                    <tr>
+                        <td><strong>Manual Reviews:</strong></td>
+                        <td class="has-text-right">${client.manual_review_count}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Review Fee:</strong></td>
+                        <td class="has-text-right has-text-warning">$${parseFloat(client.manual_review_fee).toFixed(2)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr class="has-background-success-light">
+                        <td><strong>Total Amount Due:</strong></td>
+                        <td class="has-text-right has-text-weight-bold has-text-success">$${parseFloat(client.total_fee).toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Show modal
+    document.getElementById('billingDetailsModal').classList.add('is-active');
+}
+
+// Close billing modal
+function closeBillingModal() {
+    document.getElementById('billingDetailsModal').classList.remove('is-active');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBillingModal();
+    }
+});
+
 // Project configuration
 const PROJECT_START_YEAR = <?= $projectStartYear ?>;
 const PROJECT_START_MONTH = <?= $projectStartMonth ?>;
@@ -576,30 +714,6 @@ const MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
-
-// Toggle details dropdown
-function toggleDetails(userId) {
-    const dropdown = document.getElementById('details-dropdown-' + userId);
-    
-    // Close all other dropdowns first
-    document.querySelectorAll('.dropdown.is-active').forEach(d => {
-        if (d.id !== 'details-dropdown-' + userId) {
-            d.classList.remove('is-active');
-        }
-    });
-    
-    // Toggle current dropdown
-    dropdown.classList.toggle('is-active');
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.dropdown')) {
-        document.querySelectorAll('.dropdown.is-active').forEach(dropdown => {
-            dropdown.classList.remove('is-active');
-        });
-    }
-});
 
 // Update month options based on selected year
 function updateMonthOptions() {
