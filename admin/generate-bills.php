@@ -602,29 +602,15 @@ function showBillingDetails(userId) {
             profileImageHtml = `
                 <img src="admin/view-user-profile-image.php?user_id=${client.user_id}" 
                      alt="Profile Picture" 
-                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block;"
-                     onload="this.nextElementSibling.style.display='none';"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
-                     style="width: 64px; height: 64px; border-radius: 50%; display: none;">
-                    <span class="icon is-large has-text-info">
-                        <i class="fas fa-user fa-2x"></i>
-                    </span>
-                </div>`;
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     onerror="handleImageError(this);">`;
         } else {
             // Social account - use direct URL
             profileImageHtml = `
                 <img src="${client.profile_image}" 
                      alt="Profile Picture" 
-                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block;"
-                     onload="this.nextElementSibling.style.display='none';"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
-                     style="width: 64px; height: 64px; border-radius: 50%; display: none;">
-                    <span class="icon is-large has-text-info">
-                        <i class="fas fa-user fa-2x"></i>
-                    </span>
-                </div>`;
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     onerror="handleImageError(this);">`;
         }
     } else {
         // No profile image - show placeholder
@@ -733,6 +719,20 @@ function showBillingDetails(userId) {
 // Close billing modal
 function closeBillingModal() {
     document.getElementById('billingDetailsModal').classList.remove('is-active');
+}
+
+// Handle image loading errors
+function handleImageError(img) {
+    // Replace the failed image with a placeholder
+    const placeholder = document.createElement('div');
+    placeholder.className = 'has-background-info-light is-flex is-align-items-center is-justify-content-center';
+    placeholder.style.cssText = 'width: 64px; height: 64px; border-radius: 50%;';
+    placeholder.innerHTML = `
+        <span class="icon is-large has-text-info">
+            <i class="fas fa-user fa-2x"></i>
+        </span>
+    `;
+    img.parentNode.replaceChild(placeholder, img);
 }
 
 // Close modal on Escape key
