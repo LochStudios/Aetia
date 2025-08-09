@@ -12,11 +12,13 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 }
 
 require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
 
 $userModel = new User();
+$messageModel = new Message();
 $error_message = '';
 $success_message = '';
 
@@ -34,6 +36,79 @@ if (isset($_SESSION['link_error'])) {
 // Get initial user data
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
+
+// Get user billing information for the last 6 months
+$userBillingData = [];
+$totalBillingAmount = 0;
+$totalMessages = 0;
+$totalManualReviews = 0;
+
+if ($user['approval_status'] === 'approved') {
+    try {
+        // Get billing data for the last 6 months
+        for ($i = 0; $i < 6; $i++) {
+            $monthDate = new DateTime();
+            $monthDate->modify("-$i months");
+            $year = $monthDate->format('Y');
+            $month = $monthDate->format('m');
+            
+            $firstDay = sprintf('%04d-%02d-01', $year, $month);
+            $lastDay = $monthDate->format('Y-m-t');
+            
+            // Try to get saved billing report first
+            $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+            if ($savedReport) {
+                // Find this user in the report data
+                foreach ($savedReport['report_data'] as $clientData) {
+                    if ($clientData['user_id'] == $_SESSION['user_id']) {
+                        $userBillingData[] = [
+                            'month' => $monthDate->format('F Y'),
+                            'month_short' => $monthDate->format('M Y'),
+                            'first_day' => $firstDay,
+                            'last_day' => $lastDay,
+                            'message_count' => $clientData['total_message_count'],
+                            'manual_review_count' => $clientData['manual_review_count'],
+                            'standard_fee' => $clientData['standard_fee'],
+                            'manual_review_fee' => $clientData['manual_review_fee'],
+                            'total_fee' => $clientData['total_fee']
+                        ];
+                        
+                        $totalBillingAmount += $clientData['total_fee'];
+                        $totalMessages += $clientData['total_message_count'];
+                        $totalManualReviews += $clientData['manual_review_count'];
+                        break;
+                    }
+                }
+            } else {
+                // No saved report, try to generate billing data on the fly
+                $billingData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                foreach ($billingData as $clientData) {
+                    if ($clientData['user_id'] == $_SESSION['user_id']) {
+                        $userBillingData[] = [
+                            'month' => $monthDate->format('F Y'),
+                            'month_short' => $monthDate->format('M Y'),
+                            'first_day' => $firstDay,
+                            'last_day' => $lastDay,
+                            'message_count' => $clientData['total_message_count'],
+                            'manual_review_count' => $clientData['manual_review_count'],
+                            'standard_fee' => $clientData['standard_fee'],
+                            'manual_review_fee' => $clientData['manual_review_fee'],
+                            'total_fee' => $clientData['total_fee']
+                        ];
+                        
+                        $totalBillingAmount += $clientData['total_fee'];
+                        $totalMessages += $clientData['total_message_count'];
+                        $totalManualReviews += $clientData['manual_review_count'];
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Error getting user billing data: " . $e->getMessage());
+        // Continue without billing data
+    }
+}
 
 // Handle unlinking social accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_social') {
@@ -333,8 +408,113 @@ ob_start();
                     </div>
                 </div>
             </div>
+            
+            <!-- Billing Information Section -->
+            <?php if ($user['approval_status'] === 'approved' && (!empty($userBillingData) || $totalMessages > 0)): ?>
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-6 has-text-light mb-3">
+                        <span class="icon has-text-success"><i class="fas fa-chart-line"></i></span>
+                        Activity Summary (Last 6 Months)
+                    </h4>
+                    
+                    <!-- Summary Stats -->
+                    <div class="columns is-mobile mb-3">
+                        <div class="column has-text-centered">
+                            <p class="heading has-text-grey-light">Messages</p>
+                            <p class="title is-6 has-text-info"><?= $totalMessages ?></p>
+                        </div>
+                        <div class="column has-text-centered">
+                            <p class="heading has-text-grey-light">Reviews</p>
+                            <p class="title is-6 has-text-warning"><?= $totalManualReviews ?></p>
+                        </div>
+                        <div class="column has-text-centered">
+                            <p class="heading has-text-grey-light">Total Value</p>
+                            <p class="title is-6 has-text-success">$<?= number_format($totalBillingAmount, 2) ?></p>
+                        </div>
+                    </div>
+                    
+                    <?php if (!empty($userBillingData)): ?>
+                    <!-- Monthly Breakdown -->
+                    <div class="content">
+                        <p class="has-text-grey-light is-size-7 mb-2">Monthly Activity:</p>
+                        <?php foreach (array_slice($userBillingData, 0, 3) as $monthData): ?>
+                        <div class="level is-mobile mb-2" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
+                                    <?php if ($monthData['manual_review_count'] > 0): ?>
+                                        <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
+                                    <?php endif; ?>
+                                    <span class="has-text-success is-size-7 ml-2">$<?= number_format($monthData['total_fee'], 2) ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        
+                        <?php if (count($userBillingData) > 3): ?>
+                        <details class="mt-2">
+                            <summary class="has-text-info is-size-7" style="cursor: pointer;">Show more months (<?= count($userBillingData) - 3 ?> more)</summary>
+                            <div class="mt-2">
+                                <?php foreach (array_slice($userBillingData, 3) as $monthData): ?>
+                                <div class="level is-mobile mb-2" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
+                                    <div class="level-left">
+                                        <div class="level-item">
+                                            <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="level-right">
+                                        <div class="level-item">
+                                            <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
+                                            <?php if ($monthData['manual_review_count'] > 0): ?>
+                                                <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
+                                            <?php endif; ?>
+                                            <span class="has-text-success is-size-7 ml-2">$<?= number_format($monthData['total_fee'], 2) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="has-text-centered mt-3">
+                        <a href="messages.php" class="button is-small is-info is-outlined">
+                            <span class="icon"><i class="fas fa-envelope"></i></span>
+                            <span>View Messages</span>
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <div class="notification is-info is-light">
+                        <p class="has-text-dark"><strong>No billing activity yet</strong></p>
+                        <p class="has-text-dark is-size-7">Start engaging with clients through our messaging system to see your activity here.</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php elseif ($user['approval_status'] === 'pending'): ?>
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-6 has-text-light mb-3">
+                        <span class="icon has-text-warning"><i class="fas fa-clock"></i></span>
+                        Activity Summary
+                    </h4>
+                    <div class="notification is-warning is-light">
+                        <p class="has-text-dark"><strong>Pending Approval</strong></p>
+                        <p class="has-text-dark is-size-7">Your activity summary will be available once your account is approved by our team.</p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <?php if (!empty($socialConnections)): ?>
-            <!-- Connected Social Accounts under profile card -->
+            <!-- Connected Social Accounts under billing information -->
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
                     <h4 class="title is-6 has-text-light mb-2">
