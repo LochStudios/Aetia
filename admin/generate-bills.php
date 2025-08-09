@@ -602,7 +602,8 @@ function showBillingDetails(userId) {
             profileImageHtml = `
                 <img src="admin/view-user-profile-image.php?user_id=${client.user_id}" 
                      alt="Profile Picture" 
-                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block;"
+                     onload="this.nextElementSibling.style.display='none';"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
                      style="width: 64px; height: 64px; border-radius: 50%; display: none;">
@@ -615,7 +616,8 @@ function showBillingDetails(userId) {
             profileImageHtml = `
                 <img src="${client.profile_image}" 
                      alt="Profile Picture" 
-                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block;"
+                     onload="this.nextElementSibling.style.display='none';"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
                      style="width: 64px; height: 64px; border-radius: 50%; display: none;">
