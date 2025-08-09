@@ -432,7 +432,7 @@ ob_start();
                     
                     <!-- Monthly Breakdown -->
                     <div class="content">
-                        <?php foreach ($yearlyBillingData as $monthData): ?>
+                        <?php foreach (array_reverse($yearlyBillingData) as $monthData): ?>
                         <div class="level is-mobile mb-2 has-background-grey-darker" style="padding: 12px 16px; border-radius: 6px;">
                             <div class="level-left">
                                 <div class="level-item">
@@ -443,7 +443,6 @@ ob_start();
                             </div>
                             <div class="level-right">
                                 <div class="level-item">
-                                    <span class="has-text-info is-size-7 mr-2"><?= $monthData['message_count'] ?> msgs</span>
                                     <span class="has-text-success is-size-7 has-text-weight-bold">$<?= number_format($monthData['total_fee'], 2) ?></span>
                                 </div>
                             </div>
