@@ -419,7 +419,7 @@ ob_start();
                     </h4>
                     
                     <!-- Summary Stats -->
-                    <div class="columns is-mobile mb-3">
+                    <div class="columns is-mobile mb-3 activity-summary">
                         <div class="column has-text-centered">
                             <p class="heading has-text-grey-light">Messages</p>
                             <p class="title is-6 has-text-info"><?= $totalMessages ?></p>
@@ -439,7 +439,7 @@ ob_start();
                     <div class="content">
                         <p class="has-text-grey-light is-size-7 mb-2">Monthly Activity:</p>
                         <?php foreach (array_slice($userBillingData, 0, 3) as $monthData): ?>
-                        <div class="level is-mobile mb-2" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
+                        <div class="level is-mobile mb-2 billing-month-item" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
                             <div class="level-left">
                                 <div class="level-item">
                                     <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
@@ -462,7 +462,7 @@ ob_start();
                             <summary class="has-text-info is-size-7" style="cursor: pointer;">Show more months (<?= count($userBillingData) - 3 ?> more)</summary>
                             <div class="mt-2">
                                 <?php foreach (array_slice($userBillingData, 3) as $monthData): ?>
-                                <div class="level is-mobile mb-2" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
+                                <div class="level is-mobile mb-2 billing-month-item" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
                                     <div class="level-left">
                                         <div class="level-item">
                                             <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
@@ -1086,6 +1086,34 @@ function loadSecureProfileImage() {
 document.addEventListener('DOMContentLoaded', function() {
     loadSecureProfileImage();
 });
+
+// Add styles for billing section
+const style = document.createElement('style');
+style.textContent = `
+    .billing-month-item {
+        transition: all 0.2s ease;
+    }
+    .billing-month-item:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+    .activity-summary .level-item .title {
+        margin-bottom: 0;
+    }
+    .activity-summary .heading {
+        font-size: 0.7rem;
+        margin-bottom: 0.25rem;
+    }
+    details summary {
+        transition: color 0.2s ease;
+    }
+    details summary:hover {
+        color: #3273dc !important;
+    }
+    details[open] summary {
+        margin-bottom: 0.5rem;
+    }
+`;
+document.head.appendChild(style);
 </script>
 
 <?php
