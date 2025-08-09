@@ -410,7 +410,7 @@ ob_start();
             </div>
             
             <!-- Billing Information Section -->
-            <?php if ($user['approval_status'] === 'approved' && (!empty($userBillingData) || $totalMessages > 0)): ?>
+            <?php if ($user['approval_status'] === 'approved'): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
                     <h4 class="title is-6 has-text-light mb-3">
@@ -419,68 +419,83 @@ ob_start();
                     </h4>
                     
                     <!-- Summary Stats -->
-                    <div class="columns is-mobile mb-3 activity-summary">
+                    <div class="columns is-mobile mb-3">
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light">Messages</p>
-                            <p class="title is-6 has-text-info"><?= $totalMessages ?></p>
+                            <p class="heading has-text-grey-light is-size-7">Messages</p>
+                            <p class="title is-6 has-text-info mb-0"><?= $totalMessages ?></p>
                         </div>
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light">Reviews</p>
-                            <p class="title is-6 has-text-warning"><?= $totalManualReviews ?></p>
+                            <p class="heading has-text-grey-light is-size-7">Reviews</p>
+                            <p class="title is-6 has-text-warning mb-0"><?= $totalManualReviews ?></p>
                         </div>
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light">Total Value</p>
-                            <p class="title is-6 has-text-success">$<?= number_format($totalBillingAmount, 2) ?></p>
+                            <p class="heading has-text-grey-light is-size-7">Total Value</p>
+                            <p class="title is-6 has-text-success mb-0">$<?= number_format($totalBillingAmount, 2) ?></p>
                         </div>
                     </div>
                     
-                    <?php if (!empty($userBillingData)): ?>
                     <!-- Monthly Breakdown -->
                     <div class="content">
                         <p class="has-text-grey-light is-size-7 mb-2">Monthly Activity:</p>
-                        <?php foreach (array_slice($userBillingData, 0, 3) as $monthData): ?>
-                        <div class="level is-mobile mb-2 billing-month-item" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
-                                </div>
-                            </div>
-                            <div class="level-right">
-                                <div class="level-item">
-                                    <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
-                                    <?php if ($monthData['manual_review_count'] > 0): ?>
-                                        <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
-                                    <?php endif; ?>
-                                    <span class="has-text-success is-size-7 ml-2">$<?= number_format($monthData['total_fee'], 2) ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                        
-                        <?php if (count($userBillingData) > 3): ?>
-                        <details class="mt-2">
-                            <summary class="has-text-info is-size-7" style="cursor: pointer;">Show more months (<?= count($userBillingData) - 3 ?> more)</summary>
-                            <div class="mt-2">
-                                <?php foreach (array_slice($userBillingData, 3) as $monthData): ?>
-                                <div class="level is-mobile mb-2 billing-month-item" style="background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 4px;">
-                                    <div class="level-left">
-                                        <div class="level-item">
-                                            <span class="has-text-light is-size-7"><?= $monthData['month_short'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="level-right">
-                                        <div class="level-item">
-                                            <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
-                                            <?php if ($monthData['manual_review_count'] > 0): ?>
-                                                <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
-                                            <?php endif; ?>
-                                            <span class="has-text-success is-size-7 ml-2">$<?= number_format($monthData['total_fee'], 2) ?></span>
-                                        </div>
+                        <?php if (!empty($userBillingData)): ?>
+                            <?php foreach (array_slice($userBillingData, 0, 3) as $monthData): ?>
+                            <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= $monthData['month_short'] ?></span>
                                     </div>
                                 </div>
-                                <?php endforeach; ?>
+                                <div class="level-right">
+                                    <div class="level-item">
+                                        <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
+                                        <?php if ($monthData['manual_review_count'] > 0): ?>
+                                            <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
+                                        <?php endif; ?>
+                                        <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$<?= number_format($monthData['total_fee'], 2) ?></span>
+                                    </div>
+                                </div>
                             </div>
-                        </details>
+                            <?php endforeach; ?>
+                            
+                            <?php if (count($userBillingData) > 3): ?>
+                            <details class="mt-2">
+                                <summary class="has-text-info is-size-7" style="cursor: pointer;">Show more months (<?= count($userBillingData) - 3 ?> more)</summary>
+                                <div class="mt-2">
+                                    <?php foreach (array_slice($userBillingData, 3) as $monthData): ?>
+                                    <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
+                                        <div class="level-left">
+                                            <div class="level-item">
+                                                <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= $monthData['month_short'] ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="level-right">
+                                            <div class="level-item">
+                                                <span class="tag is-small is-info"><?= $monthData['message_count'] ?> msgs</span>
+                                                <?php if ($monthData['manual_review_count'] > 0): ?>
+                                                    <span class="tag is-small is-warning ml-1"><?= $monthData['manual_review_count'] ?> reviews</span>
+                                                <?php endif; ?>
+                                                <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$<?= number_format($monthData['total_fee'], 2) ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="level is-mobile mb-2 has-background-white-ter" style="padding: 8px 12px; border-radius: 4px;">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="has-text-grey-dark is-size-7 has-text-weight-medium"><?= date('M Y') ?></span>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <div class="level-item">
+                                        <span class="tag is-small is-info">0 msgs</span>
+                                        <span class="has-text-success is-size-7 ml-2 has-text-weight-semibold">$0.00</span>
+                                    </div>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
                     
@@ -490,12 +505,6 @@ ob_start();
                             <span>View Messages</span>
                         </a>
                     </div>
-                    <?php else: ?>
-                    <div class="notification is-info is-light">
-                        <p class="has-text-dark"><strong>No billing activity yet</strong></p>
-                        <p class="has-text-dark is-size-7">Start engaging with clients through our messaging system to see your activity here.</p>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php elseif ($user['approval_status'] === 'pending'): ?>
@@ -1086,34 +1095,6 @@ function loadSecureProfileImage() {
 document.addEventListener('DOMContentLoaded', function() {
     loadSecureProfileImage();
 });
-
-// Add styles for billing section
-const style = document.createElement('style');
-style.textContent = `
-    .billing-month-item {
-        transition: all 0.2s ease;
-    }
-    .billing-month-item:hover {
-        background: rgba(255, 255, 255, 0.1) !important;
-    }
-    .activity-summary .level-item .title {
-        margin-bottom: 0;
-    }
-    .activity-summary .heading {
-        font-size: 0.7rem;
-        margin-bottom: 0.25rem;
-    }
-    details summary {
-        transition: color 0.2s ease;
-    }
-    details summary:hover {
-        color: #3273dc !important;
-    }
-    details[open] summary {
-        margin-bottom: 0.5rem;
-    }
-`;
-document.head.appendChild(style);
 </script>
 
 <?php
