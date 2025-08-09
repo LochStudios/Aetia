@@ -37,68 +37,71 @@ if (isset($_SESSION['link_error'])) {
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
 
-// Get user billing information for the current month
-$currentMonthData = null;
+// Get user billing information for the current year
+$yearlyBillingData = [];
 $currentMonthBilling = 0;
 $currentMonthMessages = 0;
 $currentMonthReviews = 0;
+$totalYearBilling = 0;
+$totalYearMessages = 0;
 
 if ($user['approval_status'] === 'approved') {
     try {
-        // Get billing data for current month only
         $currentDate = new DateTime();
-        $year = $currentDate->format('Y');
-        $month = $currentDate->format('m');
+        $currentYear = $currentDate->format('Y');
+        $currentMonth = (int)$currentDate->format('m');
         
-        $firstDay = sprintf('%04d-%02d-01', $year, $month);
-        $lastDay = $currentDate->format('Y-m-t');
-        
-        // Try to get saved billing report first
-        $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
-        if ($savedReport) {
-            // Find this user in the report data
-            foreach ($savedReport['report_data'] as $clientData) {
-                if ($clientData['user_id'] == $_SESSION['user_id']) {
-                    $currentMonthData = [
-                        'month' => $currentDate->format('F Y'),
-                        'month_short' => $currentDate->format('M Y'),
-                        'first_day' => $firstDay,
-                        'last_day' => $lastDay,
-                        'message_count' => $clientData['total_message_count'],
-                        'manual_review_count' => $clientData['manual_review_count'],
-                        'standard_fee' => $clientData['standard_fee'],
-                        'manual_review_fee' => $clientData['manual_review_fee'],
-                        'total_fee' => $clientData['total_fee']
-                    ];
-                    
-                    $currentMonthBilling = $clientData['total_fee'];
-                    $currentMonthMessages = $clientData['total_message_count'];
-                    $currentMonthReviews = $clientData['manual_review_count'];
-                    break;
+        // Get billing data for each month from January to current month
+        for ($month = 1; $month <= $currentMonth; $month++) {
+            $firstDay = sprintf('%04d-%02d-01', $currentYear, $month);
+            $monthDate = new DateTime($firstDay);
+            $lastDay = $monthDate->format('Y-m-t');
+            
+            $monthData = [
+                'month' => $monthDate->format('F'),
+                'month_full' => $monthDate->format('F Y'),
+                'month_short' => $monthDate->format('M'),
+                'first_day' => $firstDay,
+                'last_day' => $lastDay,
+                'message_count' => 0,
+                'manual_review_count' => 0,
+                'total_fee' => 0
+            ];
+            
+            // Try to get saved billing report first
+            $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+            if ($savedReport) {
+                // Find this user in the report data
+                foreach ($savedReport['report_data'] as $clientData) {
+                    if ($clientData['user_id'] == $_SESSION['user_id']) {
+                        $monthData['message_count'] = $clientData['total_message_count'];
+                        $monthData['manual_review_count'] = $clientData['manual_review_count'];
+                        $monthData['total_fee'] = $clientData['total_fee'];
+                        break;
+                    }
+                }
+            } else {
+                // No saved report, try to generate billing data on the fly
+                $billingData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                foreach ($billingData as $clientData) {
+                    if ($clientData['user_id'] == $_SESSION['user_id']) {
+                        $monthData['message_count'] = $clientData['total_message_count'];
+                        $monthData['manual_review_count'] = $clientData['manual_review_count'];
+                        $monthData['total_fee'] = $clientData['total_fee'];
+                        break;
+                    }
                 }
             }
-        } else {
-            // No saved report, try to generate billing data on the fly
-            $billingData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
-            foreach ($billingData as $clientData) {
-                if ($clientData['user_id'] == $_SESSION['user_id']) {
-                    $currentMonthData = [
-                        'month' => $currentDate->format('F Y'),
-                        'month_short' => $currentDate->format('M Y'),
-                        'first_day' => $firstDay,
-                        'last_day' => $lastDay,
-                        'message_count' => $clientData['total_message_count'],
-                        'manual_review_count' => $clientData['manual_review_count'],
-                        'standard_fee' => $clientData['standard_fee'],
-                        'manual_review_fee' => $clientData['manual_review_fee'],
-                        'total_fee' => $clientData['total_fee']
-                    ];
-                    
-                    $currentMonthBilling = $clientData['total_fee'];
-                    $currentMonthMessages = $clientData['total_message_count'];
-                    $currentMonthReviews = $clientData['manual_review_count'];
-                    break;
-                }
+            
+            $yearlyBillingData[] = $monthData;
+            $totalYearBilling += $monthData['total_fee'];
+            $totalYearMessages += $monthData['message_count'];
+            
+            // Track current month specifically
+            if ($month == $currentMonth) {
+                $currentMonthBilling = $monthData['total_fee'];
+                $currentMonthMessages = $monthData['message_count'];
+                $currentMonthReviews = $monthData['manual_review_count'];
             }
         }
     } catch (Exception $e) {
@@ -412,7 +415,7 @@ ob_start();
                 <div class="card-content">
                     <h4 class="title is-6 has-text-light mb-3">
                         <span class="icon has-text-success"><i class="fas fa-chart-line"></i></span>
-                        This Month's Activity
+                        Activity Summary
                     </h4>
                     
                     <!-- Current Month Stats -->
@@ -422,31 +425,30 @@ ob_start();
                             <p class="title is-6 has-text-info mb-0"><?= $currentMonthMessages ?></p>
                         </div>
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light is-size-7">Reviews</p>
-                            <p class="title is-6 has-text-warning mb-0"><?= $currentMonthReviews ?></p>
-                        </div>
-                        <div class="column has-text-centered">
                             <p class="heading has-text-grey-light is-size-7">Expected</p>
                             <p class="title is-6 has-text-success mb-0">$<?= number_format($currentMonthBilling, 2) ?></p>
                         </div>
                     </div>
                     
-                    <!-- Current Month Details -->
+                    <!-- Monthly Breakdown -->
                     <div class="content">
+                        <?php foreach ($yearlyBillingData as $monthData): ?>
                         <div class="level is-mobile mb-2 has-background-grey-darker" style="padding: 12px 16px; border-radius: 6px;">
                             <div class="level-left">
                                 <div class="level-item">
-                                    <span class="has-text-light is-size-6 has-text-weight-semibold">
-                                        <?= $currentMonthData ? $currentMonthData['month'] : date('F Y') ?>
+                                    <span class="has-text-light is-size-7 has-text-weight-semibold">
+                                        <?= $monthData['month'] ?>
                                     </span>
                                 </div>
                             </div>
                             <div class="level-right">
                                 <div class="level-item">
-                                    <span class="has-text-success is-size-6 has-text-weight-bold">$<?= number_format($currentMonthBilling, 2) ?></span>
+                                    <span class="has-text-info is-size-7 mr-2"><?= $monthData['message_count'] ?> msgs</span>
+                                    <span class="has-text-success is-size-7 has-text-weight-bold">$<?= number_format($monthData['total_fee'], 2) ?></span>
                                 </div>
                             </div>
                         </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
