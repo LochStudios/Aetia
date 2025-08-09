@@ -14,7 +14,6 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../services/StripeService.php';
 require_once __DIR__ . '/../includes/SecurityManager.php';
 require_once __DIR__ . '/../includes/SecurityException.php';
 
@@ -24,19 +23,6 @@ $securityManager = new SecurityManager();
 
 // Initialize secure session
 $securityManager->initializeSecureSession();
-
-// Initialize Stripe service (only if config exists)
-$stripeService = null;
-$stripeInitError = null;
-$stripeConfigStatus = StripeService::checkConfiguration();
-
-try {
-    $stripeService = new StripeService();
-} catch (Exception $e) {
-    $stripeInitError = $e->getMessage();
-    error_log("Stripe service initialization failed: " . $e->getMessage());
-    // Continue without Stripe functionality
-}
 
 // Check if current user is admin
 $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
@@ -50,7 +36,12 @@ if (!$isAdmin) {
 $message = '';
 $error = '';
 $billData = [];
-$stripeResults = null;
+$invoiceResults = [
+    'total_created' => 0,
+    'success' => [],
+    'errors' => [],
+    'total_amount' => 0
+];
 
 // Handle bill generation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -94,96 +85,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $error = 'Database error occurred while generating bills.';
             }
         }
-    } elseif ($_POST['action'] === 'create_stripe_invoices') {
-        // Handle Stripe invoice creation with enhanced security
-        if (!$stripeService) {
-            $error = 'Stripe service is not available. Please check your Stripe configuration.';
-        } else {
-            try {
-                // Verify admin access and security
-                if (!$securityManager->verifyAdminAccess($_SESSION['user_id'], 'stripe_create_invoices')) {
-                    throw new SecurityException('Access denied for Stripe invoice creation');
-                }
-                // Get bill data from session or regenerate
-                $firstDay = $_SESSION['bill_period_start'] ?? '';
-                $lastDay = $_SESSION['bill_period_end'] ?? '';
-                if (empty($firstDay) || empty($lastDay)) {
-                    $error = 'No billing period found. Please generate bills first.';
-                } else {
-                    $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
-                    
-                    if (empty($billData)) {
-                        $error = 'No billing data found for the current period.';
-                    } else {
-                        // Additional security validation
-                        if (count($billData) > 100) {
-                            $error = 'Too many clients to process at once. Please contact system administrator.';
-                        } else {
-                            $billingPeriod = date('F Y', strtotime($firstDay));
-                            $stripeResults = $stripeService->createBatchInvoices($billData, $billingPeriod);
-                            if (count($stripeResults['success']) > 0) {
-                                $message = sprintf(
-                                    'Successfully created %d Stripe invoices totaling $%s. %d errors occurred. All invoice emails were automatically sent by Stripe.',
-                                    count($stripeResults['success']),
-                                    number_format($stripeResults['total_amount'], 2),
-                                    count($stripeResults['errors'])
-                                );
-                                // Regenerate CSRF token after successful operation
-                                $securityManager->regenerateCsrfToken();
-                            } else {
-                                $error = 'Failed to create any Stripe invoices. Check error log for details.';
-                            }
-                        }
-                    }
-                }
-            } catch (SecurityException $e) {
-                error_log("Security violation in Stripe invoice creation: " . $e->getMessage());
-                $error = 'Security violation detected. Access denied.';
-            } catch (Exception $e) {
-                error_log("Stripe invoice creation error: " . $e->getMessage());
-                $error = 'Error creating Stripe invoices. Please try again.';
+    } elseif ($_POST['action'] === 'export_for_wise') {
+        // Export billing data for manual Wise.com invoice creation
+        try {
+            // Verify admin access and security
+            if (!$securityManager->verifyAdminAccess($_SESSION['user_id'], 'export_billing_data')) {
+                throw new SecurityException('Access denied for billing data export');
             }
-        }
-    } elseif ($_POST['action'] === 'test_stripe_connection') {
-        // Test Stripe connection with security
-        if (!$stripeService) {
-            if ($stripeInitError) {
-                $error = 'Stripe service initialization failed: ' . htmlspecialchars($stripeInitError);
+            
+            // Get bill data from session or regenerate
+            $firstDay = $_SESSION['bill_period_start'] ?? '';
+            $lastDay = $_SESSION['bill_period_end'] ?? '';
+            if (empty($firstDay) || empty($lastDay)) {
+                $error = 'No billing period found. Please generate bills first.';
             } else {
-                $error = 'Stripe service is not available. Please check your Stripe configuration.';
-            }
-        } else {
-            try {
-                // Verify admin access
-                if (!$securityManager->verifyAdminAccess($_SESSION['user_id'], 'stripe_test_connection')) {
-                    throw new SecurityException('Access denied for Stripe connection test');
-                }
-
-                $testResult = $stripeService->testConnection();
-                if ($testResult['success']) {
-                    $message = sprintf(
-                        'Stripe connection successful! Account: %s (%s)',
-                        $testResult['business_profile'],
-                        $testResult['account_id']
-                    );
-                    // Regenerate CSRF token after successful operation
-                    $securityManager->regenerateCsrfToken();
+                $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                
+                if (empty($billData)) {
+                    $error = 'No billing data found for the current period.';
                 } else {
-                    $error = 'Stripe connection failed. Please check your configuration.';
-                    if (isset($testResult['error'])) {
-                        $error .= ' Error: ' . htmlspecialchars($testResult['error']);
+                    // Generate CSV export for Wise.com invoice creation
+                    $billingPeriod = date('F Y', strtotime($firstDay));
+                    $filename = 'billing_export_' . date('Y_m', strtotime($firstDay)) . '.csv';
+                    
+                    header('Content-Type: text/csv');
+                    header('Content-Disposition: attachment; filename="' . $filename . '"');
+                    header('Cache-Control: no-cache, must-revalidate');
+                    header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+                    
+                    $output = fopen('php://output', 'w');
+                    
+                    // CSV headers
+                    fputcsv($output, [
+                        'Client Name',
+                        'Email',
+                        'Username', 
+                        'User ID',
+                        'Standard Fee',
+                        'Manual Review Fee',
+                        'Total Amount',
+                        'Billing Period',
+                        'Message Count',
+                        'Manual Review Count'
+                    ]);
+                    
+                    // Export data
+                    foreach ($billData as $client) {
+                        fputcsv($output, [
+                            $client['name'] ?? $client['client_name'],
+                            $client['email'],
+                            $client['username'],
+                            $client['user_id'],
+                            '$' . number_format($client['standard_fee'], 2),
+                            '$' . number_format($client['manual_review_fee'], 2),
+                            '$' . number_format($client['total_fee'], 2),
+                            $billingPeriod,
+                            $client['message_count'],
+                            $client['manual_review_count']
+                        ]);
                     }
-                    if (isset($testResult['details'])) {
-                        $error .= ' Details: ' . htmlspecialchars($testResult['details']);
-                    }
+                    
+                    fclose($output);
+                    exit;
                 }
-            } catch (SecurityException $e) {
-                error_log("Security violation in Stripe connection test: " . $e->getMessage());
-                $error = 'Security violation detected. Access denied.';
-            } catch (Exception $e) {
-                error_log("Exception in Stripe connection test: " . $e->getMessage());
-                $error = 'Error testing Stripe connection: ' . htmlspecialchars($e->getMessage());
             }
+        } catch (SecurityException $e) {
+            error_log("Security violation in billing export: " . $e->getMessage());
+            $error = 'Security violation detected. Access denied.';
+        } catch (Exception $e) {
+            error_log("Billing export error: " . $e->getMessage());
+            $error = 'Error exporting billing data. Please try again.';
         }
     }
 }
@@ -328,93 +299,42 @@ ob_start();
         </form>
     </div>
 
-    <!-- Stripe Integration Controls -->
-    <?php if ($stripeService): ?>
+    <!-- Export for Wise.com Invoice Creation -->
     <div class="box">
         <h3 class="title is-4">
-            <span class="icon"><i class="fab fa-stripe-s"></i></span>
-            Stripe Billing Integration
+            <span class="icon"><i class="fas fa-file-export"></i></span>
+            Export for Wise.com Invoice Creation
         </h3>
         
         <div class="columns">
             <div class="column is-8">
                 <div class="content">
-                    <p>Create invoices in Stripe for all clients with billing data from the selected period. This will:</p>
+                    <p>Export billing data to create invoices manually on Wise.com. This will:</p>
                     <ul>
-                        <li>Create or update customer records in Stripe</li>
-                        <li>Generate itemized invoices with service and manual review fees</li>
-                        <li>Set payment terms to Net 30 days</li>
-                        <li>Automatically send invoice emails to clients via Stripe</li>
+                        <li>Download a CSV file with all client billing information</li>
+                        <li>Include user details, email addresses, and billing amounts</li>
+                        <li>Provide all data needed to create invoices on Wise.com</li>
+                        <li>After creating invoices, upload them to the client's Documents section</li>
                     </ul>
                 </div>
             </div>
             <div class="column is-4">
                 <div class="field">
-                    <?php if ($stripeInitError): ?>
-                    <div class="notification is-danger is-dark">
-                        <p class="has-text-weight-bold">Stripe Configuration Issue:</p>
-                        <p><?= htmlspecialchars($stripeInitError) ?></p>
-                        
-                        <?php if (!empty($stripeConfigStatus['errors'])): ?>
-                        <hr>
-                        <p class="has-text-weight-bold">Diagnostic Details:</p>
-                        <ul class="is-size-7">
-                            <?php foreach ($stripeConfigStatus['errors'] as $error): ?>
-                            <li>• <?= htmlspecialchars($error) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php endif; ?>
-                        
-                        <hr>
-                        <div class="is-size-7">
-                            <p><strong>Configuration Status:</strong></p>
-                            <p>
-                                Config file: <span class="<?= $stripeConfigStatus['config_file_exists'] ? 'has-text-success' : 'has-text-danger' ?>">
-                                    <?= $stripeConfigStatus['config_file_exists'] ? '✓' : '✗' ?>
-                                </span>
-                                | Vendor library: <span class="<?= $stripeConfigStatus['vendor_library_exists'] ? 'has-text-success' : 'has-text-danger' ?>">
-                                    <?= $stripeConfigStatus['vendor_library_exists'] ? '✓' : '✗' ?>
-                                </span>
-                                | Secret key: <span class="<?= $stripeConfigStatus['secret_key_defined'] ? 'has-text-success' : 'has-text-danger' ?>">
-                                    <?= $stripeConfigStatus['secret_key_defined'] ? '✓' : '✗' ?>
-                                </span>
-                                | Publishable key: <span class="<?= $stripeConfigStatus['publishable_key_defined'] ? 'has-text-success' : 'has-text-danger' ?>">
-                                    <?= $stripeConfigStatus['publishable_key_defined'] ? '✓' : '✗' ?>
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                    <?php elseif (!$stripeService): ?>
-                    <div class="notification is-warning is-dark">
-                        <p class="has-text-weight-bold">Stripe Service Unavailable</p>
-                        <p>Stripe functionality is not available. Please check configuration.</p>
-                    </div>
-                    <?php endif; ?>
-                    
                     <div class="control">
-                        <form method="POST" action="" style="display: inline-block; margin-right: 10px;">
-                            <input type="hidden" name="action" value="test_stripe_connection">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                            <button type="submit" class="button is-info is-small" <?= !$stripeService ? 'disabled title="Stripe service not available"' : '' ?>>
-                                <span class="icon"><i class="fas fa-plug"></i></span>
-                                <span>Test Connection</span>
-                            </button>
-                        </form>
-                        
                         <?php if (!empty($billData)): ?>
                         <form method="POST" action="" style="display: inline-block;" 
-                              onsubmit="return confirm('Create Stripe invoices for <?= count($billData) ?> clients? Invoices will be automatically emailed by Stripe. This action cannot be undone.');">
-                            <input type="hidden" name="action" value="create_stripe_invoices">
+                              onsubmit="return confirm('Export billing data for <?= count($billData) ?> clients for manual Wise.com invoice creation?');">
+                            <input type="hidden" name="action" value="export_for_wise">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                            <button type="submit" class="button is-success is-medium" <?= !$stripeService ? 'disabled title="Stripe service not available"' : '' ?>>
-                                <span class="icon"><i class="fab fa-stripe-s"></i></span>
-                                <span>Create & Send Stripe Invoices</span>
+                            <button type="submit" class="button is-success is-medium">
+                                <span class="icon"><i class="fas fa-download"></i></span>
+                                <span>Export Billing Data (CSV)</span>
                             </button>
                         </form>
                         <?php else: ?>
                         <button class="button is-success is-medium" disabled title="Generate bills first">
-                            <span class="icon"><i class="fab fa-stripe-s"></i></span>
-                            <span>Create Stripe Invoices</span>
+                            <span class="icon"><i class="fas fa-download"></i></span>
+                            <span>Export Billing Data (CSV)</span>
                         </button>
                         <?php endif; ?>
                     </div>
@@ -422,30 +342,12 @@ ob_start();
             </div>
         </div>
     </div>
-    <?php else: ?>
-    <div class="box">
-        <h3 class="title is-4">
-            <span class="icon"><i class="fab fa-stripe-s"></i></span>
-            Stripe Integration (Not Available)
-        </h3>
-        <div class="notification is-warning">
-            <strong>Stripe configuration not found.</strong> To enable Stripe billing integration:
-            <ol class="mt-2">
-                <li>Install the Stripe PHP library: <code>composer install</code></li>
-                <li>Copy <code>config/stripe.example.php</code> to <code>/home/aetiacom/web-config/stripe.php</code></li>
-                <li>Add your Stripe API keys to the configuration file</li>
-                <li>Refresh this page</li>
-            </ol>
-        </div>
-    </div>
-    <?php endif; ?>
 
-    <!-- Stripe Results -->
-    <?php if ($stripeResults): ?>
+    <!-- Bill Results -->
     <div class="box">
         <h3 class="title is-4">
-            <span class="icon"><i class="fab fa-stripe-s"></i></span>
-            Stripe Invoice Results
+            <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+            Manual Invoice Results
         </h3>
         
         <div class="level mb-4">
@@ -453,37 +355,37 @@ ob_start();
                 <div class="level-item">
                     <div>
                         <p class="heading">Total Processed</p>
-                        <p class="title"><?= $stripeResults['total_processed'] ?></p>
+                        <p class="title"><?= $invoiceResults['total_created'] ?></p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div>
                         <p class="heading">Successful</p>
-                        <p class="title has-text-success"><?= count($stripeResults['success']) ?></p>
+                        <p class="title has-text-success"><?= count($invoiceResults['success']) ?></p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div>
                         <p class="heading">Errors</p>
-                        <p class="title has-text-danger"><?= count($stripeResults['errors']) ?></p>
+                        <p class="title has-text-danger"><?= count($invoiceResults['errors']) ?></p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div>
                         <p class="heading">Total Amount</p>
-                        <p class="title has-text-success">$<?= number_format($stripeResults['total_amount'], 2) ?></p>
+                        <p class="title has-text-success">$<?= number_format($invoiceResults['total_amount'], 2) ?></p>
                     </div>
                 </div>
                 <div class="level-item">
                     <div>
                         <p class="heading">Emails Sent</p>
-                        <p class="title has-text-info"><?= count($stripeResults['success']) ?></p>
+                        <p class="title has-text-info"><?= count($invoiceResults['success']) ?></p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <?php if (!empty($stripeResults['success'])): ?>
+    <!-- Bill Results -->
         <h4 class="title is-5 has-text-success">
             <span class="icon"><i class="fas fa-check-circle"></i></span>
             Successfully Created Invoices
@@ -501,7 +403,7 @@ ob_start();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($stripeResults['success'] as $success): ?>
+                    <?php foreach ($invoiceResults['success'] as $success): ?>
                     <tr>
                         <td><?= htmlspecialchars($success['user_id']) ?></td>
                         <td><?= htmlspecialchars($success['email']) ?></td>
@@ -521,44 +423,6 @@ ob_start();
                             <a href="<?= htmlspecialchars($success['invoice_url']) ?>" target="_blank" class="button is-small is-info">
                                 <span class="icon"><i class="fas fa-external-link-alt"></i></span>
                                 <span>View Invoice</span>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($stripeResults['errors'])): ?>
-        <h4 class="title is-5 has-text-danger">
-            <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
-            Errors
-        </h4>
-        <div class="table-container">
-            <table class="table is-fullwidth is-striped">
-                <thead>
-                    <tr>
-                        <th>Client</th>
-                        <th>Email</th>
-                        <th>Error</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($stripeResults['errors'] as $error_item): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($error_item['user_id']) ?></td>
-                        <td><?= htmlspecialchars($error_item['email']) ?></td>
-                        <td class="has-text-danger"><?= htmlspecialchars($error_item['error']) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
-
     <!-- Bill Results -->
     <?php if (!empty($billData)): ?>
         <?php 
