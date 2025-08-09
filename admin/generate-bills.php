@@ -505,8 +505,8 @@ ob_start();
                                     </div>
                                 </td>
                                 <td class="has-text-centered">
-                                    <button class="button is-small is-outlined" onclick="showBillingDetails(<?= $client['user_id'] ?>)">
-                                        <span class="icon is-small"><i class="fas fa-eye"></i></span>
+                                    <button class="button is-small is-outlined has-text-white" onclick="showBillingDetails(<?= $client['user_id'] ?>)">
+                                        <span class="icon is-small has-text-white"><i class="fas fa-eye"></i></span>
                                     </button>
                                 </td>
                             </tr>
