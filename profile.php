@@ -114,8 +114,12 @@ if ($user['approval_status'] === 'approved') {
 // Handle unlinking social accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_social') {
     $platform = $_POST['platform'] ?? '';
+    error_log("Profile unlink attempt - Platform: '$platform', User ID: " . $_SESSION['user_id']);
+    
     if (!empty($platform)) {
         $result = $userModel->unlinkSocialAccount($_SESSION['user_id'], $platform);
+        error_log("Profile unlink result - Platform: '$platform', Success: " . ($result['success'] ? 'true' : 'false') . ", Message: " . $result['message']);
+        
         if ($result['success']) {
             $success_message = $result['message'];
             // Refresh data
@@ -124,6 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             $error_message = $result['message'];
         }
+    } else {
+        $error_message = 'Invalid platform specified.';
     }
 }
 

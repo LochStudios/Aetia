@@ -1049,6 +1049,8 @@ class User {
         try {
             $this->ensureConnection();
             
+            error_log("User model unlinkSocialAccount - User ID: $userId, Platform: '$platform'");
+            
             // Check if this is the only/primary social connection for a social-only account
             $stmt = $this->mysqli->prepare("
                 SELECT account_type, password_hash FROM users WHERE id = ?
@@ -1058,6 +1060,8 @@ class User {
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
+            
+            error_log("User account type: " . $user['account_type'] . ", Has password: " . (!empty($user['password_hash']) ? 'yes' : 'no'));
             
             if ($user['account_type'] !== 'manual' && empty($user['password_hash'])) {
                 // Check how many social connections they have
@@ -1070,7 +1074,10 @@ class User {
                 $count = $result->fetch_assoc()['count'];
                 $stmt->close();
                 
+                error_log("Total social connections: $count");
+                
                 if ($count <= 1) {
+                    error_log("Cannot unlink - only social account");
                     return ['success' => false, 'message' => 'Cannot unlink your only social account. Please link another account or set a password first.'];
                 }
             }
@@ -1082,12 +1089,17 @@ class User {
             ");
             $stmt->bind_param("is", $userId, $platform);
             $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
             
-            if ($result) {
+            error_log("Unlink query executed - Affected rows: $affectedRows");
+            
+            if ($result && $affectedRows > 0) {
+                error_log("Successfully unlinked $platform account for user $userId");
                 return ['success' => true, 'message' => ucfirst($platform) . ' account unlinked successfully!'];
             } else {
-                return ['success' => false, 'message' => 'Failed to unlink ' . ucfirst($platform) . ' account.'];
+                error_log("Failed to unlink $platform account for user $userId - no rows affected");
+                return ['success' => false, 'message' => 'Failed to unlink ' . ucfirst($platform) . ' account. Account may not exist.'];
             }
             
         } catch (Exception $e) {
