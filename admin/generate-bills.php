@@ -594,15 +594,52 @@ function showBillingDetails(userId) {
         ? `${client.first_name || ''} ${client.last_name || ''}`.trim()
         : client.username;
     
+    // Determine profile image HTML based on account type and profile image
+    let profileImageHtml = '';
+    if (client.profile_image) {
+        if (client.account_type === 'manual') {
+            // Manual account - use secure admin endpoint
+            profileImageHtml = `
+                <img src="admin/view-user-profile-image.php?user_id=${client.user_id}" 
+                     alt="Profile Picture" 
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
+                     style="width: 64px; height: 64px; border-radius: 50%; display: none;">
+                    <span class="icon is-large has-text-info">
+                        <i class="fas fa-user fa-2x"></i>
+                    </span>
+                </div>`;
+        } else {
+            // Social account - use direct URL
+            profileImageHtml = `
+                <img src="${client.profile_image}" 
+                     alt="Profile Picture" 
+                     style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
+                     style="width: 64px; height: 64px; border-radius: 50%; display: none;">
+                    <span class="icon is-large has-text-info">
+                        <i class="fas fa-user fa-2x"></i>
+                    </span>
+                </div>`;
+        }
+    } else {
+        // No profile image - show placeholder
+        profileImageHtml = `
+            <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" 
+                 style="width: 64px; height: 64px; border-radius: 50%;">
+                <span class="icon is-large has-text-info">
+                    <i class="fas fa-user fa-2x"></i>
+                </span>
+            </div>`;
+    }
+    
     document.getElementById('modalClientInfo').innerHTML = `
         <div class="media">
             <div class="media-left">
                 <figure class="image is-64x64">
-                    <div class="has-background-info-light is-flex is-align-items-center is-justify-content-center" style="width: 64px; height: 64px; border-radius: 50%;">
-                        <span class="icon is-large has-text-info">
-                            <i class="fas fa-user fa-2x"></i>
-                        </span>
-                    </div>
+                    ${profileImageHtml}
                 </figure>
             </div>
             <div class="media-content">
