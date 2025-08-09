@@ -15,6 +15,7 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
+require_once __DIR__ . '/services/YouTubeOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
 
 $userModel = new User();
@@ -841,9 +842,11 @@ ob_start();
                         // Check if user already has Twitch linked
                         $hasTwitch = false;
                         $hasDiscord = false;
+                        $hasYouTube = false;
                         foreach ($socialConnections as $conn) {
                             if ($conn['platform'] === 'twitch') $hasTwitch = true;
                             if ($conn['platform'] === 'discord') $hasDiscord = true;
+                            if ($conn['platform'] === 'youtube') $hasYouTube = true;
                         }
                         ?>
                         <?php if (!$hasTwitch): ?>
@@ -879,6 +882,24 @@ ob_start();
                                     <i class="fab fa-discord"></i>
                                 </span>
                                 <span>Link Discord</span>
+                            </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <?php if (!$hasYouTube): ?>
+                            <?php
+                            try {
+                                $youtubeOAuth = new YouTubeOAuth();
+                                $youtubeLinkUrl = $youtubeOAuth->getLinkAuthorizationUrl();
+                            } catch (Exception $e) {
+                                $youtubeLinkUrl = null;
+                            }
+                            ?>
+                            <?php if ($youtubeLinkUrl): ?>
+                            <a href="<?= htmlspecialchars($youtubeLinkUrl) ?>" class="button is-danger">
+                                <span class="icon">
+                                    <i class="fab fa-youtube"></i>
+                                </span>
+                                <span>Link YouTube</span>
                             </a>
                             <?php endif; ?>
                         <?php endif; ?>

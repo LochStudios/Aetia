@@ -5,6 +5,7 @@ session_start();
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
+require_once __DIR__ . '/services/YouTubeOAuth.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
@@ -126,6 +127,17 @@ try {
     $discordAvailable = false;
 }
 
+// Initialize YouTube OAuth
+$youtubeAuthUrl = null;
+$youtubeAvailable = true;
+try {
+    $youtubeOAuth = new YouTubeOAuth();
+    $youtubeAuthUrl = $youtubeOAuth->getAuthorizationUrl();
+} catch (Exception $e) {
+    error_log('YouTube OAuth initialization failed: ' . $e->getMessage());
+    $youtubeAvailable = false;
+}
+
 // Check for initial admin password
 $initialAdminPassword = '';
 $tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
@@ -190,10 +202,17 @@ ob_start();
                             <span class="icon"><i class="fab fa-discord"></i></span>
                             <span>Continue with Discord</span>
                         </a>
+                        <?php if ($youtubeAvailable && $youtubeAuthUrl): ?>
+                        <a href="<?= htmlspecialchars($youtubeAuthUrl) ?>" class="button is-danger is-fullwidth mb-2 has-text-white">
+                            <span class="icon"><i class="fab fa-youtube"></i></span>
+                            <span>Continue with YouTube</span>
+                        </a>
+                        <?php else: ?>
                         <button class="button is-danger is-fullwidth mb-2 has-text-white" disabled>
                             <span class="icon"><i class="fab fa-youtube"></i></span>
-                            <span>Continue with YouTube (Coming Soon)</span>
+                            <span>Continue with YouTube (Currently Unavailable)</span>
                         </button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
