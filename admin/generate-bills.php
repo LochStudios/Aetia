@@ -693,7 +693,6 @@ function showBillingDetails(userId) {
                         <td><strong>Service Fee:</strong></td>
                         <td class="has-text-right has-text-info">$${parseFloat(client.standard_fee).toFixed(2)}</td>
                     </tr>
-                    ${client.manual_review_count > 0 ? `
                     <tr>
                         <td><strong>Manual Reviews:</strong></td>
                         <td class="has-text-right">${client.manual_review_count}</td>
@@ -702,7 +701,6 @@ function showBillingDetails(userId) {
                         <td><strong>Review Fee:</strong></td>
                         <td class="has-text-right has-text-warning">$${parseFloat(client.manual_review_fee).toFixed(2)}</td>
                     </tr>
-                    ` : ''}
                     <tr class="has-background-success-light">
                         <td><strong>Total Amount Due:</strong></td>
                         <td class="has-text-right has-text-weight-bold has-text-success">$${parseFloat(client.total_fee).toFixed(2)}</td>
