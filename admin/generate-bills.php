@@ -695,11 +695,7 @@ function showBillingDetails(userId) {
                     </tr>
                     <tr>
                         <td><strong>Manual Reviews:</strong></td>
-                        <td class="has-text-right">${client.manual_review_count}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Review Fee:</strong></td>
-                        <td class="has-text-right has-text-warning">$${parseFloat(client.manual_review_fee).toFixed(2)}</td>
+                        <td class="has-text-right">${client.manual_review_count} × $1.00 = $${parseFloat(client.manual_review_fee).toFixed(2)}</td>
                     </tr>
                     <tr class="has-background-success-light">
                         <td><strong>Total Amount Due:</strong></td>
