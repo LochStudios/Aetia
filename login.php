@@ -203,13 +203,13 @@ ob_start();
                             <span>Continue with Discord</span>
                         </a>
                         <?php if ($googleAvailable && $googleAuthUrl): ?>
-                        <a href="<?= htmlspecialchars($googleAuthUrl) ?>" class="button is-danger is-fullwidth mb-2 has-text-white">
-                            <span class="icon"><i class="fab fa-google"></i></span>
+                        <a href="<?= htmlspecialchars($googleAuthUrl) ?>" class="button is-fullwidth mb-2" style="background-color: #ffffff; border: 1px solid #dadce0; color: #3c4043;">
+                            <span class="icon"><i class="fab fa-google" style="color: #4285f4;"></i></span>
                             <span>Continue with Google</span>
                         </a>
                         <?php else: ?>
-                        <button class="button is-danger is-fullwidth mb-2 has-text-white" disabled>
-                            <span class="icon"><i class="fab fa-google"></i></span>
+                        <button class="button is-fullwidth mb-2" style="background-color: #f8f9fa; border: 1px solid #dadce0; color: #5f6368;" disabled>
+                            <span class="icon"><i class="fab fa-google" style="color: #9aa0a6;"></i></span>
                             <span>Continue with Google (Currently Unavailable)</span>
                         </button>
                         <?php endif; ?>

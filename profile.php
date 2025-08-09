@@ -895,9 +895,9 @@ ob_start();
                             }
                             ?>
                             <?php if ($googleLinkUrl): ?>
-                            <a href="<?= htmlspecialchars($googleLinkUrl) ?>" class="button is-danger">
+                            <a href="<?= htmlspecialchars($googleLinkUrl) ?>" class="button" style="background-color: #ffffff; border: 1px solid #dadce0; color: #3c4043;">
                                 <span class="icon">
-                                    <i class="fab fa-google"></i>
+                                    <i class="fab fa-google" style="color: #4285f4;"></i>
                                 </span>
                                 <span>Link Google</span>
                             </a>
