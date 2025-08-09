@@ -1090,6 +1090,7 @@ class Message {
                     u.first_name,
                     u.last_name,
                     u.account_type,
+                    u.profile_image,
                     COUNT(m.id) as total_message_count,
                     SUM(CASE WHEN m.manual_review = 1 THEN 1 ELSE 0 END) as manual_review_count,
                     MIN(m.created_at) as first_message_date,
@@ -1104,7 +1105,7 @@ class Message {
                 INNER JOIN users u ON m.user_id = u.id
                 WHERE m.created_at >= ? AND m.created_at <= ?
                 AND u.is_active = 1
-                GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.account_type
+                GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.account_type, u.profile_image
                 HAVING total_message_count > 0
                 ORDER BY total_message_count DESC, u.username ASC
             ");
