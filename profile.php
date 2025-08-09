@@ -15,8 +15,6 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
-require_once __DIR__ . '/services/StripeService.php';
-require_once __DIR__ . '/services/StripeDataService.php';
 
 $userModel = new User();
 $error_message = '';
@@ -36,15 +34,6 @@ if (isset($_SESSION['link_error'])) {
 // Get initial user data
 $user = $userModel->getUserById($_SESSION['user_id']);
 $socialConnections = $userModel->getUserSocialConnections($_SESSION['user_id']);
-
-// Check if Stripe is configured for billing portal
-$stripeAvailable = false;
-try {
-    $stripeConfig = StripeService::checkConfiguration();
-    $stripeAvailable = empty($stripeConfig['errors']);
-} catch (Exception $e) {
-    $stripeAvailable = false;
-}
 
 // Handle unlinking social accounts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_social') {
@@ -222,31 +211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle billing portal access
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'access_billing_portal') {
-    try {
-        // Check if Stripe is configured
-        $stripeConfig = StripeService::checkConfiguration();
-        if (!empty($stripeConfig['errors'])) {
-            $error_message = 'Billing portal is not available at this time. Please contact support.';
-        } else {
-            $stripeService = new StripeService();
-            $returnUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/profile.php';
-            $portalResult = $stripeService->createCustomerPortalSession($user['email'], $returnUrl);
-            if ($portalResult['success']) {
-                // Redirect to the billing portal
-                header('Location: ' . $portalResult['url']);
-                exit;
-            } else {
-                $error_message = 'Unable to access billing portal at this time. Please try again later.';
-            }
-        }
-    } catch (Exception $e) {
-        error_log("Billing portal access error for user ID {$_SESSION['user_id']}: " . $e->getMessage());
-        $error_message = 'Unable to access billing portal at this time. Please contact support if this problem persists.';
-    }
-}
-
 $pageTitle = 'Profile | Aetia Talent Agency';
 ob_start();
 ?>
@@ -369,34 +333,6 @@ ob_start();
                     </div>
                 </div>
             </div>
-            <?php if ($stripeAvailable): ?>
-            <!-- Billing Portal -->
-            <div class="card has-background-dark billing-portal-card mt-4">
-                <div class="card-content">
-                    <h4 class="title is-6 has-text-light mb-3">
-                        <span class="icon has-text-info"><i class="fas fa-credit-card"></i></span>
-                        Billing & Payments
-                    </h4>
-                    <div class="content has-text-grey-light">
-                        <p class="is-size-7 mb-3">
-                            Manage your billing information, view invoices, update payment methods, and download receipts through our secure billing portal.
-                        </p>
-                        <form method="POST" action="profile.php">
-                            <input type="hidden" name="action" value="access_billing_portal">
-                            <button type="submit" class="button is-info is-fullwidth">
-                                <span class="icon">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </span>
-                                <span>Access Billing Portal</span>
-                            </button>
-                        </form>
-                        <p class="help has-text-grey-light is-size-7 mt-2">
-                            <i class="fas fa-shield-alt"></i> Our billing panel is powered by Stripe - Your payment information is always secure
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
             <?php if (!empty($socialConnections)): ?>
             <!-- Connected Social Accounts under profile card -->
             <div class="card has-background-dark mt-4">

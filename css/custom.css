@@ -44,21 +44,21 @@
     padding: 0.25rem 0.75rem;
 }
 
-/* Profile page billing portal styling */
-.billing-portal-card .button.is-info {
+/* Manual invoice portal styling */
+.invoice-portal-card .button.is-info {
     background: linear-gradient(135deg, #209cee 0%, #3273dc 100%);
     border: none;
     font-weight: 600;
     transition: all 0.3s ease;
 }
 
-.billing-portal-card .button.is-info:hover {
+.invoice-portal-card .button.is-info:hover {
     background: linear-gradient(135deg, #3273dc 0%, #209cee 100%);
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(32, 156, 238, 0.3);
 }
 
-.billing-portal-card .button.is-info:active {
+.invoice-portal-card .button.is-info:active {
     transform: translateY(0);
 }
 
@@ -881,12 +881,12 @@ button[disabled], input[disabled] {
 .status-closed { background: #666; color: white; }
 .status-approved { background: #48c78e; color: white; }
 
-/* Billing Table Styling */
-.billing-table {
+/* Invoice Table Styling */
+.invoice-table {
     font-size: 0.875rem;
 }
 
-.billing-table th {
+.invoice-table th {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -895,12 +895,12 @@ button[disabled], input[disabled] {
     border-bottom: 2px solid #363636;
 }
 
-.billing-table td {
+.invoice-table td {
     padding: 0.5rem !important;
     vertical-align: middle;
 }
 
-.billing-table .tag.is-small-compact {
+.invoice-table .tag.is-small-compact {
     font-size: 0.65rem;
     height: 1.5em;
     padding-left: 0.5em;
@@ -951,12 +951,12 @@ button[disabled], input[disabled] {
 }
 
 @media screen and (max-width: 992px) {
-    .billing-table {
+    .invoice-table {
         font-size: 0.8rem;
     }
     
-    .billing-table th,
-    .billing-table td {
+    .invoice-table th,
+    .invoice-table td {
         padding: 0.375rem !important;
     }
 }
@@ -1053,7 +1053,7 @@ button[disabled], input[disabled] {
     padding-right: 0.5em;
 }
 
-/* Print styles for billing */
+/* Print styles for invoices */
 @media print {
     .button, .breadcrumb, .level .level-right {
         display: none !important;
