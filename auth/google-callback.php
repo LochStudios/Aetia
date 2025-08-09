@@ -52,9 +52,10 @@ try {
             'google',
             $googleUser['id'],
             $googleUser['username'],
-            $googleUser['email'],
-            $googleUser['profile_image'],
-            json_encode($googleUser)
+            $googleUser,
+            $accessToken,
+            $tokenData['refresh_token'] ?? null,
+            isset($tokenData['expires_in']) ? date('Y-m-d H:i:s', time() + $tokenData['expires_in']) : null
         );
         
         if ($result['success']) {
@@ -100,9 +101,10 @@ try {
             'google',
             $googleUser['id'],
             $googleUser['username'],
-            $googleUser['email'],
-            $googleUser['profile_image'],
-            json_encode($googleUser)
+            $googleUser,
+            $accessToken,
+            $tokenData['refresh_token'] ?? null,
+            isset($tokenData['expires_in']) ? date('Y-m-d H:i:s', time() + $tokenData['expires_in']) : null
         );
         
         if ($result['success']) {
@@ -144,9 +146,10 @@ try {
             'google',
             $googleUser['id'],
             $googleUser['username'],
-            $googleUser['email'],
-            $googleUser['profile_image'],
-            json_encode($googleUser)
+            $googleUser,
+            $accessToken,
+            $tokenData['refresh_token'] ?? null,
+            isset($tokenData['expires_in']) ? date('Y-m-d H:i:s', time() + $tokenData['expires_in']) : null
         );
         
         if ($linkResult['success']) {

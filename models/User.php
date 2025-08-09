@@ -314,6 +314,10 @@ class User {
             
             $socialDataJson = json_encode($socialData);
             $isPrimaryInt = $isPrimary ? 1 : 0;
+            
+            error_log("AddSocialConnection - About to insert: User ID: $userId, Platform: '$platform', Social ID: '$socialId', Username: '$socialUsername'");
+            error_log("AddSocialConnection - Social data JSON: " . substr($socialDataJson, 0, 200) . "...");
+            
             $stmt->bind_param("isssssssi", $userId, $platform, $socialId, $socialUsername, $accessToken, $refreshToken, $expiresAt, $socialDataJson, $isPrimaryInt);
             $result = $stmt->execute();
             
@@ -323,6 +327,9 @@ class User {
                 $stmt->close();
                 return false;
             }
+            
+            $affectedRows = $this->mysqli->affected_rows;
+            error_log("AddSocialConnection - Successfully inserted, affected rows: $affectedRows");
             
             $stmt->close();
             return true;
@@ -446,6 +453,9 @@ class User {
         try {
             $this->ensureConnection();
             
+            error_log("LinkSocialAccount - User ID: $userId, Platform: '$platform', Social ID: '$socialId', Username: '$socialUsername'");
+            error_log("LinkSocialAccount - Access token: " . (empty($accessToken) ? 'NULL' : substr($accessToken, 0, 20) . '...'));
+            
             // Check if this social account is already linked to another user
             $stmt = $this->mysqli->prepare("
                 SELECT user_id FROM social_connections 
@@ -458,6 +468,7 @@ class User {
             $stmt->close();
             
             if ($existingConnection && $existingConnection['user_id'] != $userId) {
+                error_log("LinkSocialAccount - Account already linked to user " . $existingConnection['user_id']);
                 return ['success' => false, 'message' => 'This ' . ucfirst($platform) . ' account is already linked to another user.'];
             }
             
