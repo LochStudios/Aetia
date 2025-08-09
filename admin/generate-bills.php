@@ -44,9 +44,9 @@ $invoiceResults = [
     'total_amount' => 0
 ];
 
-// Get the selected month and year, default to previous month
-$selectedMonth = isset($_GET['month']) ? intval($_GET['month']) : (isset($_POST['month']) ? intval($_POST['month']) : date('n', strtotime('last month')));
-$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : (isset($_POST['year']) ? intval($_POST['year']) : date('Y', strtotime('last month')));
+// Get the selected month and year, default to current month
+$selectedMonth = isset($_GET['month']) ? intval($_GET['month']) : (isset($_POST['month']) ? intval($_POST['month']) : date('n'));
+$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : (isset($_POST['year']) ? intval($_POST['year']) : date('Y'));
 
 // Calculate the first and last day of the selected month
 if ($selectedMonth >= 1 && $selectedMonth <= 12 && $selectedYear >= 2000 && $selectedYear <= date('Y')) {
@@ -57,6 +57,36 @@ if ($selectedMonth >= 1 && $selectedMonth <= 12 && $selectedYear >= 2000 && $sel
     $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
     if ($savedReport) {
         $billData = $savedReport['report_data'];
+    } else {
+        // No saved report exists, generate billing data automatically
+        try {
+            $database = new Database();
+            $mysqli = $database->getConnection();
+            
+            if ($mysqli) {
+                $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                
+                // If we have data, save it automatically
+                if (!empty($billData)) {
+                    $saveResult = $messageModel->saveBillingReport($firstDay, $lastDay, $billData, $_SESSION['user_id']);
+                    if ($saveResult['success']) {
+                        $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+                    }
+                }
+                
+                // Store the period for display regardless of whether we have data
+                $_SESSION['bill_period_start'] = $firstDay;
+                $_SESSION['bill_period_end'] = $lastDay;
+            } else {
+                error_log("Database connection failed during auto-load");
+            }
+        } catch (Exception $e) {
+            error_log("Auto-generate billing data error: " . $e->getMessage());
+            // Set a user-friendly message if this is a database connectivity issue
+            if (strpos($e->getMessage(), 'Database connection failed') !== false) {
+                $error = 'Database connection unavailable. Please check your configuration.';
+            }
+        }
     }
 }
 
@@ -246,7 +276,7 @@ ob_start();
             <div class="buttons">
                 <a href="?month=<?= $selectedMonth ?>&year=<?= $selectedYear ?>" class="button is-info is-outlined">
                     <span class="icon"><i class="fas fa-sync"></i></span>
-                    <span>Refresh</span>
+                    <span>Refresh Data</span>
                 </a>
             </div>
         </div>
@@ -257,24 +287,29 @@ ob_start();
     </p>
 
     <!-- Quick Month Navigation -->
-    <?php if (!empty($billData) || $savedReport): ?>
-        <div class="box">
-            <h4 class="title is-6">Quick Month Navigation</h4>
-            <div class="buttons are-small">
-                <?php
-                // Show navigation for nearby months
-                for ($nav_month = 1; $nav_month <= 12; $nav_month++) {
-                    $isCurrentMonth = ($nav_month == $selectedMonth && $selectedYear == $selectedYear);
-                    $buttonClass = $isCurrentMonth ? 'is-primary' : 'is-outlined';
-                    ?>
-                    <a href="?month=<?= $nav_month ?>&year=<?= $selectedYear ?>" 
-                       class="button <?= $buttonClass ?> is-small">
-                        <?= date('M', mktime(0, 0, 0, $nav_month, 1)) ?>
-                    </a>
-                <?php } ?>
-            </div>
+    <div class="box">
+        <h4 class="title is-6">Quick Month Navigation</h4>
+        <div class="buttons are-small">
+            <?php
+            // Show navigation for nearby months
+            for ($nav_month = 1; $nav_month <= 12; $nav_month++) {
+                $isCurrentMonth = ($nav_month == $selectedMonth && $selectedYear == $selectedYear);
+                $buttonClass = $isCurrentMonth ? 'is-primary' : 'is-outlined';
+                ?>
+                <a href="?month=<?= $nav_month ?>&year=<?= $selectedYear ?>" 
+                   class="button <?= $buttonClass ?> is-small">
+                    <?= date('M', mktime(0, 0, 0, $nav_month, 1)) ?>
+                </a>
+            <?php } ?>
         </div>
-    <?php endif; ?>
+        
+        <?php if (empty($billData) && $firstDay && $lastDay): ?>
+            <div class="notification is-warning is-light mt-3">
+                <p><strong>No billing data found for <?= date('F Y', strtotime($firstDay)) ?></strong></p>
+                <p>Click "Generate Bills" below to create billing data for this period, or select a different month above.</p>
+            </div>
+        <?php endif; ?>
+    </div>
 
     <!-- Messages -->
     <?php if ($message): ?>
