@@ -295,7 +295,7 @@ ob_start();
         Profile Settings
     </h2>
     <?php if ($user['username'] === 'admin' && $user['approved_by'] === 'Auto-Generated' && !isset($_SESSION['admin_setup_complete'])): ?>
-    <div class="notification is-warning is-light mb-4">
+    <div class="notification is-warning is-dark has-text-white mb-4">
         <div class="content">
             <p><strong><i class="fas fa-shield-alt"></i> Admin Security Notice</strong></p>
             <p>You are logged in with the auto-generated admin account. For security purposes, please change your password immediately.</p>
@@ -304,13 +304,13 @@ ob_start();
     </div>
     <?php endif; ?>
     <?php if ($error_message): ?>
-    <div class="notification is-danger is-light mb-4">
+    <div class="notification is-danger is-dark has-text-white mb-4">
         <button class="delete"></button>
         <?= htmlspecialchars($error_message) ?>
     </div>
     <?php endif; ?>
     <?php if ($success_message): ?>
-    <div class="notification is-success is-light mb-4">
+    <div class="notification is-success is-dark has-text-white mb-4">
         <button class="delete"></button>
         <?= htmlspecialchars($success_message) ?>
     </div>
@@ -514,7 +514,7 @@ ob_start();
                         <span class="icon has-text-warning"><i class="fas fa-clock"></i></span>
                         Activity Summary
                     </h4>
-                    <div class="notification is-warning is-light">
+                    <div class="notification is-warning is-dark has-text-white">
                         <p class="has-text-dark"><strong>Pending Approval</strong></p>
                         <p class="has-text-dark is-size-7">Your activity summary will be available once your account is approved by our team.</p>
                     </div>
@@ -785,7 +785,7 @@ ob_start();
                     </div>
                     
                     <div id="password-change-form" style="display: none; margin-top: 1rem;">
-                        <div class="notification is-info is-light mb-4">
+                        <div class="notification is-info is-dark has-text-white mb-4">
                             <div class="content">
                                 <p>For security, please enter your current password to confirm changes.</p>
                                 <p>Your new password must be at least 8 characters long.</p>
@@ -840,7 +840,7 @@ ob_start();
                         <span class="icon has-text-info"><i class="fas fa-key"></i></span>
                         Set Manual Login Password
                     </h4>
-                    <div class="notification is-info is-light mb-4">
+                    <div class="notification is-info is-dark has-text-white mb-4">
                         <div class="content">
                             <p><strong>Enable Manual Login:</strong> Set a password to login with your username and password in addition to your social accounts.</p>
                             <p>This gives you an alternative way to access your account and is recommended for security.</p>
@@ -886,7 +886,7 @@ ob_start();
                         <span class="icon has-text-success"><i class="fas fa-plus-circle"></i></span>
                         Link Additional Social Accounts
                     </h4>
-                    <div class="notification is-info is-light mb-4">
+                    <div class="notification is-info is-dark has-text-white mb-4">
                         <div class="content">
                             <p><strong>Link Multiple Accounts:</strong> You can connect accounts from different platforms even if they use different email addresses.</p>
                             <p>This allows you to access your account through any of your connected social platforms.</p>
