@@ -646,7 +646,7 @@ function showBillingDetails(userId) {
                 <h4 class="title is-4">${clientName}</h4>
                 <p class="subtitle is-6">
                     <span class="icon"><i class="fas fa-at"></i></span>
-                    @${client.username}
+                    ${client.username}
                 </p>
                 <p class="is-size-6">
                     <span class="icon"><i class="fas fa-envelope"></i></span>
