@@ -504,50 +504,56 @@ ob_start();
                                         <div><?= isset($client['last_message_date']) ? date('M j', strtotime($client['last_message_date'])) : 'N/A' ?></div>
                                     </div>
                                 </td>
-                                <td class="has-text-centered" style="position: relative;">
-                                    <details>
-                                        <summary class="button is-small is-outlined">
-                                            <span class="icon is-small"><i class="fas fa-eye"></i></span>
-                                        </summary>
-                                        <div class="details-popup p-3">
-                                            <?php if ($client['manual_review_count'] > 0 && !empty($client['manual_review_details'])): ?>
-                                                <h6 class="title is-6 has-text-warning mb-2">
-                                                    <span class="icon"><i class="fas fa-dollar-sign"></i></span>
-                                                    Manual Review Messages (<?= $client['manual_review_count'] ?>):
-                                                </h6>
-                                                <?php 
-                                                $manualReviewDetails = explode('; ', $client['manual_review_details']);
-                                                foreach ($manualReviewDetails as $detail): 
-                                                    if (!empty(trim($detail))):
-                                                ?>
-                                                    <p class="is-size-7 mb-1 has-text-warning">• <?= htmlspecialchars($detail) ?> <strong>[+$1.00]</strong></p>
-                                                <?php 
-                                                    endif;
-                                                endforeach;
-                                                ?>
-                                                <hr class="my-2">
-                                            <?php endif; ?>
-                                            
-                                            <h6 class="title is-6 mb-2">Billing Summary:</h6>
-                                            <p class="is-size-7 mb-1">
-                                                <strong>Period:</strong> <?= date('M j, Y', strtotime($client['first_message_date'])) ?> - <?= date('M j, Y', strtotime($client['last_message_date'])) ?>
-                                            </p>
-                                            <p class="is-size-7 mb-1">
-                                                <strong>Total Messages:</strong> <?= $client['total_message_count'] ?>
-                                            </p>
-                                            <p class="is-size-7 mb-1">
-                                                <strong>Service Fee:</strong> $<?= number_format($client['standard_fee'], 2) ?> (<?= $client['total_message_count'] ?> × $1.00)
-                                            </p>
-                                            <?php if ($client['manual_review_count'] > 0): ?>
-                                            <p class="is-size-7 mb-1">
-                                                <strong>Manual Review Fee:</strong> $<?= number_format($client['manual_review_fee'], 2) ?> (<?= $client['manual_review_count'] ?> × $1.00)
-                                            </p>
-                                            <?php endif; ?>
-                                            <p class="is-size-7 mb-1">
-                                                <strong>Total Amount Due:</strong> <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
-                                            </p>
+                                <td class="has-text-centered">
+                                    <div class="dropdown is-right" id="details-dropdown-<?= $client['user_id'] ?>">
+                                        <div class="dropdown-trigger">
+                                            <button class="button is-small is-outlined" aria-haspopup="true" aria-controls="dropdown-menu-<?= $client['user_id'] ?>" onclick="toggleDetails(<?= $client['user_id'] ?>)">
+                                                <span class="icon is-small"><i class="fas fa-eye"></i></span>
+                                            </button>
                                         </div>
-                                    </details>
+                                        <div class="dropdown-menu" id="dropdown-menu-<?= $client['user_id'] ?>" role="menu">
+                                            <div class="dropdown-content" style="min-width: 350px; max-width: 400px;">
+                                                <div class="dropdown-item">
+                                                    <?php if ($client['manual_review_count'] > 0 && !empty($client['manual_review_details'])): ?>
+                                                        <h6 class="title is-6 has-text-warning mb-2">
+                                                            <span class="icon"><i class="fas fa-dollar-sign"></i></span>
+                                                            Manual Review Messages (<?= $client['manual_review_count'] ?>):
+                                                        </h6>
+                                                        <?php 
+                                                        $manualReviewDetails = explode('; ', $client['manual_review_details']);
+                                                        foreach ($manualReviewDetails as $detail): 
+                                                            if (!empty(trim($detail))):
+                                                        ?>
+                                                            <p class="is-size-7 mb-1 has-text-warning">• <?= htmlspecialchars($detail) ?> <strong>[+$1.00]</strong></p>
+                                                        <?php 
+                                                            endif;
+                                                        endforeach;
+                                                        ?>
+                                                        <hr class="my-2">
+                                                    <?php endif; ?>
+                                                    
+                                                    <h6 class="title is-6 mb-2">Billing Summary:</h6>
+                                                    <p class="is-size-7 mb-1">
+                                                        <strong>Period:</strong> <?= date('M j, Y', strtotime($client['first_message_date'])) ?> - <?= date('M j, Y', strtotime($client['last_message_date'])) ?>
+                                                    </p>
+                                                    <p class="is-size-7 mb-1">
+                                                        <strong>Total Messages:</strong> <?= $client['total_message_count'] ?>
+                                                    </p>
+                                                    <p class="is-size-7 mb-1">
+                                                        <strong>Service Fee:</strong> $<?= number_format($client['standard_fee'], 2) ?> (<?= $client['total_message_count'] ?> × $1.00)
+                                                    </p>
+                                                    <?php if ($client['manual_review_count'] > 0): ?>
+                                                    <p class="is-size-7 mb-1">
+                                                        <strong>Manual Review Fee:</strong> $<?= number_format($client['manual_review_fee'], 2) ?> (<?= $client['manual_review_count'] ?> × $1.00)
+                                                    </p>
+                                                    <?php endif; ?>
+                                                    <p class="is-size-7 mb-1">
+                                                        <strong>Total Amount Due:</strong> <strong>$<?= number_format($client['total_fee'], 2) ?></strong>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -570,6 +576,30 @@ const MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
+
+// Toggle details dropdown
+function toggleDetails(userId) {
+    const dropdown = document.getElementById('details-dropdown-' + userId);
+    
+    // Close all other dropdowns first
+    document.querySelectorAll('.dropdown.is-active').forEach(d => {
+        if (d.id !== 'details-dropdown-' + userId) {
+            d.classList.remove('is-active');
+        }
+    });
+    
+    // Toggle current dropdown
+    dropdown.classList.toggle('is-active');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown.is-active').forEach(dropdown => {
+            dropdown.classList.remove('is-active');
+        });
+    }
+});
 
 // Update month options based on selected year
 function updateMonthOptions() {

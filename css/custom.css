@@ -991,6 +991,48 @@ button[disabled], input[disabled] {
 #billTable .col-period { width: 100px; }
 #billTable .col-details { width: 80px; }
 
+/* Billing details dropdown styling */
+#billTable .dropdown {
+    position: relative;
+}
+
+#billTable .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    margin-top: 0.25rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+}
+
+#billTable .dropdown-content {
+    background-color: #2c2c2c;
+    border: 1px solid #4a4a4a;
+    border-radius: 0.5rem;
+    color: #fff;
+    padding: 1rem;
+}
+
+#billTable .dropdown-item {
+    padding: 0;
+    background: transparent;
+    color: #fff;
+}
+
+#billTable .dropdown-item:hover {
+    background: transparent;
+}
+
+#billTable .dropdown-item .title {
+    color: #fff !important;
+}
+
+#billTable .dropdown-item hr {
+    background-color: #4a4a4a;
+    margin: 0.75rem 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1400px) {
     #billTable .col-contact { width: 150px; }
@@ -1004,6 +1046,23 @@ button[disabled], input[disabled] {
     #billTable th,
     #billTable td {
         padding: 0.4rem 0.2rem;
+    }
+    
+    /* Adjust dropdown size on smaller screens */
+    #billTable .dropdown-content {
+        min-width: 300px !important;
+        max-width: 320px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #billTable .dropdown-menu {
+        right: -50px;
+    }
+    
+    #billTable .dropdown-content {
+        min-width: 280px !important;
+        max-width: 300px !important;
     }
 }
 
