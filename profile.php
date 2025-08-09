@@ -437,17 +437,13 @@ ob_start();
                             <div class="level-left">
                                 <div class="level-item">
                                     <span class="has-text-light is-size-6 has-text-weight-semibold">
-                                        <?= $currentMonthData ? $currentMonthData['month_short'] : date('M Y') ?>
+                                        <?= $currentMonthData ? $currentMonthData['month'] : date('F Y') ?>
                                     </span>
                                 </div>
                             </div>
                             <div class="level-right">
                                 <div class="level-item">
-                                    <span class="tag is-info"><?= $currentMonthMessages ?> msgs</span>
-                                    <?php if ($currentMonthReviews > 0): ?>
-                                        <span class="tag is-warning ml-1"><?= $currentMonthReviews ?> reviews</span>
-                                    <?php endif; ?>
-                                    <span class="has-text-success is-size-6 ml-3 has-text-weight-bold">$<?= number_format($currentMonthBilling, 2) ?></span>
+                                    <span class="has-text-success is-size-6 has-text-weight-bold">$<?= number_format($currentMonthBilling, 2) ?></span>
                                 </div>
                             </div>
                         </div>
