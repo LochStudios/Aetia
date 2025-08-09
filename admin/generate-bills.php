@@ -325,6 +325,19 @@ ob_start();
             <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
+    
+    <!-- Debug Information (temporary) -->
+    <div class="notification is-info is-light">
+        <p><strong>Debug Info:</strong></p>
+        <p>Selected Month: <?= $selectedMonth ?> (<?= date('F', mktime(0, 0, 0, $selectedMonth, 1)) ?>)</p>
+        <p>Selected Year: <?= $selectedYear ?></p>
+        <p>Period: <?= $firstDay ?? 'Not set' ?> to <?= $lastDay ?? 'Not set' ?></p>
+        <p>Saved Report: <?= $savedReport ? 'Found' : 'Not found' ?></p>
+        <p>Bill Data Count: <?= count($billData) ?> clients</p>
+        <?php if (!empty($billData)): ?>
+            <p>Total Amount: $<?= number_format(array_sum(array_column($billData, 'total_fee')), 2) ?></p>
+        <?php endif; ?>
+    </div>
 
     <!-- Bill Generation Form -->
     <div class="box">
