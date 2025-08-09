@@ -194,10 +194,6 @@ ob_start();
                             <span class="icon"><i class="fab fa-youtube"></i></span>
                             <span>Continue with YouTube (Coming Soon)</span>
                         </button>
-                        <button class="button is-info is-fullwidth has-text-white" disabled>
-                            <span class="icon"><i class="fab fa-twitter"></i></span>
-                            <span>Continue with Twitter (Coming Soon)</span>
-                        </button>
                     </div>
                 </div>
                 
