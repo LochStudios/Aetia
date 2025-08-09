@@ -334,6 +334,29 @@ class Database {
             
             $this->mysqli->query($createUserContractsTable);
 
+            // Create billing_reports table
+            $createBillingReportsTable = "
+            CREATE TABLE IF NOT EXISTS billing_reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                report_period_start DATE NOT NULL,
+                report_period_end DATE NOT NULL,
+                report_data JSON NOT NULL,
+                total_clients INT NOT NULL DEFAULT 0,
+                total_messages INT NOT NULL DEFAULT 0,
+                total_manual_reviews INT NOT NULL DEFAULT 0,
+                total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                generated_by INT NOT NULL,
+                generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (generated_by) REFERENCES users(id) ON DELETE SET NULL,
+                UNIQUE KEY unique_period (report_period_start, report_period_end),
+                INDEX idx_period_start (report_period_start),
+                INDEX idx_generated_by (generated_by),
+                INDEX idx_generated_at (generated_at)
+            )";
+            
+            $this->mysqli->query($createBillingReportsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
