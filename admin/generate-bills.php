@@ -423,6 +423,15 @@ ob_start();
                             <a href="<?= htmlspecialchars($success['invoice_url']) ?>" target="_blank" class="button is-small is-info">
                                 <span class="icon"><i class="fas fa-external-link-alt"></i></span>
                                 <span>View Invoice</span>
+                            </a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Bill Results -->
     <?php if (!empty($billData)): ?>
         <?php 
