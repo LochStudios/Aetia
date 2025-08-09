@@ -36,12 +36,29 @@ if (!$isAdmin) {
 $message = '';
 $error = '';
 $billData = [];
+$savedReport = null;
 $invoiceResults = [
     'total_created' => 0,
     'success' => [],
     'errors' => [],
     'total_amount' => 0
 ];
+
+// Get the selected month and year, default to previous month
+$selectedMonth = isset($_GET['month']) ? intval($_GET['month']) : (isset($_POST['month']) ? intval($_POST['month']) : date('n', strtotime('last month')));
+$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : (isset($_POST['year']) ? intval($_POST['year']) : date('Y', strtotime('last month')));
+
+// Calculate the first and last day of the selected month
+if ($selectedMonth >= 1 && $selectedMonth <= 12 && $selectedYear >= 2000 && $selectedYear <= date('Y')) {
+    $firstDay = sprintf('%04d-%02d-01', $selectedYear, $selectedMonth);
+    $lastDay = date('Y-m-t', strtotime($firstDay)); // Last day of the month
+    
+    // Check if there's a saved report for this period
+    $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+    if ($savedReport) {
+        $billData = $savedReport['report_data'];
+    }
+}
 
 // Handle bill generation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -74,7 +91,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if (empty($billData)) {
                     $error = 'No client activity found for ' . date('F Y', strtotime($firstDay));
                 } else {
-                    $message = 'Bill data generated successfully for ' . date('F Y', strtotime($firstDay)) . '. Found ' . count($billData) . ' clients with activity.';
+                    // Save the billing report to database
+                    $saveResult = $messageModel->saveBillingReport($firstDay, $lastDay, $billData, $_SESSION['user_id']);
+                    
+                    if ($saveResult['success']) {
+                        $action = $saveResult['action'];
+                        $message = 'Bill data ' . ($action === 'updated' ? 'updated' : 'generated') . ' successfully for ' . date('F Y', strtotime($firstDay)) . '. Found ' . count($billData) . ' clients with activity.';
+                        
+                        // Update saved report for display
+                        $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+                    } else {
+                        $message = 'Bill data generated successfully for ' . date('F Y', strtotime($firstDay)) . '. Found ' . count($billData) . ' clients with activity. Warning: Could not save to database.';
+                        error_log("Failed to save billing report: " . $saveResult['message']);
+                    }
+                    
                     // Store the period for display
                     $_SESSION['bill_period_start'] = $firstDay;
                     $_SESSION['bill_period_end'] = $lastDay;
@@ -99,7 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if (empty($firstDay) || empty($lastDay)) {
                 $error = 'No billing period found. Please generate bills first.';
             } else {
-                $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                // Try to get saved report first, then fall back to regenerating
+                $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
+                if ($savedReport) {
+                    $billData = $savedReport['report_data'];
+                } else {
+                    $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                }
                 
                 if (empty($billData)) {
                     $error = 'No billing data found for the current period.';
@@ -174,9 +210,7 @@ if ($currentYear > $projectStartYear || ($currentYear == $projectStartYear && $c
     $defaultYear = $projectStartYear;
 }
 
-// Initialize variables for display
-$firstDay = '';
-$lastDay = '';
+// Initialize variables for display - already set above based on selected month/year
 
 $pageTitle = 'Generate Bills | Admin | Aetia';
 ob_start();
@@ -208,11 +242,39 @@ ob_start();
                 Generate Client Bills
             </h2>
         </div>
+        <div class="level-right">
+            <div class="buttons">
+                <a href="?month=<?= $selectedMonth ?>&year=<?= $selectedYear ?>" class="button is-info is-outlined">
+                    <span class="icon"><i class="fas fa-sync"></i></span>
+                    <span>Refresh</span>
+                </a>
+            </div>
+        </div>
     </div>
 
     <p class="subtitle has-text-light">
         Generate billing information based on client message activity for a specific month.
     </p>
+
+    <!-- Quick Month Navigation -->
+    <?php if (!empty($billData) || $savedReport): ?>
+        <div class="box">
+            <h4 class="title is-6">Quick Month Navigation</h4>
+            <div class="buttons are-small">
+                <?php
+                // Show navigation for nearby months
+                for ($nav_month = 1; $nav_month <= 12; $nav_month++) {
+                    $isCurrentMonth = ($nav_month == $selectedMonth && $selectedYear == $selectedYear);
+                    $buttonClass = $isCurrentMonth ? 'is-primary' : 'is-outlined';
+                    ?>
+                    <a href="?month=<?= $nav_month ?>&year=<?= $selectedYear ?>" 
+                       class="button <?= $buttonClass ?> is-small">
+                        <?= date('M', mktime(0, 0, 0, $nav_month, 1)) ?>
+                    </a>
+                <?php } ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Messages -->
     <?php if ($message): ?>
@@ -247,15 +309,9 @@ ob_start();
                         <div class="control">
                             <div class="select is-fullwidth">
                                 <select name="month" id="monthSelect" required>
-                                    <?php 
-                                    // Show months based on project start (August 2025)
-                                    $startMonth = ($defaultYear == $projectStartYear) ? $projectStartMonth : 1;
-                                    $endMonth = ($defaultYear == $currentYear) ? $currentMonth : 12;
-                                    
-                                    for ($i = $startMonth; $i <= $endMonth; $i++): 
-                                    ?>
-                                        <option value="<?= $i ?>" <?= $i == $defaultMonth ? 'selected' : '' ?>>
-                                            <?= date('F', mktime(0, 0, 0, $i, 1)) ?>
+                                    <?php for ($month = 1; $month <= 12; $month++): ?>
+                                        <option value="<?= $month ?>" <?= ($month == $selectedMonth) ? 'selected' : '' ?>>
+                                            <?= date('F', mktime(0, 0, 0, $month, 1)) ?>
                                         </option>
                                     <?php endfor; ?>
                                 </select>
@@ -270,11 +326,8 @@ ob_start();
                         <div class="control">
                             <div class="select is-fullwidth">
                                 <select name="year" id="yearSelect" required onchange="updateMonthOptions()">
-                                    <?php 
-                                    // Show years from project start (2025) to current year + 1 (for future planning)
-                                    for ($year = $projectStartYear; $year <= $currentYear + 1; $year++): 
-                                    ?>
-                                        <option value="<?= $year ?>" <?= $year == $defaultYear ? 'selected' : '' ?>>
+                                    <?php for ($year = $projectStartYear; $year <= $currentYear; $year++): ?>
+                                        <option value="<?= $year ?>" <?= ($year == $selectedYear) ? 'selected' : '' ?>>
                                             <?= $year ?>
                                         </option>
                                     <?php endfor; ?>
@@ -289,12 +342,24 @@ ob_start();
                 <div class="control">
                     <button type="submit" class="button is-primary is-medium">
                         <span class="icon"><i class="fas fa-calculator"></i></span>
-                        <span>Generate Bills</span>
+                        <span><?= !empty($billData) ? 'Update Bills' : 'Generate Bills' ?></span>
                     </button>
                 </div>
                 <p class="help">
-                    This will analyze all messages created during the selected month and generate billing information for each client.
+                    This will analyze all messages created during the selected month and <?= !empty($billData) ? 'update' : 'generate' ?> billing information for each client.
                 </p>
+                
+                <?php if ($savedReport): ?>
+                    <div class="notification is-info is-light mt-3">
+                        <p class="has-text-weight-medium">Saved Report Information:</p>
+                        <p><strong>Last Generated:</strong> <?= date('F j, Y \a\t g:i A', strtotime($savedReport['generated_at'])) ?></p>
+                        <?php if ($savedReport['updated_at'] !== $savedReport['generated_at']): ?>
+                            <p><strong>Last Updated:</strong> <?= date('F j, Y \a\t g:i A', strtotime($savedReport['updated_at'])) ?></p>
+                        <?php endif; ?>
+                        <p><strong>Generated By:</strong> <?= htmlspecialchars($savedReport['generated_by_display_name']) ?></p>
+                        <p class="mb-0"><strong>Summary:</strong> <?= $savedReport['total_clients'] ?> clients, <?= $savedReport['total_messages'] ?> messages, $<?= number_format($savedReport['total_amount'], 2) ?> total</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </form>
     </div>
@@ -345,15 +410,10 @@ ob_start();
 
     <!-- Bill Results -->
     <?php if (!empty($billData)): ?>
-        <?php 
-        // Get period from session if available
-        $displayFirstDay = $_SESSION['bill_period_start'] ?? '';
-        $displayLastDay = $_SESSION['bill_period_end'] ?? '';
-        ?>
         <div class="box">
             <h3 class="title is-4">
                 <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                Billing Summary - <?= $displayFirstDay ? date('F Y', strtotime($displayFirstDay)) : 'Selected Period' ?>
+                Billing Summary - <?= date('F Y', strtotime($firstDay)) ?>
             </h3>
             
             <div class="level mb-4">
@@ -397,7 +457,7 @@ ob_start();
                     <div class="level-item">
                         <div>
                             <p class="heading">Period</p>
-                            <p class="title"><?= $displayFirstDay && $displayLastDay ? date('M j', strtotime($displayFirstDay)) . ' - ' . date('M j, Y', strtotime($displayLastDay)) : 'N/A' ?></p>
+                            <p class="title"><?= $firstDay && $lastDay ? date('M j', strtotime($firstDay)) . ' - ' . date('M j, Y', strtotime($lastDay)) : 'N/A' ?></p>
                         </div>
                     </div>
                 </div>
@@ -741,6 +801,8 @@ const PROJECT_START_YEAR = <?= $projectStartYear ?>;
 const PROJECT_START_MONTH = <?= $projectStartMonth ?>;
 const CURRENT_YEAR = <?= $currentYear ?>;
 const CURRENT_MONTH = <?= $currentMonth ?>;
+const SELECTED_YEAR = <?= $selectedYear ?>;
+const SELECTED_MONTH = <?= $selectedMonth ?>;
 
 // Month names
 const MONTH_NAMES = [
@@ -782,9 +844,10 @@ function updateMonthOptions() {
         option.textContent = MONTH_NAMES[month - 1];
         
         // Select current month if it's available, otherwise select the last available month
-        if ((selectedYear === CURRENT_YEAR && month === CURRENT_MONTH) || 
+        if ((selectedYear === CURRENT_YEAR && month === SELECTED_MONTH) || 
             (selectedYear === PROJECT_START_YEAR && month === PROJECT_START_MONTH && CURRENT_YEAR > PROJECT_START_YEAR) ||
-            (month === endMonth && selectedYear < CURRENT_YEAR)) {
+            (month === endMonth && selectedYear < CURRENT_YEAR) ||
+            (selectedYear === SELECTED_YEAR && month === SELECTED_MONTH)) {
             option.selected = true;
         }
         

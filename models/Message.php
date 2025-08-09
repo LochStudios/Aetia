@@ -1137,5 +1137,166 @@ class Message {
             return [];
         }
     }
+    
+    // Save billing report to database
+    public function saveBillingReport($startDate, $endDate, $billingData, $generatedBy) {
+        try {
+            $this->ensureConnection();
+            
+            // Calculate totals
+            $totalClients = count($billingData);
+            $totalMessages = array_sum(array_column($billingData, 'total_message_count'));
+            $totalManualReviews = array_sum(array_column($billingData, 'manual_review_count'));
+            $totalAmount = array_sum(array_column($billingData, 'total_fee'));
+            
+            // Convert billing data to JSON
+            $reportDataJson = json_encode($billingData);
+            
+            // Check if report already exists for this period
+            $checkStmt = $this->mysqli->prepare("
+                SELECT id FROM billing_reports 
+                WHERE report_period_start = ? AND report_period_end = ?
+            ");
+            $checkStmt->bind_param("ss", $startDate, $endDate);
+            $checkStmt->execute();
+            $result = $checkStmt->get_result();
+            $existingReport = $result->fetch_assoc();
+            $checkStmt->close();
+            
+            if ($existingReport) {
+                // Update existing report
+                $updateStmt = $this->mysqli->prepare("
+                    UPDATE billing_reports 
+                    SET report_data = ?, 
+                        total_clients = ?, 
+                        total_messages = ?, 
+                        total_manual_reviews = ?, 
+                        total_amount = ?, 
+                        generated_by = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ");
+                $updateStmt->bind_param("siiddii", $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalAmount, $generatedBy, $existingReport['id']);
+                $result = $updateStmt->execute();
+                $updateStmt->close();
+                
+                return [
+                    'success' => $result,
+                    'action' => 'updated',
+                    'report_id' => $existingReport['id'],
+                    'message' => $result ? 'Billing report updated successfully' : 'Failed to update billing report'
+                ];
+            } else {
+                // Create new report
+                $insertStmt = $this->mysqli->prepare("
+                    INSERT INTO billing_reports (report_period_start, report_period_end, report_data, total_clients, total_messages, total_manual_reviews, total_amount, generated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $insertStmt->bind_param("sssiiddi", $startDate, $endDate, $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalAmount, $generatedBy);
+                $result = $insertStmt->execute();
+                $reportId = $this->mysqli->insert_id;
+                $insertStmt->close();
+                
+                return [
+                    'success' => $result,
+                    'action' => 'created',
+                    'report_id' => $reportId,
+                    'message' => $result ? 'Billing report saved successfully' : 'Failed to save billing report'
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Save billing report error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred while saving report'];
+        }
+    }
+    
+    // Get saved billing report for a specific period
+    public function getSavedBillingReport($startDate, $endDate) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT br.*, u.username as generated_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as generated_by_display_name
+                FROM billing_reports br
+                LEFT JOIN users u ON br.generated_by = u.id
+                WHERE br.report_period_start = ? AND br.report_period_end = ?
+            ");
+            $stmt->bind_param("ss", $startDate, $endDate);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $report = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($report) {
+                // Decode JSON data
+                $report['report_data'] = json_decode($report['report_data'], true);
+            }
+            
+            return $report;
+        } catch (Exception $e) {
+            error_log("Get saved billing report error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    // Get all saved billing reports (for admin overview)
+    public function getAllBillingReports($limit = 50, $offset = 0) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT br.id, br.report_period_start, br.report_period_end, 
+                       br.total_clients, br.total_messages, br.total_manual_reviews, br.total_amount,
+                       br.generated_at, br.updated_at,
+                       u.username as generated_by_username,
+                       COALESCE(NULLIF(u.social_username, ''), u.username) as generated_by_display_name
+                FROM billing_reports br
+                LEFT JOIN users u ON br.generated_by = u.id
+                ORDER BY br.report_period_start DESC
+                LIMIT ? OFFSET ?
+            ");
+            $stmt->bind_param("ii", $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $reports = [];
+            while ($row = $result->fetch_assoc()) {
+                $reports[] = $row;
+            }
+            
+            $stmt->close();
+            return $reports;
+        } catch (Exception $e) {
+            error_log("Get all billing reports error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Delete a billing report
+    public function deleteBillingReport($reportId, $userId) {
+        try {
+            $this->ensureConnection();
+            
+            // Check if user is admin
+            $isAdmin = $this->getUserModel()->isUserAdmin($userId);
+            if (!$isAdmin) {
+                return ['success' => false, 'message' => 'Access denied. Administrator privileges required.'];
+            }
+            
+            $stmt = $this->mysqli->prepare("DELETE FROM billing_reports WHERE id = ?");
+            $stmt->bind_param("i", $reportId);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return [
+                'success' => $result,
+                'message' => $result ? 'Billing report deleted successfully' : 'Failed to delete billing report'
+            ];
+        } catch (Exception $e) {
+            error_log("Delete billing report error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
 }
 ?>
