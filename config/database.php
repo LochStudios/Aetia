@@ -77,7 +77,7 @@ class Database {
                 last_name VARCHAR(50),
                 profile_image VARCHAR(255),
                 public_email VARCHAR(100) NULL,
-                account_type ENUM('manual', 'twitch', 'youtube', 'twitter', 'instagram') DEFAULT 'manual',
+                account_type ENUM('manual', 'twitch', 'google', 'twitter', 'instagram') DEFAULT 'manual',
                 social_id VARCHAR(100),
                 social_username VARCHAR(100),
                 social_data JSON,
@@ -111,7 +111,7 @@ class Database {
             CREATE TABLE IF NOT EXISTS social_connections (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
-                platform ENUM('twitch', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL,
+                platform ENUM('twitch', 'google', 'twitter', 'instagram', 'discord') NOT NULL,
                 social_id VARCHAR(100) NOT NULL,
                 social_username VARCHAR(100),
                 access_token TEXT,
@@ -647,7 +647,7 @@ class Database {
                     // Check if 'discord' is already in the ENUM
                     if (strpos($type, "'discord'") === false) {
                         // Add discord to the ENUM
-                        $alterQuery = "ALTER TABLE social_connections MODIFY COLUMN platform ENUM('twitch', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL";
+                        $alterQuery = "ALTER TABLE social_connections MODIFY COLUMN platform ENUM('twitch', 'google', 'twitter', 'instagram', 'discord') NOT NULL";
                         if ($this->mysqli->query($alterQuery)) {
                             error_log("Successfully added 'discord' to social_connections platform ENUM");
                         } else {

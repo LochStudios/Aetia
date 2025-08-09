@@ -5,7 +5,7 @@ session_start();
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
-require_once __DIR__ . '/services/YouTubeOAuth.php';
+require_once __DIR__ . '/services/GoogleOAuth.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
@@ -127,15 +127,15 @@ try {
     $discordAvailable = false;
 }
 
-// Initialize YouTube OAuth
-$youtubeAuthUrl = null;
-$youtubeAvailable = true;
+// Initialize Google OAuth
+$googleAuthUrl = null;
+$googleAvailable = true;
 try {
-    $youtubeOAuth = new YouTubeOAuth();
-    $youtubeAuthUrl = $youtubeOAuth->getAuthorizationUrl();
+    $googleOAuth = new GoogleOAuth();
+    $googleAuthUrl = $googleOAuth->getAuthorizationUrl();
 } catch (Exception $e) {
-    error_log('YouTube OAuth initialization failed: ' . $e->getMessage());
-    $youtubeAvailable = false;
+    error_log('Google OAuth initialization failed: ' . $e->getMessage());
+    $googleAvailable = false;
 }
 
 // Check for initial admin password
@@ -202,15 +202,15 @@ ob_start();
                             <span class="icon"><i class="fab fa-discord"></i></span>
                             <span>Continue with Discord</span>
                         </a>
-                        <?php if ($youtubeAvailable && $youtubeAuthUrl): ?>
-                        <a href="<?= htmlspecialchars($youtubeAuthUrl) ?>" class="button is-danger is-fullwidth mb-2 has-text-white">
-                            <span class="icon"><i class="fab fa-youtube"></i></span>
-                            <span>Continue with YouTube</span>
+                        <?php if ($googleAvailable && $googleAuthUrl): ?>
+                        <a href="<?= htmlspecialchars($googleAuthUrl) ?>" class="button is-danger is-fullwidth mb-2 has-text-white">
+                            <span class="icon"><i class="fab fa-google"></i></span>
+                            <span>Continue with Google</span>
                         </a>
                         <?php else: ?>
                         <button class="button is-danger is-fullwidth mb-2 has-text-white" disabled>
-                            <span class="icon"><i class="fab fa-youtube"></i></span>
-                            <span>Continue with YouTube (Currently Unavailable)</span>
+                            <span class="icon"><i class="fab fa-google"></i></span>
+                            <span>Continue with Google (Currently Unavailable)</span>
                         </button>
                         <?php endif; ?>
                     </div>

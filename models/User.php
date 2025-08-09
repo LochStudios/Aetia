@@ -414,8 +414,8 @@ class User {
                     return "https://cdn.discordapp.com/avatars/{$userId}/{$avatarHash}.{$extension}";
                 }
                 return null;
-            case 'youtube':
-                return $socialData['snippet']['thumbnails']['default']['url'] ?? null;
+            case 'google':
+                return $socialData['picture'] ?? null;
             case 'twitter':
                 return $socialData['profile_image_url'] ?? null;
             case 'instagram':
@@ -1101,7 +1101,7 @@ class User {
         try {
             $this->ensureConnection();
             
-            $allPlatforms = ['twitch', 'discord', 'youtube', 'twitter', 'instagram'];
+            $allPlatforms = ['twitch', 'discord', 'google', 'twitter', 'instagram'];
             
             $stmt = $this->mysqli->prepare("
                 SELECT platform FROM social_connections WHERE user_id = ?

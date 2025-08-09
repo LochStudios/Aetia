@@ -445,8 +445,8 @@ ob_start();
                                             $platformIcon = 'fab fa-discord';
                                             $platformColor = 'is-link';
                                             break;
-                                        case 'youtube':
-                                            $platformIcon = 'fab fa-youtube';
+                                        case 'google':
+                                            $platformIcon = 'fab fa-google';
                                             $platformColor = 'is-danger';
                                             break;
                                         case 'twitter':

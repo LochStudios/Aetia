@@ -15,7 +15,7 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
-require_once __DIR__ . '/services/YouTubeOAuth.php';
+require_once __DIR__ . '/services/GoogleOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
 
 $userModel = new User();
@@ -842,11 +842,11 @@ ob_start();
                         // Check if user already has Twitch linked
                         $hasTwitch = false;
                         $hasDiscord = false;
-                        $hasYouTube = false;
+                        $hasGoogle = false;
                         foreach ($socialConnections as $conn) {
                             if ($conn['platform'] === 'twitch') $hasTwitch = true;
                             if ($conn['platform'] === 'discord') $hasDiscord = true;
-                            if ($conn['platform'] === 'youtube') $hasYouTube = true;
+                            if ($conn['platform'] === 'google') $hasGoogle = true;
                         }
                         ?>
                         <?php if (!$hasTwitch): ?>
@@ -885,21 +885,21 @@ ob_start();
                             </a>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <?php if (!$hasYouTube): ?>
+                        <?php if (!$hasGoogle): ?>
                             <?php
                             try {
-                                $youtubeOAuth = new YouTubeOAuth();
-                                $youtubeLinkUrl = $youtubeOAuth->getLinkAuthorizationUrl();
+                                $googleOAuth = new GoogleOAuth();
+                                $googleLinkUrl = $googleOAuth->getLinkAuthorizationUrl();
                             } catch (Exception $e) {
-                                $youtubeLinkUrl = null;
+                                $googleLinkUrl = null;
                             }
                             ?>
-                            <?php if ($youtubeLinkUrl): ?>
-                            <a href="<?= htmlspecialchars($youtubeLinkUrl) ?>" class="button is-danger">
+                            <?php if ($googleLinkUrl): ?>
+                            <a href="<?= htmlspecialchars($googleLinkUrl) ?>" class="button is-danger">
                                 <span class="icon">
-                                    <i class="fab fa-youtube"></i>
+                                    <i class="fab fa-google"></i>
                                 </span>
-                                <span>Link YouTube</span>
+                                <span>Link Google</span>
                             </a>
                             <?php endif; ?>
                         <?php endif; ?>

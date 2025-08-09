@@ -1,9 +1,9 @@
 <?php
-// services/YouTubeOAuth.php - YouTube OAuth integration for Aetia Talent Agency
+// services/GoogleOAuth.php - Google OAuth integration for Aetia Talent Agency
 
-require_once '/home/aetiacom/web-config/google.php';
+require_once '/home/aetiacom/web-config/config.php';
 
-class YouTubeOAuth {
+class GoogleOAuth {
     private $clientId;
     private $clientSecret;
     private $redirectUri;
@@ -35,7 +35,7 @@ class YouTubeOAuth {
             }
             
         } catch (Exception $e) {
-            error_log('YouTubeOAuth configuration error: ' . $e->getMessage());
+            error_log('GoogleOAuth configuration error: ' . $e->getMessage());
             throw new Exception('Google OAuth configuration error. Please check your configuration files.');
         }
     }
@@ -51,7 +51,7 @@ class YouTubeOAuth {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        $_SESSION['youtube_oauth_state'] = $state;
+        $_SESSION['google_oauth_state'] = $state;
         
         $params = [
             'client_id' => $this->clientId,
@@ -77,7 +77,7 @@ class YouTubeOAuth {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        $_SESSION['youtube_link_oauth_state'] = $state;
+        $_SESSION['google_link_oauth_state'] = $state;
         
         $params = [
             'client_id' => $this->clientId,
@@ -100,11 +100,11 @@ class YouTubeOAuth {
         }
         
         $isLinking = false;
-        if (isset($_SESSION['youtube_link_oauth_state']) && $state === $_SESSION['youtube_link_oauth_state']) {
+        if (isset($_SESSION['google_link_oauth_state']) && $state === $_SESSION['google_link_oauth_state']) {
             $isLinking = true;
-            unset($_SESSION['youtube_link_oauth_state']);
-        } elseif (isset($_SESSION['youtube_oauth_state']) && $state === $_SESSION['youtube_oauth_state']) {
-            unset($_SESSION['youtube_oauth_state']);
+            unset($_SESSION['google_link_oauth_state']);
+        } elseif (isset($_SESSION['google_oauth_state']) && $state === $_SESSION['google_oauth_state']) {
+            unset($_SESSION['google_oauth_state']);
         } else {
             throw new Exception('Invalid state parameter');
         }
@@ -131,14 +131,14 @@ class YouTubeOAuth {
         curl_close($ch);
         
         if ($httpCode !== 200) {
-            error_log('YouTube token exchange failed: ' . $response);
+            error_log('Google token exchange failed: ' . $response);
             throw new Exception('Failed to exchange authorization code for access token');
         }
         
         $tokenData = json_decode($response, true);
         
         if (isset($tokenData['error'])) {
-            error_log('YouTube token exchange error: ' . $tokenData['error']);
+            error_log('Google token exchange error: ' . $tokenData['error']);
             throw new Exception('Token exchange failed: ' . $tokenData['error']);
         }
         
@@ -150,7 +150,7 @@ class YouTubeOAuth {
         ];
     }
     
-    // Get user information from Google/YouTube
+    // Get user information from Google
     public function getUserInfo($accessToken) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->apiUrl . '/userinfo');
@@ -164,14 +164,14 @@ class YouTubeOAuth {
         curl_close($ch);
         
         if ($httpCode !== 200) {
-            error_log('YouTube user info request failed: ' . $response);
+            error_log('Google user info request failed: ' . $response);
             throw new Exception('Failed to fetch user information');
         }
         
         $userData = json_decode($response, true);
         
         if (!isset($userData['email'])) {
-            throw new Exception('Email not provided by YouTube OAuth');
+            throw new Exception('Email not provided by Google OAuth');
         }
         
         return [
@@ -206,14 +206,14 @@ class YouTubeOAuth {
         curl_close($ch);
         
         if ($httpCode !== 200) {
-            error_log('YouTube token refresh failed: ' . $response);
+            error_log('Google token refresh failed: ' . $response);
             throw new Exception('Failed to refresh access token');
         }
         
         $tokenData = json_decode($response, true);
         
         if (isset($tokenData['error'])) {
-            error_log('YouTube token refresh error: ' . $tokenData['error']);
+            error_log('Google token refresh error: ' . $tokenData['error']);
             throw new Exception('Token refresh failed: ' . $tokenData['error']);
         }
         
