@@ -2,6 +2,7 @@
 // services/GoogleOAuth.php - Google OAuth integration for Aetia Talent Agency
 
 require_once '/home/aetiacom/web-config/config.php';
+require_once '/home/aetiacom/vendors/Google/vendor/autoload.php';
 
 class GoogleOAuth {
     private $clientId;
