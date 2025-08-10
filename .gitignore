@@ -1,2 +1,3 @@
 config/*.example.php
+api/test*
 /sql
