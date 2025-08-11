@@ -419,11 +419,10 @@ class SmsService {
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => [
-                    'Content-type: application/x-www-form-urlencoded',
-                    'Authorization: Basic ' . $credentials,
-                    'Content-Length: ' . strlen($postString)
-                ],
+                'header' => 
+                    "Content-type: application/x-www-form-urlencoded\r\n" .
+                    "Authorization: Basic " . $credentials . "\r\n" .
+                    "Content-Length: " . strlen($postString),
                 'content' => $postString,
                 'timeout' => 30
             ]
@@ -432,7 +431,9 @@ class SmsService {
         $response = file_get_contents($url, false, $context);
         
         if ($response === false) {
-            throw new Exception("HTTP request failed using file_get_contents");
+            $error = error_get_last();
+            $errorMessage = $error ? $error['message'] : 'Unknown error';
+            throw new Exception("HTTP request failed using file_get_contents: " . $errorMessage);
         }
         
         // Extract HTTP response code from headers
@@ -446,6 +447,10 @@ class SmsService {
             }
         }
         
+        // Log response for debugging if there's an error
+        if ($httpCode >= 400) {
+            error_log("SMS Service HTTP Error {$httpCode}: " . substr($response, 0, 500));
+        }
         return $this->processTwilioResponse($response, $httpCode);
     }
     
