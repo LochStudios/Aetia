@@ -1203,16 +1203,32 @@ function toggleSmsFields(enabled) {
     const smsFields = document.getElementById('sms-fields');
     if (enabled) {
         smsFields.style.display = 'block';
-        // Also check if sensitive info should be shown
+        // When SMS is enabled, automatically show the phone number field (sensitive info)
         const sensitiveElements = smsFields.querySelectorAll('.sensitive-info');
-        const firstSensitiveElement = document.querySelector('.sensitive-info');
-        const shouldShowSensitive = firstSensitiveElement && firstSensitiveElement.style.display !== 'none';
-        
         sensitiveElements.forEach(element => {
-            element.style.display = shouldShowSensitive ? 'block' : 'none';
+            element.style.display = 'block';
         });
+        
+        // Also update the main sensitive info toggle if needed
+        const firstSensitiveElement = document.querySelector('.sensitive-info');
+        if (firstSensitiveElement && firstSensitiveElement.style.display === 'none') {
+            // If other sensitive info is hidden, show a notice that phone number is now visible
+            const toggleBtn = document.getElementById('toggle-sensitive-btn');
+            const toggleIcon = document.getElementById('toggle-sensitive-icon');
+            const toggleText = document.getElementById('toggle-sensitive-text');
+            
+            if (toggleBtn && toggleText.textContent === 'Show Sensitive Info') {
+                toggleText.textContent = 'Show All Sensitive Info';
+            }
+        }
     } else {
         smsFields.style.display = 'none';
+        
+        // Reset the button text if needed
+        const toggleText = document.getElementById('toggle-sensitive-text');
+        if (toggleText && toggleText.textContent === 'Show All Sensitive Info') {
+            toggleText.textContent = 'Show Sensitive Info';
+        }
     }
 }
 
@@ -1238,10 +1254,19 @@ function toggleSensitiveInfo() {
     const isHidden = sensitiveElements[0] && sensitiveElements[0].style.display === 'none';
     
     sensitiveElements.forEach(element => {
+        // Check if this element is inside SMS fields
+        const isInSmsFields = element.closest('#sms-fields');
+        const smsEnabled = document.querySelector('input[name="sms_enabled"]').checked;
+        
         if (isHidden) {
             element.style.display = 'block';
         } else {
-            element.style.display = 'none';
+            // Only hide phone number if SMS is disabled
+            if (isInSmsFields && smsEnabled) {
+                element.style.display = 'block'; // Keep phone number visible if SMS is enabled
+            } else {
+                element.style.display = 'none';
+            }
         }
     });
     
@@ -1252,7 +1277,12 @@ function toggleSensitiveInfo() {
         toggleBtn.className = 'button is-small is-warning';
     } else {
         toggleIcon.className = 'fas fa-eye';
-        toggleText.textContent = 'Show Sensitive Info';
+        const smsEnabled = document.querySelector('input[name="sms_enabled"]').checked;
+        if (smsEnabled) {
+            toggleText.textContent = 'Show All Sensitive Info';
+        } else {
+            toggleText.textContent = 'Show Sensitive Info';
+        }
         toggleBtn.className = 'button is-small is-info';
     }
 }
