@@ -329,11 +329,11 @@ class SmsService {
             'Body' => $message
         ];
         // Try cURL first, fallback to file_get_contents if needed
-        if (function_exists('curl_init') && defined('CURL_HTTPAUTH_BASIC')) {
+        if (function_exists('curl_init')) {
             error_log("SMS Debug - Using cURL method");
             return $this->sendWithCurl($url, $postData, $accountSid, $authToken);
         } else {
-            error_log("SMS Debug - Falling back to file_get_contents. cURL available: " . (function_exists('curl_init') ? 'yes' : 'no') . ", CURL_HTTPAUTH_BASIC defined: " . (defined('CURL_HTTPAUTH_BASIC') ? 'yes' : 'no'));
+            error_log("SMS Debug - Falling back to file_get_contents. cURL available: " . (function_exists('curl_init') ? 'yes' : 'no'));
             return $this->sendWithFileGetContents($url, $postData, $accountSid, $authToken);
         }
     }
@@ -348,17 +348,25 @@ class SmsService {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURL_HTTPAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_USERPWD, $accountSid . ':' . $authToken);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Aetia-SMS-Service/1.0');
         // Execute request
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
         curl_close($ch);
         if ($curlError) {
+            error_log("SMS cURL Error #{$curlErrno}: {$curlError}");
             throw new Exception("cURL error: {$curlError}");
+        }
+        error_log("SMS Debug - cURL Response Code: {$httpCode}");
+        if ($httpCode >= 400) {
+            error_log("SMS Debug - cURL Error Response: " . substr($response, 0, 500));
         }
         return $this->processTwilioResponse($response, $httpCode);
     }
