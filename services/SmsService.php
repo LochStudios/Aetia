@@ -478,7 +478,6 @@ class SmsService {
             ];
         }
     }
-    }
     
     /**
      * Get appropriate from number based on destination phone number
