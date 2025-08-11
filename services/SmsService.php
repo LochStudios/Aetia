@@ -339,22 +339,6 @@ class SmsService {
      * Send SMS using Twilio API
      */
     private function sendSmsWithTwilio($to, $message) {
-        // Check if cURL extension is loaded
-        if (!extension_loaded('curl')) {
-            return [
-                'success' => false,
-                'message' => 'cURL extension is not loaded. Please enable cURL in PHP configuration.'
-            ];
-        }
-        
-        // Check if cURL constants are defined
-        if (!defined('CURL_HTTPAUTH_BASIC')) {
-            return [
-                'success' => false,
-                'message' => 'cURL constants not available. Please check PHP cURL installation.'
-            ];
-        }
-        
         $accountSid = $this->config['account_sid'];
         $authToken = $this->config['auth_token'];
         
