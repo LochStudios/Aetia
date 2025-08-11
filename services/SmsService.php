@@ -354,6 +354,9 @@ class SmsService {
         // Get appropriate from number based on destination country
         $fromNumber = $this->getFromNumberForDestination($to);
         
+        // Debug logging
+        error_log("SMS Debug - To: $to, From: $fromNumber");
+        
         if (empty($fromNumber)) {
             $countryCode = $this->getCountryCodeFromPhone($to);
             $supportedCountries = array_keys(self::getSupportedCountries());
@@ -375,8 +378,10 @@ class SmsService {
         
         // Try cURL first, fallback to file_get_contents if needed
         if (function_exists('curl_init') && defined('CURL_HTTPAUTH_BASIC')) {
+            error_log("SMS Debug - Using cURL method");
             return $this->sendWithCurl($url, $postData, $accountSid, $authToken);
         } else {
+            error_log("SMS Debug - Falling back to file_get_contents. cURL available: " . (function_exists('curl_init') ? 'yes' : 'no') . ", CURL_HTTPAUTH_BASIC defined: " . (defined('CURL_HTTPAUTH_BASIC') ? 'yes' : 'no'));
             return $this->sendWithFileGetContents($url, $postData, $accountSid, $authToken);
         }
     }
@@ -415,7 +420,10 @@ class SmsService {
     private function sendWithFileGetContents($url, $postData, $accountSid, $authToken) {
         $postString = http_build_query($postData);
         $credentials = base64_encode($accountSid . ':' . $authToken);
-        
+        // Debug logging to see what we're sending
+        error_log("SMS Debug - URL: " . $url);
+        error_log("SMS Debug - Post Data: " . json_encode($postData));
+        error_log("SMS Debug - Post String: " . $postString);
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
@@ -425,17 +433,14 @@ class SmsService {
                     "Content-Length: " . strlen($postString),
                 'content' => $postString,
                 'timeout' => 30
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+                'allow_self_signed' => false
             ]
         ]);
-        
-        $response = file_get_contents($url, false, $context);
-        
-        if ($response === false) {
-            $error = error_get_last();
-            $errorMessage = $error ? $error['message'] : 'Unknown error';
-            throw new Exception("HTTP request failed using file_get_contents: " . $errorMessage);
-        }
-        
+        $response = @file_get_contents($url, false, $context);
         // Extract HTTP response code from headers
         $httpCode = 200; // Default assumption for file_get_contents success
         if (isset($http_response_header)) {
@@ -446,8 +451,17 @@ class SmsService {
                 }
             }
         }
-        
         // Log response for debugging if there's an error
+        if ($httpCode >= 400) {
+            error_log("SMS Service HTTP Error {$httpCode}: " . substr($response ?: 'No response body', 0, 500));
+        }
+        
+        // If we got no response at all, that's a failure
+        if ($response === false) {
+            $error = error_get_last();
+            $errorMessage = $error ? $error['message'] : 'Unknown error';
+            throw new Exception("HTTP request failed using file_get_contents: " . $errorMessage);
+        }
         if ($httpCode >= 400) {
             error_log("SMS Service HTTP Error {$httpCode}: " . substr($response, 0, 500));
         }
