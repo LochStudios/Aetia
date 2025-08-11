@@ -637,6 +637,185 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
+            <!-- SMS Notifications Settings -->
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-6 has-text-light mb-4">
+                        <span class="icon has-text-warning"><i class="fas fa-sms"></i></span>
+                        SMS Notifications
+                    </h4>
+                    <div class="notification is-info is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong>Optional SMS Notifications:</strong> Enable SMS notifications to receive important updates directly to your phone.</p>
+                            <p>You can enable or disable this feature at any time. Your phone number will be kept secure and only used for Aetia notifications.</p>
+                        </div>
+                    </div>
+                    <div class="notification is-warning is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong><i class="fas fa-dollar-sign"></i> Additional Service - SMS Pricing:</strong></p>
+                            <p>SMS notifications are charged at <strong>$0.30 per message</strong> sent to your phone.</p>
+                            <p class="is-size-7">This covers our SMS provider costs and service fees. You will only be charged when SMS messages are actually sent to your phone number.</p>
+                        </div>
+                    </div>
+                    <div class="notification is-info is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong><i class="fas fa-phone"></i> SMS Sender Information:</strong></p>
+                            <p>Messages from us will come from: <strong>+1 (202) 559-4813</strong> (US number)</p>
+                            <p class="is-size-7">This is our official SMS service number. Please save this number to easily identify our messages.</p>
+                        </div>
+                    </div>
+                    <?php 
+                    $smsEnabled = $smsPreferences['success'] ? $smsPreferences['sms_enabled'] : false;
+                    $phoneNumber = $smsPreferences['success'] ? $smsPreferences['phone_number'] : '';
+                    $phoneVerified = $smsPreferences['success'] ? $smsPreferences['phone_verified'] : false;
+                    ?>
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="update_sms">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                        <!-- SMS Enable/Disable -->
+                        <div class="field">
+                            <div class="control">
+                                <label class="checkbox has-text-light">
+                                    <input type="checkbox" name="sms_enabled" value="1" <?= $smsEnabled ? 'checked' : '' ?> onchange="toggleSmsFields(this.checked)">
+                                    <span class="ml-2">Enable SMS Notifications</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Phone Number Field -->
+                        <div id="sms-fields" style="<?= $smsEnabled ? '' : 'display: none;' ?>">
+                            <div class="field">
+                                <label class="label has-text-light">Phone Number</label>
+                                <?php 
+                                // Parse existing phone number to determine country code and number
+                                $currentCountryCode = '+1'; // Default to USA
+                                $currentPhoneNumber = '';
+                                if (!empty($phoneNumber)) {
+                                    if (strpos($phoneNumber, '+1') === 0) {
+                                        $currentCountryCode = '+1';
+                                        $currentPhoneNumber = substr($phoneNumber, 2);
+                                    } elseif (strpos($phoneNumber, '+61') === 0) {
+                                        $currentCountryCode = '+61';
+                                        $currentPhoneNumber = substr($phoneNumber, 3);
+                                    } else {
+                                        // Keep original for unsupported countries
+                                        $currentPhoneNumber = $phoneNumber;
+                                    }
+                                }
+                                ?>
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <div class="select">
+                                            <select name="country_code" class="has-background-grey-darker has-text-light" style="border-color: #4a4a4a; background-color: #363636; color: #f5f5f5;">
+                                                <option value="+1" <?= $currentCountryCode === '+1' ? 'selected' : '' ?>>🇺🇸 +1 (USA)</option>
+                                                <!-- <option value="+61" <?= $currentCountryCode === '+61' ? 'selected' : '' ?>>🇦🇺 +61 (Australia)</option> -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="control is-expanded has-icons-left">
+                                        <input class="input has-background-grey-darker has-text-light" 
+                                               type="tel" 
+                                               name="phone_number_local" 
+                                               placeholder="e.g., 5551234567 or 412345678" 
+                                               value="<?= htmlspecialchars($currentPhoneNumber) ?>"
+                                               pattern="\d{7,14}"
+                                               title="Please enter your phone number without country code">
+                                        <span class="icon is-small is-left">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="help has-text-grey-light">
+                                    Select your country and enter your phone number without the country code.
+                                    <br><span class="has-text-info"><i class="fas fa-info-circle"></i> Example: For USA: 5551234567</span>
+                                    <br><span class="has-text-warning"><i class="fas fa-globe"></i> Support for more countries coming soon!</span>
+                                </p>
+                                <!-- Hidden field to combine country code and phone number -->
+                                <input type="hidden" name="phone_number" id="combined_phone_number" value="<?= htmlspecialchars($phoneNumber) ?>">
+                            </div>
+                            <!-- Verification Status -->
+                            <?php if ($smsEnabled && $phoneNumber): ?>
+                            <div class="field">
+                                <label class="label has-text-light">Verification Status</label>
+                                <div class="tags">
+                                    <?php if ($phoneVerified): ?>
+                                        <span class="tag is-success">
+                                            <span class="icon"><i class="fas fa-check-circle"></i></span>
+                                            <span>Phone Verified</span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-warning">
+                                            <span class="icon"><i class="fas fa-clock"></i></span>
+                                            <span>Verification Required</span>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="field mt-2">
+                            <div class="control">
+                                <button class="button is-warning" type="submit">
+                                    <span class="icon"><i class="fas fa-save"></i></span>
+                                    <span>Update SMS Settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <!-- Phone Verification Section -->
+                    <?php if ($smsEnabled && $phoneNumber && !$phoneVerified): ?>
+                    <hr class="has-background-grey">
+                    <div class="notification is-warning is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong>Phone Verification Required:</strong> Please verify your phone number to enable SMS notifications.</p>
+                            <div class="notification is-info is-dark has-text-white mt-3" style="background-color: rgba(50, 115, 220, 0.2); border-left: 4px solid #3273dc;">
+                                <p class="is-size-7"><strong>💰 One-Time Verification Charges:</strong></p>
+                                <ul class="is-size-7" style="margin-left: 1rem;">
+                                    <li><strong>SMS Delivery:</strong> $0.30</li>
+                                    <li><strong>Verification Service:</strong> $0.10</li>
+                                    <li><strong>Total:</strong> $0.40 (one-time charge for phone verification)</li>
+                                </ul>
+                                <p class="is-size-7 mt-2"><em>Future SMS notifications will be charged at $0.30 per message only.</em></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="columns">
+                        <div class="column is-half">
+                            <form method="POST" action="profile.php" style="display: inline;">
+                                <input type="hidden" name="action" value="send_sms_verification">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                                <button class="button is-info" type="submit">
+                                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                                    <span>Send Verification Code</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="column is-half">
+                            <form method="POST" action="profile.php">
+                                <input type="hidden" name="action" value="verify_sms_code">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                                <div class="field has-addons">
+                                    <div class="control is-expanded">
+                                        <input class="input has-background-grey-darker has-text-light" 
+                                               type="text" 
+                                               name="verification_code" 
+                                               placeholder="Enter 6-digit code"
+                                               maxlength="6"
+                                               pattern="\d{6}"
+                                               required>
+                                    </div>
+                                    <div class="control">
+                                        <button class="button is-success" type="submit">
+                                            <span class="icon"><i class="fas fa-check"></i></span>
+                                            <span>Verify</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
         <div class="column is-8">
             <div class="card has-background-dark">
@@ -1010,185 +1189,6 @@ ob_start();
                 </div>
             </div>
             
-            <!-- SMS Notifications Settings -->
-            <div class="card has-background-dark mt-4">
-                <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">
-                        <span class="icon has-text-warning"><i class="fas fa-sms"></i></span>
-                        SMS Notifications
-                    </h4>
-                    <div class="notification is-info is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong>Optional SMS Notifications:</strong> Enable SMS notifications to receive important updates directly to your phone.</p>
-                            <p>You can enable or disable this feature at any time. Your phone number will be kept secure and only used for Aetia notifications.</p>
-                        </div>
-                    </div>
-                    <div class="notification is-warning is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong><i class="fas fa-dollar-sign"></i> Additional Service - SMS Pricing:</strong></p>
-                            <p>SMS notifications are charged at <strong>$0.30 per message</strong> sent to your phone.</p>
-                            <p class="is-size-7">This covers our SMS provider costs and service fees. You will only be charged when SMS messages are actually sent to your phone number.</p>
-                        </div>
-                    </div>
-                    <div class="notification is-info is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong><i class="fas fa-phone"></i> SMS Sender Information:</strong></p>
-                            <p>Messages from us will come from: <strong>+1 (202) 559-4813</strong> (US number)</p>
-                            <p class="is-size-7">This is our official SMS service number. Please save this number to easily identify our messages.</p>
-                        </div>
-                    </div>
-                    <?php 
-                    $smsEnabled = $smsPreferences['success'] ? $smsPreferences['sms_enabled'] : false;
-                    $phoneNumber = $smsPreferences['success'] ? $smsPreferences['phone_number'] : '';
-                    $phoneVerified = $smsPreferences['success'] ? $smsPreferences['phone_verified'] : false;
-                    ?>
-                    <form method="POST" action="profile.php">
-                        <input type="hidden" name="action" value="update_sms">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                        <!-- SMS Enable/Disable -->
-                        <div class="field">
-                            <div class="control">
-                                <label class="checkbox has-text-light">
-                                    <input type="checkbox" name="sms_enabled" value="1" <?= $smsEnabled ? 'checked' : '' ?> onchange="toggleSmsFields(this.checked)">
-                                    <span class="ml-2">Enable SMS Notifications</span>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Phone Number Field -->
-                        <div id="sms-fields" style="<?= $smsEnabled ? '' : 'display: none;' ?>">
-                            <div class="field">
-                                <label class="label has-text-light">Phone Number</label>
-                                <?php 
-                                // Parse existing phone number to determine country code and number
-                                $currentCountryCode = '+1'; // Default to USA
-                                $currentPhoneNumber = '';
-                                if (!empty($phoneNumber)) {
-                                    if (strpos($phoneNumber, '+1') === 0) {
-                                        $currentCountryCode = '+1';
-                                        $currentPhoneNumber = substr($phoneNumber, 2);
-                                    } elseif (strpos($phoneNumber, '+61') === 0) {
-                                        $currentCountryCode = '+61';
-                                        $currentPhoneNumber = substr($phoneNumber, 3);
-                                    } else {
-                                        // Keep original for unsupported countries
-                                        $currentPhoneNumber = $phoneNumber;
-                                    }
-                                }
-                                ?>
-                                <div class="field has-addons">
-                                    <div class="control">
-                                        <div class="select">
-                                            <select name="country_code" class="has-background-grey-darker has-text-light" style="border-color: #4a4a4a; background-color: #363636; color: #f5f5f5;">
-                                                <option value="+1" <?= $currentCountryCode === '+1' ? 'selected' : '' ?>>🇺🇸 +1 (USA)</option>
-                                                <!-- <option value="+61" <?= $currentCountryCode === '+61' ? 'selected' : '' ?>>🇦🇺 +61 (Australia)</option> -->
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="control is-expanded has-icons-left">
-                                        <input class="input has-background-grey-darker has-text-light" 
-                                               type="tel" 
-                                               name="phone_number_local" 
-                                               placeholder="e.g., 5551234567 or 412345678" 
-                                               value="<?= htmlspecialchars($currentPhoneNumber) ?>"
-                                               pattern="\d{7,14}"
-                                               title="Please enter your phone number without country code">
-                                        <span class="icon is-small is-left">
-                                            <i class="fas fa-phone"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                                <p class="help has-text-grey-light">
-                                    Select your country and enter your phone number without the country code.
-                                    <br><span class="has-text-info"><i class="fas fa-info-circle"></i> Example: For USA: 5551234567</span>
-                                    <br><span class="has-text-warning"><i class="fas fa-globe"></i> Support for more countries coming soon!</span>
-                                </p>
-                                <!-- Hidden field to combine country code and phone number -->
-                                <input type="hidden" name="phone_number" id="combined_phone_number" value="<?= htmlspecialchars($phoneNumber) ?>">
-                            </div>
-                            <!-- Verification Status -->
-                            <?php if ($smsEnabled && $phoneNumber): ?>
-                            <div class="field">
-                                <label class="label has-text-light">Verification Status</label>
-                                <div class="tags">
-                                    <?php if ($phoneVerified): ?>
-                                        <span class="tag is-success">
-                                            <span class="icon"><i class="fas fa-check-circle"></i></span>
-                                            <span>Phone Verified</span>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="tag is-warning">
-                                            <span class="icon"><i class="fas fa-clock"></i></span>
-                                            <span>Verification Required</span>
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="field mt-2">
-                            <div class="control">
-                                <button class="button is-warning" type="submit">
-                                    <span class="icon"><i class="fas fa-save"></i></span>
-                                    <span>Update SMS Settings</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                    <!-- Phone Verification Section -->
-                    <?php if ($smsEnabled && $phoneNumber && !$phoneVerified): ?>
-                    <hr class="has-background-grey">
-                    <div class="notification is-warning is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong>Phone Verification Required:</strong> Please verify your phone number to enable SMS notifications.</p>
-                            <div class="notification is-info is-dark has-text-white mt-3" style="background-color: rgba(50, 115, 220, 0.2); border-left: 4px solid #3273dc;">
-                                <p class="is-size-7"><strong>💰 One-Time Verification Charges:</strong></p>
-                                <ul class="is-size-7" style="margin-left: 1rem;">
-                                    <li><strong>SMS Delivery:</strong> $0.30</li>
-                                    <li><strong>Verification Service:</strong> $0.10</li>
-                                    <li><strong>Total:</strong> $0.40 (one-time charge for phone verification)</li>
-                                </ul>
-                                <p class="is-size-7 mt-2"><em>Future SMS notifications will be charged at $0.30 per message only.</em></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="columns">
-                        <div class="column is-half">
-                            <form method="POST" action="profile.php" style="display: inline;">
-                                <input type="hidden" name="action" value="send_sms_verification">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                                <button class="button is-info" type="submit">
-                                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                                    <span>Send Verification Code</span>
-                                </button>
-                            </form>
-                        </div>
-                        <div class="column is-half">
-                            <form method="POST" action="profile.php">
-                                <input type="hidden" name="action" value="verify_sms_code">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                                <div class="field has-addons">
-                                    <div class="control is-expanded">
-                                        <input class="input has-background-grey-darker has-text-light" 
-                                               type="text" 
-                                               name="verification_code" 
-                                               placeholder="Enter 6-digit code"
-                                               maxlength="6"
-                                               pattern="\d{6}"
-                                               required>
-                                    </div>
-                                    <div class="control">
-                                        <button class="button is-success" type="submit">
-                                            <span class="icon"><i class="fas fa-check"></i></span>
-                                            <span>Verify</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
         </div>
     </div>
 </div>
