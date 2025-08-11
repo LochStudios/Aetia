@@ -1,6 +1,7 @@
 <?php
 // documents.php - User interface for viewing their own documents (uses API)
 session_start();
+require_once 'includes/LinkConverter.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
@@ -172,6 +173,29 @@ ob_start();
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let documentsData = [];
+    // Function to convert URLs in text to clickable links
+    function convertLinksToClickable(text) {
+        if (!text) return '';
+        // Escape HTML to prevent XSS
+        const div = document.createElement('div');
+        div.textContent = text;
+        let escapedText = div.innerHTML;
+        // Pattern to match URLs (http, https, www)
+        const urlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>"{}|\\^`\[\]]*)/gi;
+        // Replace URLs with clickable links
+        escapedText = escapedText.replace(urlPattern, function(url) {
+            let displayUrl = url;
+            let linkUrl = url.startsWith('www.') ? 'https://' + url : url;
+            // Truncate display URL if it's too long
+            if (displayUrl.length > 60) {
+                displayUrl = displayUrl.substring(0, 57) + '...';
+            }
+            return `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="message-link" style="color: #3273dc; text-decoration: underline;">${displayUrl}</a>`;
+        });
+        // Convert line breaks to <br> tags
+        escapedText = escapedText.replace(/\n/g, '<br>');
+        return escapedText;
+    }
     
     // Load documents on page load
     loadDocuments();
@@ -367,8 +391,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             
                             <div class="content">
-                                ${doc.description ? `<p><strong>Description:</strong> ${doc.description}</p>` : ''}
-                                ${doc.archived && doc.archived_reason ? `<p><strong>Archive Reason:</strong> ${doc.archived_reason}</p>` : ''}
+                                ${doc.description ? `<p><strong>Description:</strong> ${convertLinksToClickable(doc.description)}</p>` : ''}
+                                ${doc.archived && doc.archived_reason ? `<p><strong>Archive Reason:</strong> ${convertLinksToClickable(doc.archived_reason)}</p>` : ''}
                                 <p><strong>Uploaded:</strong> ${new Date(doc.uploaded_at).toLocaleDateString()}</p>
                             </div>
                             
