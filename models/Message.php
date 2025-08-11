@@ -1118,27 +1118,47 @@ class Message {
             
             $billingData = [];
             while ($row = $result->fetch_assoc()) {
-                // Get SMS count for this user in the same period
-                $smsStmt = $this->mysqli->prepare("
-                    SELECT COUNT(*) as sms_count
-                    FROM sms_logs 
-                    WHERE user_id = ? AND sent_at >= ? AND sent_at <= ? AND status = 'sent'
-                ");
-                $smsStmt->bind_param("iss", $row['user_id'], $startDate, $endDateTime);
-                $smsStmt->execute();
-                $smsResult = $smsStmt->get_result();
-                $smsData = $smsResult->fetch_assoc();
-                $smsCount = $smsData ? intval($smsData['sms_count']) : 0;
-                $smsStmt->close();
+                // Initialize SMS data with defaults
+                $smsCount = 0;
+                $verificationCount = 0;
+                $smsFee = 0.0;
+                
+                // Try to get SMS data - but don't let it break the billing system
+                try {
+                    $smsStmt = $this->mysqli->prepare("
+                        SELECT 
+                            COUNT(*) as total_sms_count,
+                            SUM(CASE WHEN purpose = 'verification' THEN 1 ELSE 0 END) as verification_count
+                        FROM sms_logs 
+                        WHERE user_id = ? AND sent_at >= ? AND sent_at <= ? AND success = 1
+                    ");
+                    
+                    if ($smsStmt) {
+                        $smsStmt->bind_param("iss", $row['user_id'], $startDate, $endDateTime);
+                        $smsStmt->execute();
+                        $smsResult = $smsStmt->get_result();
+                        $smsData = $smsResult->fetch_assoc();
+                        
+                        if ($smsData) {
+                            $smsCount = intval($smsData['total_sms_count']);
+                            $verificationCount = intval($smsData['verification_count']);
+                            $smsFee = ($smsCount * 0.30) + ($verificationCount * 0.10); // $0.30 per SMS + $0.10 extra for verification
+                        }
+                        $smsStmt->close();
+                    }
+                } catch (Exception $smsError) {
+                    // Log the SMS error but continue with billing
+                    error_log("SMS billing query failed for user {$row['user_id']}: " . $smsError->getMessage());
+                }
                 
                 // Calculate fees according to contract terms
                 $standardFee = $row['total_message_count'] * 1.00; // $1.00 per qualifying communication
                 $manualReviewFee = $row['manual_review_count'] * 1.00; // Additional $1.00 per manual review
-                $smsFee = $smsCount * 0.30; // $0.30 per SMS
                 $totalFee = $standardFee + $manualReviewFee + $smsFee;
                 
-                // Ensure all SMS fields are properly set
+                // Ensure all fields are properly set
                 $row['sms_count'] = $smsCount;
+                $row['verification_count'] = $verificationCount;
                 $row['standard_fee'] = $standardFee;
                 $row['manual_review_fee'] = $manualReviewFee;
                 $row['sms_fee'] = $smsFee;
@@ -1165,6 +1185,7 @@ class Message {
             $totalMessages = array_sum(array_column($billingData, 'total_message_count'));
             $totalManualReviews = array_sum(array_column($billingData, 'manual_review_count'));
             $totalSms = array_sum(array_column($billingData, 'sms_count'));
+            $totalVerifications = array_sum(array_column($billingData, 'verification_count'));
             $totalAmount = array_sum(array_column($billingData, 'total_fee'));
             
             // Convert billing data to JSON

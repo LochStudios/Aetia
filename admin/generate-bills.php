@@ -835,6 +835,12 @@ function showBillingDetails(userId) {
                         <td><strong>SMS Fee:</strong></td>
                         <td class="has-text-right has-text-link">$${parseFloat(client.sms_fee || 0).toFixed(2)}</td>
                     </tr>
+                    ${(client.verification_count && client.verification_count > 0) ? `
+                    <tr>
+                        <td><strong>Verification SMS:</strong></td>
+                        <td class="has-text-right has-text-warning">${client.verification_count} (+$0.10 each)</td>
+                    </tr>
+                    ` : ''}
                     <tr class="has-background-success-light">
                         <td><strong>Total Amount Due:</strong></td>
                         <td class="has-text-right has-text-weight-bold has-text-success">$${parseFloat(client.total_fee).toFixed(2)}</td>
