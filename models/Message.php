@@ -1118,13 +1118,29 @@ class Message {
             
             $billingData = [];
             while ($row = $result->fetch_assoc()) {
+                // Get SMS count for this user in the same period
+                $smsStmt = $this->mysqli->prepare("
+                    SELECT COUNT(*) as sms_count
+                    FROM sms_logs 
+                    WHERE user_id = ? AND sent_at >= ? AND sent_at <= ? AND status = 'sent'
+                ");
+                $smsStmt->bind_param("iss", $row['user_id'], $startDate, $endDateTime);
+                $smsStmt->execute();
+                $smsResult = $smsStmt->get_result();
+                $smsData = $smsResult->fetch_assoc();
+                $smsCount = $smsData ? $smsData['sms_count'] : 0;
+                $smsStmt->close();
+                
                 // Calculate fees according to contract terms
                 $standardFee = $row['total_message_count'] * 1.00; // $1.00 per qualifying communication
                 $manualReviewFee = $row['manual_review_count'] * 1.00; // Additional $1.00 per manual review
-                $totalFee = $standardFee + $manualReviewFee;
+                $smsFee = $smsCount * 0.30; // $0.30 per SMS
+                $totalFee = $standardFee + $manualReviewFee + $smsFee;
                 
+                $row['sms_count'] = $smsCount;
                 $row['standard_fee'] = $standardFee;
                 $row['manual_review_fee'] = $manualReviewFee;
+                $row['sms_fee'] = $smsFee;
                 $row['total_fee'] = $totalFee;
                 
                 $billingData[] = $row;
@@ -1147,6 +1163,7 @@ class Message {
             $totalClients = count($billingData);
             $totalMessages = array_sum(array_column($billingData, 'total_message_count'));
             $totalManualReviews = array_sum(array_column($billingData, 'manual_review_count'));
+            $totalSms = array_sum(array_column($billingData, 'sms_count'));
             $totalAmount = array_sum(array_column($billingData, 'total_fee'));
             
             // Convert billing data to JSON
@@ -1164,19 +1181,20 @@ class Message {
             $checkStmt->close();
             
             if ($existingReport) {
-                // Update existing report
+                // Update existing report - add SMS fields if they don't exist
                 $updateStmt = $this->mysqli->prepare("
                     UPDATE billing_reports 
                     SET report_data = ?, 
                         total_clients = ?, 
                         total_messages = ?, 
                         total_manual_reviews = ?, 
+                        total_sms = ?,
                         total_amount = ?, 
                         generated_by = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ");
-                $updateStmt->bind_param("siiddii", $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalAmount, $generatedBy, $existingReport['id']);
+                $updateStmt->bind_param("siiiidii", $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalSms, $totalAmount, $generatedBy, $existingReport['id']);
                 $result = $updateStmt->execute();
                 $updateStmt->close();
                 
@@ -1189,10 +1207,10 @@ class Message {
             } else {
                 // Create new report
                 $insertStmt = $this->mysqli->prepare("
-                    INSERT INTO billing_reports (report_period_start, report_period_end, report_data, total_clients, total_messages, total_manual_reviews, total_amount, generated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO billing_reports (report_period_start, report_period_end, report_data, total_clients, total_messages, total_manual_reviews, total_sms, total_amount, generated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $insertStmt->bind_param("sssiiddi", $startDate, $endDate, $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalAmount, $generatedBy);
+                $insertStmt->bind_param("sssiiiiddi", $startDate, $endDate, $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalSms, $totalAmount, $generatedBy);
                 $result = $insertStmt->execute();
                 $reportId = $this->mysqli->insert_id;
                 $insertStmt->close();

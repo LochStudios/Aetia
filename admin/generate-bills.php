@@ -473,6 +473,12 @@ ob_start();
                     </div>
                     <div class="level-item">
                         <div>
+                            <p class="heading">SMS Sent</p>
+                            <p class="title has-text-link"><?= array_sum(array_column($billData, 'sms_count')) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
                             <p class="heading">Service Fees</p>
                             <p class="title has-text-info">$<?= number_format(array_sum(array_column($billData, 'standard_fee')), 2) ?></p>
                         </div>
@@ -481,6 +487,12 @@ ob_start();
                         <div>
                             <p class="heading">Review Fees</p>
                             <p class="title has-text-warning">$<?= number_format(array_sum(array_column($billData, 'manual_review_fee')), 2) ?></p>
+                        </div>
+                    </div>
+                    <div class="level-item">
+                        <div>
+                            <p class="heading">SMS Fees</p>
+                            <p class="title has-text-link">$<?= number_format(array_sum(array_column($billData, 'sms_fee')), 2) ?></p>
                         </div>
                     </div>
                     <div class="level-item">
@@ -520,8 +532,10 @@ ob_start();
                             <th class="col-type has-text-centered"><abbr title="Account Type">Type</abbr></th>
                             <th class="col-messages has-text-centered"><abbr title="Messages">Msgs</abbr></th>
                             <th class="col-review has-text-centered"><abbr title="Manual Reviews">MR</abbr></th>
+                            <th class="col-sms has-text-centered"><abbr title="SMS Sent">SMS</abbr></th>
                             <th class="col-service has-text-right"><abbr title="Service Fee">Service</abbr></th>
                             <th class="col-review-fee has-text-right"><abbr title="Review Fee">Review</abbr></th>
+                            <th class="col-sms-fee has-text-right"><abbr title="SMS Fee">SMS Fee</abbr></th>
                             <th class="col-total has-text-right"><abbr title="Total Fee">Total</abbr></th>
                             <th class="col-period has-text-centered">Period</th>
                             <th class="col-details has-text-centered">Details</th>
@@ -573,6 +587,15 @@ ob_start();
                                         <span class="tag is-dark is-small-compact">0</span>
                                     <?php endif; ?>
                                 </td>
+                                <td class="has-text-centered">
+                                    <?php if ($client['sms_count'] > 0): ?>
+                                        <span class="tag is-link is-small-compact" title="SMS Messages Sent">
+                                            <?= $client['sms_count'] ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-dark is-small-compact">0</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="has-text-right">
                                     <span class="has-text-weight-semibold has-text-info is-size-7">
                                         $<?= number_format($client['standard_fee'], 2) ?>
@@ -582,6 +605,15 @@ ob_start();
                                     <?php if ($client['manual_review_fee'] > 0): ?>
                                         <span class="has-text-weight-semibold has-text-warning is-size-7">
                                             $<?= number_format($client['manual_review_fee'], 2) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="has-text-grey is-size-7">$0.00</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="has-text-right">
+                                    <?php if ($client['sms_fee'] > 0): ?>
+                                        <span class="has-text-weight-semibold has-text-link is-size-7">
+                                            $<?= number_format($client['sms_fee'], 2) ?>
                                         </span>
                                     <?php else: ?>
                                         <span class="has-text-grey is-size-7">$0.00</span>
@@ -791,6 +823,14 @@ function showBillingDetails(userId) {
                     <tr>
                         <td><strong>Manual Reviews:</strong></td>
                         <td class="has-text-right has-text-warning">$${parseFloat(client.manual_review_fee || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SMS Messages:</strong></td>
+                        <td class="has-text-right">${client.sms_count || 0}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SMS Fee:</strong></td>
+                        <td class="has-text-right has-text-link">$${parseFloat(client.sms_fee || 0).toFixed(2)}</td>
                     </tr>
                     <tr class="has-background-success-light">
                         <td><strong>Total Amount Due:</strong></td>
@@ -1120,9 +1160,12 @@ function printBills() {
             <td colspan="4"><strong>TOTALS:</strong></td>
             <td class="center"><strong>${totalMessages}</strong></td>
             <td class="center">-</td>
+            <td class="center">-</td>
+            <td class="number">-</td>
             <td class="number">-</td>
             <td class="number">-</td>
             <td class="number"><strong>$${totalAmount.toFixed(2)}</strong></td>
+            <td class="center">-</td>
             <td class="center">-</td>
         </tr>
     `;

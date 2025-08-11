@@ -349,6 +349,7 @@ class Database {
                 total_clients INT NOT NULL DEFAULT 0,
                 total_messages INT NOT NULL DEFAULT 0,
                 total_manual_reviews INT NOT NULL DEFAULT 0,
+                total_sms INT NOT NULL DEFAULT 0,
                 total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
                 generated_by INT NOT NULL,
                 generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -361,6 +362,14 @@ class Database {
             )";
             
             $this->mysqli->query($createBillingReportsTable);
+            
+            // Add total_sms column to existing billing_reports table if it doesn't exist
+            $addSmsColumnQuery = "
+            ALTER TABLE billing_reports 
+            ADD COLUMN IF NOT EXISTS total_sms INT NOT NULL DEFAULT 0 
+            AFTER total_manual_reviews
+            ";
+            $this->mysqli->query($addSmsColumnQuery);
 
             // Create SMS logs table
             $createSmsLogsTable = "
