@@ -339,6 +339,22 @@ class SmsService {
      * Send SMS using Twilio API
      */
     private function sendSmsWithTwilio($to, $message) {
+        // Check if cURL extension is loaded
+        if (!extension_loaded('curl')) {
+            return [
+                'success' => false,
+                'message' => 'cURL extension is not loaded. Please enable cURL in PHP configuration.'
+            ];
+        }
+        
+        // Check if cURL constants are defined
+        if (!defined('CURL_HTTPAUTH_BASIC')) {
+            return [
+                'success' => false,
+                'message' => 'cURL constants not available. Please check PHP cURL installation.'
+            ];
+        }
+        
         $accountSid = $this->config['account_sid'];
         $authToken = $this->config['auth_token'];
         
@@ -364,6 +380,18 @@ class SmsService {
             'Body' => $message
         ];
         
+        // Try cURL first, fallback to file_get_contents if needed
+        if (function_exists('curl_init') && defined('CURL_HTTPAUTH_BASIC')) {
+            return $this->sendWithCurl($url, $postData, $accountSid, $authToken);
+        } else {
+            return $this->sendWithFileGetContents($url, $postData, $accountSid, $authToken);
+        }
+    }
+    
+    /**
+     * Send SMS using cURL
+     */
+    private function sendWithCurl($url, $postData, $accountSid, $authToken) {
         // Initialize cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -385,6 +413,53 @@ class SmsService {
             throw new Exception("cURL error: {$curlError}");
         }
         
+        return $this->processTwilioResponse($response, $httpCode);
+    }
+    
+    /**
+     * Send SMS using file_get_contents (fallback method)
+     */
+    private function sendWithFileGetContents($url, $postData, $accountSid, $authToken) {
+        $postString = http_build_query($postData);
+        $credentials = base64_encode($accountSid . ':' . $authToken);
+        
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => [
+                    'Content-type: application/x-www-form-urlencoded',
+                    'Authorization: Basic ' . $credentials,
+                    'Content-Length: ' . strlen($postString)
+                ],
+                'content' => $postString,
+                'timeout' => 30
+            ]
+        ]);
+        
+        $response = file_get_contents($url, false, $context);
+        
+        if ($response === false) {
+            throw new Exception("HTTP request failed using file_get_contents");
+        }
+        
+        // Extract HTTP response code from headers
+        $httpCode = 200; // Default assumption for file_get_contents success
+        if (isset($http_response_header)) {
+            foreach ($http_response_header as $header) {
+                if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $header, $matches)) {
+                    $httpCode = (int)$matches[1];
+                    break;
+                }
+            }
+        }
+        
+        return $this->processTwilioResponse($response, $httpCode);
+    }
+    
+    /**
+     * Process Twilio API response
+     */
+    private function processTwilioResponse($response, $httpCode) {
         $responseData = json_decode($response, true);
         
         if ($httpCode >= 200 && $httpCode < 300) {
@@ -402,6 +477,7 @@ class SmsService {
                 'provider_response' => $responseData
             ];
         }
+    }
     }
     
     /**
