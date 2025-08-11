@@ -362,7 +362,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${doc.description ? `<p><strong>Description:</strong> ${doc.description}</p>` : ''}
                                 ${doc.archived && doc.archived_reason ? `<p><strong>Archive Reason:</strong> ${doc.archived_reason}</p>` : ''}
                                 <p><strong>Uploaded:</strong> ${new Date(doc.uploaded_at).toLocaleDateString()}</p>
-                                ${doc.uploaded_by_username ? `<p><strong>Uploaded by:</strong> ${doc.uploaded_by_username}</p>` : ''}
                             </div>
                             
                             <div class="field is-grouped">
