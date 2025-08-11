@@ -453,7 +453,7 @@ ob_start();
                                 <?= ucfirst($user['account_type']) ?> Account
                             </p>
                             <?php if ($user['first_name'] || $user['last_name']): ?>
-                            <p class="has-text-grey-light mb-2">
+                            <p class="has-text-grey-light mb-2 sensitive-info" style="display: none;">
                                 <?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>
                             </p>
                             <?php endif; ?>
@@ -595,7 +595,7 @@ ob_start();
                                                 <span class="tag is-primary is-small ml-1" style="font-size: 0.6rem; padding: 2px 6px;">Primary</span>
                                             <?php endif; ?>
                                         </p>
-                                        <p class="is-size-7 has-text-grey-light">@<?= htmlspecialchars($connection['social_username']) ?></p>
+                                        <p class="is-size-7 has-text-grey-light sensitive-info" style="display: none;">@<?= htmlspecialchars($connection['social_username']) ?></p>
                                     </div>
                                 </div>
                             </div>
