@@ -117,6 +117,30 @@ $emailStats['failed'] = $result->fetch_assoc()['failed'];
 $result = $mysqli->query("SELECT COUNT(*) as sent_week FROM email_logs WHERE sent_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status = 'sent'");
 $emailStats['sent_week'] = $result->fetch_assoc()['sent_week'];
 
+// SMS statistics
+$smsStats = [
+    'total' => 0,
+    'sent_today' => 0,
+    'failed' => 0,
+    'sent_week' => 0
+];
+
+// Check if sms_logs table exists before querying
+$tableExists = $mysqli->query("SHOW TABLES LIKE 'sms_logs'");
+if ($tableExists && $tableExists->num_rows > 0) {
+    $result = $mysqli->query("SELECT COUNT(*) as total FROM sms_logs");
+    $smsStats['total'] = $result->fetch_assoc()['total'];
+    
+    $result = $mysqli->query("SELECT COUNT(*) as sent_today FROM sms_logs WHERE DATE(sent_at) = CURDATE()");
+    $smsStats['sent_today'] = $result->fetch_assoc()['sent_today'];
+    
+    $result = $mysqli->query("SELECT COUNT(*) as failed FROM sms_logs WHERE success = 0");
+    $smsStats['failed'] = $result->fetch_assoc()['failed'];
+    
+    $result = $mysqli->query("SELECT COUNT(*) as sent_week FROM sms_logs WHERE sent_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    $smsStats['sent_week'] = $result->fetch_assoc()['sent_week'];
+}
+
 // Recent activity
 $recentUsers = [];
 $result = $mysqli->query("SELECT id, username, email, created_at, approval_status FROM users ORDER BY created_at DESC LIMIT 5");
@@ -157,6 +181,7 @@ ob_start();
             <li><a href="create-message.php"><span class="icon is-small"><i class="fas fa-plus"></i></span><span>New Message</span></a></li>
             <li><a href="send-emails.php"><span class="icon is-small"><i class="fas fa-paper-plane"></i></span><span>Send Emails</span></a></li>
             <li><a href="email-logs.php"><span class="icon is-small"><i class="fas fa-chart-line"></i></span><span>Email Logs</span></a></li>
+            <li><a href="sms-logs.php"><span class="icon is-small"><i class="fas fa-sms"></i></span><span>SMS Logs</span></a></li>
             <li><a href="contact-form.php"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
             <li><a href="contracts.php"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>Contracts</span></a></li>
             <li><a href="generate-bills.php"><span class="icon is-small"><i class="fas fa-receipt"></i></span><span>Generate Bills</span></a></li>
@@ -193,6 +218,11 @@ ob_start();
             <div class="action-icon"><i class="fas fa-chart-line"></i></div>
             <div class="action-title">Email Logs</div>
             <div class="action-desc">Monitor email delivery and statistics</div>
+        </a>
+        <a href="sms-logs.php" class="action-card">
+            <div class="action-icon"><i class="fas fa-sms"></i></div>
+            <div class="action-title">SMS Logs</div>
+            <div class="action-desc">Monitor SMS delivery and statistics</div>
         </a>
         <a href="contracts.php" class="action-card">
             <div class="action-icon"><i class="fas fa-file-contract"></i></div>
@@ -268,6 +298,20 @@ ob_start();
         <div class="stat-card <?= $emailStats['failed'] > 10 ? 'warning' : '' ?>">
             <div class="stat-number"><?= number_format($emailStats['failed']) ?></div>
             <div class="stat-label">Failed Emails</div>
+        </div>
+        
+        <!-- SMS Statistics -->
+        <div class="stat-card">
+            <div class="stat-number"><?= number_format($smsStats['sent_today']) ?></div>
+            <div class="stat-label">SMS Sent Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number"><?= number_format($smsStats['sent_week']) ?></div>
+            <div class="stat-label">SMS This Week</div>
+        </div>
+        <div class="stat-card <?= $smsStats['failed'] > 5 ? 'warning' : '' ?>">
+            <div class="stat-number"><?= number_format($smsStats['failed']) ?></div>
+            <div class="stat-label">Failed SMS</div>
         </div>
     </div>
     
