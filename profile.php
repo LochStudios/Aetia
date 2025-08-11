@@ -1124,8 +1124,7 @@ ob_start();
                             </div>
                             <?php endif; ?>
                         </div>
-                        
-                        <div class="field">
+                        <div class="field mt-2">
                             <div class="control">
                                 <button class="button is-warning" type="submit">
                                     <span class="icon"><i class="fas fa-save"></i></span>
