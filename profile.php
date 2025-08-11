@@ -646,22 +646,11 @@ ob_start();
                     </h4>
                     <div class="notification is-info is-dark has-text-white mb-4">
                         <div class="content">
-                            <p><strong>Optional SMS Notifications:</strong> Enable SMS notifications to receive important updates directly to your phone.</p>
-                            <p>You can enable or disable this feature at any time. Your phone number will be kept secure and only used for Aetia notifications.</p>
-                        </div>
-                    </div>
-                    <div class="notification is-warning is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong><i class="fas fa-dollar-sign"></i> Additional Service - SMS Pricing:</strong></p>
-                            <p>SMS notifications are charged at <strong>$0.30 per message</strong> sent to your phone.</p>
-                            <p class="is-size-7">This covers our SMS provider costs and service fees. You will only be charged when SMS messages are actually sent to your phone number.</p>
-                        </div>
-                    </div>
-                    <div class="notification is-info is-dark has-text-white mb-4">
-                        <div class="content">
-                            <p><strong><i class="fas fa-phone"></i> SMS Sender Information:</strong></p>
-                            <p>Messages from us will come from: <strong>+1 (202) 559-4813</strong> (US number)</p>
-                            <p class="is-size-7">This is our official SMS service number. Please save this number to easily identify our messages.</p>
+                            <p><strong>SMS Notifications:</strong> Get important updates via text message.</p>
+                            <p class="is-size-7">
+                                <i class="fas fa-dollar-sign"></i> <strong>$0.30 per message</strong> • 
+                                <i class="fas fa-phone"></i> Messages from: <strong>+1 (202) 559-4813</strong>
+                            </p>
                         </div>
                     </div>
                     <?php 
