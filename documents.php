@@ -99,7 +99,7 @@ ob_start();
                     <h3 class="title is-5 mt-3">No Documents Yet</h3>
                     <p class="subtitle is-6">
                         You don't have any documents uploaded to your account yet.<br>
-                        Documents such as contracts, invoices, and agreements will appear here once they are uploaded by our team.
+                        Documents such as contracts, invoices, and agreements will appear here once they are available.
                     </p>
                     <p class="content">
                         <strong>Need a document uploaded?</strong><br>
@@ -334,6 +334,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>` : '';
             
+            const viewButton = extension === 'pdf' ? 
+                `<div class="control">
+                    <a href="api/download-document.php?id=${doc.id}" target="_blank" class="button is-info">
+                        <span class="icon"><i class="fas fa-eye"></i></span>
+                        <span>View</span>
+                    </a>
+                </div>` : '';
+            
             return `
                 <div class="column is-half document-item" data-type="${doc.document_type}">
                     <div class="card ${archivedClass}">
@@ -371,6 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <span>Download</span>
                                     </a>
                                 </div>
+                                ${viewButton}
                                 ${previewButton}
                             </div>
                         </div>
