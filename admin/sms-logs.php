@@ -729,5 +729,5 @@ document.addEventListener('keydown', function(e) {
 
 <?php
 $content = ob_get_clean();
-include __DIR__ . '/../layout.php';
+include '../layout.php';
 ?>
