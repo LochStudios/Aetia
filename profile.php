@@ -767,40 +767,40 @@ ob_start();
                             </div>
                         </div>
                     </div>
-                    <div class="columns">
-                        <div class="column is-half">
-                            <form method="POST" action="profile.php" style="display: inline;">
-                                <input type="hidden" name="action" value="send_sms_verification">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                                <button class="button is-info" type="submit">
-                                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
-                                    <span>Send Verification Code</span>
-                                </button>
-                            </form>
-                        </div>
-                        <div class="column is-half">
-                            <form method="POST" action="profile.php">
-                                <input type="hidden" name="action" value="verify_sms_code">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                                <div class="field has-addons">
-                                    <div class="control is-expanded">
-                                        <input class="input has-background-grey-darker has-text-light" 
-                                               type="text" 
-                                               name="verification_code" 
-                                               placeholder="Enter 6-digit code"
-                                               maxlength="6"
-                                               pattern="\d{6}"
-                                               required>
-                                    </div>
-                                    <div class="control">
-                                        <button class="button is-success" type="submit">
-                                            <span class="icon"><i class="fas fa-check"></i></span>
-                                            <span>Verify</span>
-                                        </button>
-                                    </div>
+                    <div class="field">
+                        <form method="POST" action="profile.php" style="display: inline;">
+                            <input type="hidden" name="action" value="send_sms_verification">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                            <button class="button is-info" type="submit" id="send-verification-btn" onclick="showVerificationField(event)">
+                                <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                                <span>Send Verification Code</span>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Verification Code Input Field (Hidden Initially) -->
+                    <div id="verification-field" style="display: none;">
+                        <form method="POST" action="profile.php">
+                            <input type="hidden" name="action" value="verify_sms_code">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                            <div class="field has-addons">
+                                <div class="control is-expanded">
+                                    <input class="input has-background-grey-darker has-text-light" 
+                                           type="text" 
+                                           name="verification_code" 
+                                           placeholder="Enter 6-digit code"
+                                           maxlength="6"
+                                           pattern="\d{6}"
+                                           required>
                                 </div>
-                            </form>
-                        </div>
+                                <div class="control">
+                                    <button class="button is-success" type="submit">
+                                        <span class="icon"><i class="fas fa-check"></i></span>
+                                        <span>Verify</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -1305,6 +1305,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+function showVerificationField(event) {
+    // Show the verification input field
+    const verificationField = document.getElementById('verification-field');
+    if (verificationField) {
+        verificationField.style.display = 'block';
+    }
+    
+    // Don't prevent the form submission - let it proceed normally
+    return true;
+}
 
 function toggleActivityBreakdown() {
     const breakdown = document.getElementById('activity-breakdown');
