@@ -414,7 +414,7 @@ class DocumentService {
             <h2>New Document Available</h2>
             <div class='highlight-box'>
                 <p><strong>Hello {$userName},</strong></p>
-                <p>A new document has been uploaded to your account by <strong>{$uploaderName}</strong>.</p>
+                <p>A new document has been uploaded to your account..</p>
             </div>
             <h3>Document Details:</h3>
             <div class='highlight-box' style='border-left-color: #209cee;'>
