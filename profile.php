@@ -683,7 +683,7 @@ ob_start();
                         </div>
                         <!-- Phone Number Field -->
                         <div id="sms-fields" style="<?= $smsEnabled ? '' : 'display: none;' ?>">
-                            <div class="field">
+                            <div class="field sensitive-info" style="display: none;">
                                 <label class="label has-text-light">Phone Number</label>
                                 <?php 
                                 // Parse existing phone number to determine country code and number
@@ -820,9 +820,25 @@ ob_start();
         <div class="column is-8">
             <div class="card has-background-dark">
                 <div class="card-content">
-                    <h4 class="title is-5 has-text-light mb-4">Account Information</h4>
+                    <div class="level is-mobile mb-4">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <h4 class="title is-5 has-text-light mb-0">Account Information</h4>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <button class="button is-small is-info" onclick="toggleSensitiveInfo()" id="toggle-sensitive-btn">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-eye-slash" id="toggle-sensitive-icon"></i>
+                                    </span>
+                                    <span id="toggle-sensitive-text">Show Sensitive Info</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <?php if (!empty($user['first_name']) && !empty($user['last_name'])): ?>
-                    <div class="field">
+                    <div class="field sensitive-info" style="display: none;">
                         <label class="label has-text-light">Full Name</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])) ?>" readonly>
@@ -835,8 +851,8 @@ ob_start();
                             <input class="input has-background-grey-darker has-text-light" type="text" value="<?= htmlspecialchars($user['username']) ?>" readonly>
                         </div>
                     </div>
-                    <div class="field">
-                        <label class="label has-text-light">Email Address</label>
+                    <div class="field sensitive-info" style="display: none;">
+                        <label class="label has-text-light">Private Email Address</label>
                         <div class="control">
                             <input class="input has-background-grey-darker has-text-light" type="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
                         </div>
@@ -1198,6 +1214,14 @@ function toggleSmsFields(enabled) {
     const smsFields = document.getElementById('sms-fields');
     if (enabled) {
         smsFields.style.display = 'block';
+        // Also check if sensitive info should be shown
+        const sensitiveElements = smsFields.querySelectorAll('.sensitive-info');
+        const firstSensitiveElement = document.querySelector('.sensitive-info');
+        const shouldShowSensitive = firstSensitiveElement && firstSensitiveElement.style.display !== 'none';
+        
+        sensitiveElements.forEach(element => {
+            element.style.display = shouldShowSensitive ? 'block' : 'none';
+        });
     } else {
         smsFields.style.display = 'none';
     }
@@ -1212,6 +1236,35 @@ function combinePhoneNumber() {
         combinedField.value = countryCode + localNumber.replace(/\D/g, ''); // Remove non-digits from local number
     } else {
         combinedField.value = '';
+    }
+}
+
+function toggleSensitiveInfo() {
+    const sensitiveElements = document.querySelectorAll('.sensitive-info');
+    const toggleBtn = document.getElementById('toggle-sensitive-btn');
+    const toggleIcon = document.getElementById('toggle-sensitive-icon');
+    const toggleText = document.getElementById('toggle-sensitive-text');
+    
+    // Check current state by looking at the first sensitive element
+    const isHidden = sensitiveElements[0] && sensitiveElements[0].style.display === 'none';
+    
+    sensitiveElements.forEach(element => {
+        if (isHidden) {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    });
+    
+    // Update button text and icon
+    if (isHidden) {
+        toggleIcon.className = 'fas fa-eye-slash';
+        toggleText.textContent = 'Hide Sensitive Info';
+        toggleBtn.className = 'button is-small is-warning';
+    } else {
+        toggleIcon.className = 'fas fa-eye';
+        toggleText.textContent = 'Show Sensitive Info';
+        toggleBtn.className = 'button is-small is-info';
     }
 }
 
