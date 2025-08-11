@@ -429,7 +429,7 @@ class DocumentService {
                 <li>Find and download your new document</li>
             </ol>
             <p style='text-align: center; margin: 30px 0;'>
-                <a href='https://aetia.com/login.php' class='button-primary'>Log In to View Documents</a>
+                <a href='https://aetia.com.au/login.php' class='button-primary'>Log In to View Documents</a>
             </p>
             <div class='highlight-box' style='background-color: #2a2d2e; border-left-color: #ffdd57;'>
                 <p style='color: #b0b3b5; font-size: 14px; margin: 0;'>
