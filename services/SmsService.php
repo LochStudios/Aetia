@@ -10,18 +10,14 @@ class SmsService {
     private $mysqli;
     private $config;
     private $securityManager;
-    
     public function __construct() {
         // Initialize security first
         $this->securityManager = new SecurityManager();
-        
         // Verify server-only access for SMS operations
         $this->verifyServerAccess();
-        
         // Initialize database connection
         $this->db = new Database();
         $this->mysqli = $this->db->getConnection();
-        
         // Load configuration
         $this->loadConfig();
     }
@@ -37,12 +33,10 @@ class SmsService {
             'localhost',
             '43.250.142.45'
         ];
-        
         // Get server IP if available
         if (isset($_SERVER['SERVER_ADDR'])) {
             $allowedIPs[] = $_SERVER['SERVER_ADDR'];
         }
-        
         // Also allow HTTP_HOST IP if it's the same domain
         if (isset($_SERVER['HTTP_HOST'])) {
             $hostIP = gethostbyname($_SERVER['HTTP_HOST']);
@@ -50,12 +44,9 @@ class SmsService {
                 $allowedIPs[] = $hostIP;
             }
         }
-        
         $clientIP = $this->getRealClientIP();
-        
         // For cPanel hosting, check if this is a legitimate server-side request
         $isServerSideRequest = $this->isLegitimateServerRequest();
-        
         // Allow if IP matches OR if it's a legitimate server-side request
         if (!in_array($clientIP, $allowedIPs) && !$this->isLocalhost($clientIP) && !$isServerSideRequest) {
             $this->securityManager->logSecurityEventPublic(
@@ -86,14 +77,12 @@ class SmsService {
             'HTTP_CLIENT_IP',
             'REMOTE_ADDR'
         ];
-        
         foreach ($headers as $header) {
             if (!empty($_SERVER[$header])) {
                 $ips = explode(',', $_SERVER[$header]);
                 return trim($ips[0]);
             }
         }
-        
         return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     }
     
@@ -110,13 +99,11 @@ class SmsService {
             '172.24.', '172.25.', '172.26.', '172.27.',
             '172.28.', '172.29.', '172.30.', '172.31.'
         ];
-        
         foreach ($localRanges as $range) {
             if (strpos($ip, $range) === 0) {
                 return true;
             }
         }
-        
         return $ip === 'localhost' || $ip === '::1';
     }
     
@@ -128,11 +115,9 @@ class SmsService {
         if (php_sapi_name() === 'cli') {
             return true;
         }
-        
         // Check if this is being called from a legitimate application script
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
         $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-        
         // Allow requests from profile.php, api endpoints, and admin pages
         $allowedScripts = [
             '/profile.php',
@@ -140,24 +125,20 @@ class SmsService {
             '/admin/',
             '/auth/',
         ];
-        
         foreach ($allowedScripts as $allowedScript) {
             if (strpos($scriptName, $allowedScript) !== false || strpos($requestUri, $allowedScript) !== false) {
                 // This is a legitimate application request
                 return true;
             }
         }
-        
         // Check if this is a POST request with valid session (likely form submission)
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']) {
             return true;
         }
-        
         // Check if request has a valid CSRF token (indicates legitimate form submission)
         if (isset($_POST['csrf_token']) && !empty($_POST['csrf_token'])) {
             return true;
         }
-        
         return false;
     }
     
@@ -169,25 +150,21 @@ class SmsService {
         // Check if request is from same domain/server
         $serverName = $_SERVER['SERVER_NAME'] ?? '';
         $httpHost = $_SERVER['HTTP_HOST'] ?? '';
-        
         // If HTTP_HOST matches SERVER_NAME, it's likely internal
         if (!empty($serverName) && !empty($httpHost) && $serverName === $httpHost) {
             return true;
         }
-        
         // Check if User-Agent suggests internal request
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         if (empty($userAgent) || strpos($userAgent, 'cURL') !== false) {
             return true;
         }
-        
         // Check if request is from PHP script (no browser headers)
         $hasTypicalBrowserHeaders = (
             isset($_SERVER['HTTP_ACCEPT']) &&
             isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) &&
             isset($_SERVER['HTTP_ACCEPT_ENCODING'])
         );
-        
         return !$hasTypicalBrowserHeaders;
     }
     
@@ -197,29 +174,22 @@ class SmsService {
     private function loadConfig() {
         try {
             $configFile = '/home/aetiacom/web-config/sms.php';
-            
             if (!file_exists($configFile)) {
                 throw new Exception("SMS configuration file not found at: {$configFile}. Please ensure the sms.php configuration file exists.");
             }
-            
             // Load the configuration array
             $config = include $configFile;
-            
             // Validate that we have a proper array structure
             if (!is_array($config)) {
                 throw new Exception("SMS configuration file must return an array.");
             }
-            
             // Validate required configuration for Twilio
             if (!isset($config['twilio'])) {
                 throw new Exception("Twilio configuration not found in SMS configuration file.");
             }
-            
             $this->config = $config['twilio'];
-            
             // Validate required fields
             $this->validateConfig();
-            
         } catch (Exception $e) {
             error_log('SMS Service Config Error: ' . $e->getMessage());
             throw new Exception('SMS service configuration error: ' . $e->getMessage());
@@ -231,7 +201,6 @@ class SmsService {
      */
     private function validateConfig() {
         $required = ['account_sid', 'auth_token'];
-        
         foreach ($required as $field) {
             if (empty($this->config[$field])) {
                 throw new Exception("Required Twilio configuration field '{$field}' is missing.");
@@ -252,7 +221,6 @@ class SmsService {
         try {
             // Security validation first
             $this->validateSmsRequest($userId, $purpose);
-            
             // Validate phone number format
             if (!$this->validatePhoneNumber($to)) {
                 $this->logSecurityEvent('SMS_INVALID_PHONE', $userId, $purpose, ['phone' => $to]);
@@ -261,16 +229,18 @@ class SmsService {
                     'message' => 'Invalid phone number or unsupported country. Currently we only support USA (+1) and Australia (+61) phone numbers. Support for more countries coming soon!'
                 ];
             }
-            
             // Rate limiting check
             if (!$this->checkSmsRateLimit($userId, $purpose)) {
                 $this->logSecurityEvent('SMS_RATE_LIMITED', $userId, $purpose);
+                // Get rate limit status for more informative error message
+                $rateLimitStatus = $this->getRateLimitStatus($userId, $purpose);
+                $waitTime = $rateLimitStatus['reset_in_seconds'];
+                $waitMinutes = ceil($waitTime / 60);
                 return [
                     'success' => false,
-                    'message' => 'SMS rate limit exceeded. Please wait before sending another message.'
+                    'message' => "SMS rate limit exceeded. You have reached the limit of {$rateLimitStatus['limit']} {$purpose} SMS per hour. Please wait {$waitMinutes} minutes before sending another message. (Reset at: {$rateLimitStatus['reset_time']})"
                 ];
             }
-            
             // Validate message content
             if (empty(trim($message))) {
                 return [
@@ -278,10 +248,8 @@ class SmsService {
                     'message' => 'Message content cannot be empty.'
                 ];
             }
-            
             // Sanitize message content
             $message = $this->sanitizeMessage($message);
-            
             // Check message length (most SMS providers have 160 character limit for single SMS)
             if (strlen($message) > 1600) { // Allow for longer messages that will be split
                 return [
@@ -289,16 +257,12 @@ class SmsService {
                     'message' => 'Message is too long. Maximum 1600 characters allowed.'
                 ];
             }
-            
             // Send SMS using Twilio API
             $result = $this->sendSmsWithTwilio($to, $message);
-            
             // Check if this is admin testing
             $isAdmin = $this->isAdminUser($userId);
-            
             // Log the SMS attempt with security context (skips for admin testing)
             $this->logSmsAttempt($to, $message, $result, $userId, $purpose);
-            
             // Log successful send for security audit
             if ($result['success']) {
                 $this->logSecurityEvent('SMS_SENT_SUCCESS', $userId, $purpose, [
@@ -306,15 +270,12 @@ class SmsService {
                     'message_length' => strlen($message),
                     'admin_testing' => $isAdmin
                 ]);
-                
                 // Add admin testing notice to success message
                 if ($isAdmin && ($purpose === 'verification' || $purpose === 'test')) {
                     $result['message'] .= ' (Admin testing - no cost logged)';
                 }
             }
-            
             return $result;
-            
         } catch (SecurityException $e) {
             // Security exceptions should not be retried
             $this->logSmsAttempt($to, $message, [
@@ -322,21 +283,18 @@ class SmsService {
                 'message' => 'Security violation',
                 'error' => $e->getMessage()
             ], $userId, $purpose);
-            
             return [
                 'success' => false,
                 'message' => 'SMS request denied for security reasons.'
             ];
         } catch (Exception $e) {
             error_log('SMS Service Error: ' . $e->getMessage());
-            
             // Log failed attempt
             $this->logSmsAttempt($to, $message, [
                 'success' => false,
                 'message' => 'SMS service error',
                 'error' => $e->getMessage()
             ], $userId, $purpose);
-            
             return [
                 'success' => false,
                 'message' => 'Failed to send SMS. Please try again later.'
@@ -350,13 +308,10 @@ class SmsService {
     private function sendSmsWithTwilio($to, $message) {
         $accountSid = $this->config['account_sid'];
         $authToken = $this->config['auth_token'];
-        
         // Get appropriate from number based on destination country
         $fromNumber = $this->getFromNumberForDestination($to);
-        
         // Debug logging
         error_log("SMS Debug - To: $to, From: $fromNumber");
-        
         if (empty($fromNumber)) {
             $countryCode = $this->getCountryCodeFromPhone($to);
             $supportedCountries = array_keys(self::getSupportedCountries());
@@ -366,16 +321,13 @@ class SmsService {
                 'message' => "SMS service not configured for {$countryCode} numbers. Please add a Twilio phone number for this country in your SMS configuration. Supported countries: " . implode(', ', $supportedCountries) . ". Visit https://console.twilio.com/us1/develop/phone-numbers/manage/incoming to get phone numbers."
             ];
         }
-        
         // Prepare API request
         $url = "https://api.twilio.com/2010-04-01/Accounts/{$accountSid}/Messages.json";
-        
         $postData = [
             'From' => $fromNumber,
             'To' => $to,
             'Body' => $message
         ];
-        
         // Try cURL first, fallback to file_get_contents if needed
         if (function_exists('curl_init') && defined('CURL_HTTPAUTH_BASIC')) {
             error_log("SMS Debug - Using cURL method");
@@ -400,17 +352,14 @@ class SmsService {
         curl_setopt($ch, CURLOPT_USERPWD, $accountSid . ':' . $authToken);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        
         // Execute request
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
-        
         if ($curlError) {
             throw new Exception("cURL error: {$curlError}");
         }
-        
         return $this->processTwilioResponse($response, $httpCode);
     }
     
@@ -455,7 +404,6 @@ class SmsService {
         if ($httpCode >= 400) {
             error_log("SMS Service HTTP Error {$httpCode}: " . substr($response ?: 'No response body', 0, 500));
         }
-        
         // If we got no response at all, that's a failure
         if ($response === false) {
             $error = error_get_last();
@@ -473,7 +421,6 @@ class SmsService {
      */
     private function processTwilioResponse($response, $httpCode) {
         $responseData = json_decode($response, true);
-        
         if ($httpCode >= 200 && $httpCode < 300) {
             return [
                 'success' => true,
@@ -496,19 +443,16 @@ class SmsService {
      */
     private function getFromNumberForDestination($phoneNumber) {
         $countryCode = $this->getCountryCodeFromPhone($phoneNumber);
-        
         // Check for country-specific from numbers first
         if (isset($this->config['from_numbers']) && is_array($this->config['from_numbers'])) {
             if (isset($this->config['from_numbers'][$countryCode])) {
                 return $this->config['from_numbers'][$countryCode];
             }
         }
-        
         // Fall back to legacy single from_number
         if (isset($this->config['from_number']) && !empty($this->config['from_number'])) {
             return $this->config['from_number'];
         }
-        
         return null;
     }
     
@@ -518,18 +462,15 @@ class SmsService {
     private function getCountryCodeFromPhone($phoneNumber) {
         // Remove all non-numeric characters except + at the beginning
         $cleaned = preg_replace('/[^\d+]/', '', $phoneNumber);
-        
         if (preg_match('/^\+1\d{10}$/', $cleaned)) {
             return '+1'; // USA
         } elseif (preg_match('/^\+61\d{8,9}$/', $cleaned)) {
             return '+61'; // Australia
         }
-        
         // Extract first 1-3 digits after +
         if (preg_match('/^\+(\d{1,3})/', $cleaned, $matches)) {
             return '+' . $matches[1];
         }
-        
         return 'unknown';
     }
     
@@ -539,12 +480,10 @@ class SmsService {
     private function validatePhoneNumber($phoneNumber) {
         // Remove all non-numeric characters except + at the beginning
         $cleaned = preg_replace('/[^\d+]/', '', $phoneNumber);
-        
         // Must start with + and have 10-15 digits
         if (!preg_match('/^\+\d{10,15}$/', $cleaned)) {
             return false;
         }
-        
         // Check if it's a supported country code
         // USA: +1 followed by 10 digits (total 12 characters)
         // Australia: +61 followed by 8-9 digits (total 11-12 characters)
@@ -553,7 +492,6 @@ class SmsService {
         } elseif (preg_match('/^\+61\d{8,9}$/', $cleaned)) {
             return true; // Australia number
         }
-        
         return false; // Unsupported country code
     }
     
@@ -585,12 +523,10 @@ class SmsService {
         if ($purpose === 'verification' && (!$userId || !isset($_SESSION['user_id']))) {
             throw new SecurityException('Invalid session for SMS verification request');
         }
-        
         // Validate user ID matches session for security
         if ($userId && isset($_SESSION['user_id']) && $_SESSION['user_id'] != $userId) {
             throw new SecurityException('User ID mismatch in SMS request');
         }
-        
         // Additional validation for test purposes
         if ($purpose === 'test') {
             if (!isset($_SESSION['user_logged_in']) || !$_SESSION['user_logged_in']) {
@@ -610,19 +546,15 @@ class SmsService {
         ];
         
         $limit = $limits[$purpose] ?? ['count' => 5, 'window' => 3600];
-        
         // Use existing rate limiting from SecurityManager approach
         $rateLimitFile = '/home/aetiacom/tmp/aetia_sms_rate_limits.json';
         $rateLimits = [];
-        
         if (file_exists($rateLimitFile)) {
             $data = file_get_contents($rateLimitFile);
             $rateLimits = json_decode($data, true) ?: [];
         }
-        
         $key = ($userId ?: 'anonymous') . '_sms_' . $purpose;
         $now = time();
-        
         // Clean old entries
         if (isset($rateLimits[$key])) {
             $rateLimits[$key] = array_filter($rateLimits[$key], function($timestamp) use ($now, $limit) {
@@ -631,17 +563,93 @@ class SmsService {
         } else {
             $rateLimits[$key] = [];
         }
-        
         // Check if limit exceeded
         if (count($rateLimits[$key]) >= $limit['count']) {
             return false;
         }
-        
         // Add current request
         $rateLimits[$key][] = $now;
         file_put_contents($rateLimitFile, json_encode($rateLimits), LOCK_EX);
-        
         return true;
+    }
+    
+    /**
+     * Get current rate limit status for a user
+     * 
+     * @param int|null $userId User ID
+     * @param string $purpose Purpose of SMS (verification, notification, etc.)
+     * @return array Rate limit status information
+     */
+    public function getRateLimitStatus($userId, $purpose = 'verification') {
+        $limits = [
+            'verification' => ['count' => 3, 'window' => 3600], // 3 verification SMS per hour
+            'notification' => ['count' => 10, 'window' => 3600], // 10 notifications per hour
+            'test' => ['count' => 5, 'window' => 3600] // 5 test SMS per hour
+        ];
+        $limit = $limits[$purpose] ?? ['count' => 5, 'window' => 3600];
+        $rateLimitFile = '/home/aetiacom/tmp/aetia_sms_rate_limits.json';
+        $rateLimits = [];
+        if (file_exists($rateLimitFile)) {
+            $data = file_get_contents($rateLimitFile);
+            $rateLimits = json_decode($data, true) ?: [];
+        }
+        $key = ($userId ?: 'anonymous') . '_sms_' . $purpose;
+        $now = time();
+        // Clean old entries and get current attempts
+        if (isset($rateLimits[$key])) {
+            $rateLimits[$key] = array_filter($rateLimits[$key], function($timestamp) use ($now, $limit) {
+                return ($now - $timestamp) < $limit['window'];
+            });
+        } else {
+            $rateLimits[$key] = [];
+        }
+        $currentCount = count($rateLimits[$key]);
+        $remaining = max(0, $limit['count'] - $currentCount);
+        // Calculate time until next reset
+        $oldestAttempt = empty($rateLimits[$key]) ? null : min($rateLimits[$key]);
+        $resetTime = $oldestAttempt ? $oldestAttempt + $limit['window'] : $now;
+        $timeUntilReset = max(0, $resetTime - $now);
+        return [
+            'purpose' => $purpose,
+            'limit' => $limit['count'],
+            'window_seconds' => $limit['window'],
+            'current_count' => $currentCount,
+            'remaining' => $remaining,
+            'is_limited' => $currentCount >= $limit['count'],
+            'reset_in_seconds' => $timeUntilReset,
+            'reset_time' => date('Y-m-d H:i:s', $resetTime)
+        ];
+    }
+    
+    /**
+     * Reset rate limit for a user (admin function)
+     * 
+     * @param int|null $userId User ID
+     * @param string $purpose Purpose of SMS (verification, notification, etc.)
+     * @return bool Success status
+     */
+    public function resetRateLimit($userId, $purpose = 'verification') {
+        try {
+            $rateLimitFile = '/home/aetiacom/tmp/aetia_sms_rate_limits.json';
+            $rateLimits = [];
+            if (file_exists($rateLimitFile)) {
+                $data = file_get_contents($rateLimitFile);
+                $rateLimits = json_decode($data, true) ?: [];
+            }
+            $key = ($userId ?: 'anonymous') . '_sms_' . $purpose;
+            // Remove the rate limit entry for this user/purpose
+            if (isset($rateLimits[$key])) {
+                unset($rateLimits[$key]);
+                file_put_contents($rateLimitFile, json_encode($rateLimits), LOCK_EX);
+                // Log the reset for audit purposes
+                error_log("SMS_RATE_LIMIT_RESET: User {$userId}, Purpose: {$purpose}, Admin: " . ($_SESSION['user_id'] ?? 'unknown'));
+                return true;
+            }
+            return true; // No limit to reset
+        } catch (Exception $e) {
+            error_log('Failed to reset SMS rate limit: ' . $e->getMessage());
+            return false;
+        }
     }
     
     /**
@@ -651,15 +659,12 @@ class SmsService {
         // Remove potentially harmful content
         $message = strip_tags($message);
         $message = trim($message);
-        
         // Remove excessive whitespace
         $message = preg_replace('/\s+/', ' ', $message);
-        
         // Ensure message is UTF-8
         if (!mb_check_encoding($message, 'UTF-8')) {
             $message = mb_convert_encoding($message, 'UTF-8', 'auto');
         }
-        
         return $message;
     }
     
@@ -676,9 +681,7 @@ class SmsService {
             'timestamp' => date('Y-m-d H:i:s'),
             'additional' => $additional
         ];
-        
         error_log("SMS_SECURITY_EVENT: " . json_encode($logData));
-        
         // Critical events should be logged to security audit file
         $criticalEvents = ['SMS_ACCESS_DENIED_EXTERNAL_IP', 'SMS_RATE_LIMITED', 'SMS_INVALID_PHONE'];
         if (in_array($event, $criticalEvents)) {
@@ -692,19 +695,15 @@ class SmsService {
      */
     private function isAdminUser($userId) {
         if (!$userId) return false;
-        
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("SELECT username FROM users WHERE id = ?");
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             $userData = $result->fetch_assoc();
             $stmt->close();
-            
             return $userData && strtolower($userData['username']) === 'admin';
-            
         } catch (Exception $e) {
             error_log('Failed to check admin user: ' . $e->getMessage());
             return false;
@@ -722,9 +721,7 @@ class SmsService {
                 error_log("SMS_ADMIN_TEST: Skipping cost logging for admin user testing. Purpose: {$purpose}, Phone: " . substr($to, 0, 4) . '****');
                 return; // Don't log admin test SMS to avoid charges
             }
-            
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 INSERT INTO sms_logs (
                     user_id, 
@@ -739,15 +736,12 @@ class SmsService {
                     sent_at
                 ) VALUES (?, ?, ?, 'twilio', ?, ?, ?, ?, ?, NOW())
             ");
-            
             $success = $result['success'] ? 1 : 0;
             $responseMessage = $result['message'] ?? '';
             $providerMessageId = $result['message_id'] ?? null;
             $clientIP = $this->getRealClientIP();
-            
             // Truncate message content for logging (privacy)
             $logMessage = strlen($message) > 100 ? substr($message, 0, 100) . '...' : $message;
-            
             $stmt->bind_param(
                 "ississss",
                 $userId,
@@ -759,10 +753,8 @@ class SmsService {
                 $purpose,
                 $clientIP
             );
-            
             $stmt->execute();
             $stmt->close();
-            
         } catch (Exception $e) {
             error_log('Failed to log SMS attempt: ' . $e->getMessage());
         }
@@ -789,7 +781,6 @@ class SmsService {
     public function getUserSmsLogs($userId, $limit = 50, $offset = 0) {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 SELECT 
                     to_number,
@@ -804,19 +795,15 @@ class SmsService {
                 ORDER BY sent_at DESC 
                 LIMIT ? OFFSET ?
             ");
-            
             $stmt->bind_param("iii", $userId, $limit, $offset);
             $stmt->execute();
             $result = $stmt->get_result();
-            
             $logs = [];
             while ($row = $result->fetch_assoc()) {
                 $logs[] = $row;
             }
-            
             $stmt->close();
             return $logs;
-            
         } catch (Exception $e) {
             error_log('Failed to get SMS logs: ' . $e->getMessage());
             return [];
@@ -832,7 +819,6 @@ class SmsService {
     public function getUserSmsStats($userId) {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 SELECT 
                     COUNT(*) as total_sent,
@@ -841,19 +827,16 @@ class SmsService {
                 FROM sms_logs 
                 WHERE user_id = ?
             ");
-            
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             $stats = $result->fetch_assoc();
             $stmt->close();
-            
             return [
                 'total_sent' => (int)$stats['total_sent'],
                 'successful_sent' => (int)$stats['successful_sent'], 
                 'failed_sent' => (int)$stats['failed_sent']
             ];
-            
         } catch (Exception $e) {
             error_log('Failed to get SMS stats: ' . $e->getMessage());
             return [
