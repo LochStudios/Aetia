@@ -1091,45 +1091,28 @@ class Message {
                     u.last_name,
                     u.account_type,
                     u.profile_image,
-                    COALESCE(m.total_message_count, 0) as total_message_count,
-                    COALESCE(m.manual_review_count, 0) as manual_review_count,
-                    m.first_message_date,
-                    m.last_message_date,
-                    m.manual_review_details
-                FROM users u
-                LEFT JOIN (
-                    SELECT 
-                        user_id,
-                        COUNT(id) as total_message_count,
-                        SUM(CASE WHEN manual_review = 1 THEN 1 ELSE 0 END) as manual_review_count,
-                        MIN(created_at) as first_message_date,
-                        MAX(created_at) as last_message_date,
-                        GROUP_CONCAT(
-                            CASE WHEN manual_review = 1 
-                            THEN CONCAT('MR: ', subject, ' (', DATE_FORMAT(created_at, '%Y-%m-%d'), ')')
-                            ELSE NULL END
-                            SEPARATOR '; '
-                        ) as manual_review_details
-                    FROM messages 
-                    WHERE created_at >= ? AND created_at <= ?
-                    GROUP BY user_id
-                ) m ON u.id = m.user_id
-                WHERE u.is_active = 1
-                AND (
-                    m.user_id IS NOT NULL 
-                    OR EXISTS (
-                        SELECT 1 FROM sms_logs s 
-                        WHERE s.user_id = u.id 
-                        AND s.sent_at >= ? AND s.sent_at <= ? 
-                        AND s.status = 'sent'
-                    )
-                )
-                ORDER BY COALESCE(m.total_message_count, 0) DESC, u.username ASC
+                    COUNT(m.id) as total_message_count,
+                    SUM(CASE WHEN m.manual_review = 1 THEN 1 ELSE 0 END) as manual_review_count,
+                    MIN(m.created_at) as first_message_date,
+                    MAX(m.created_at) as last_message_date,
+                    GROUP_CONCAT(
+                        CASE WHEN m.manual_review = 1 
+                        THEN CONCAT('MR: ', m.subject, ' (', DATE_FORMAT(m.created_at, '%Y-%m-%d'), ')')
+                        ELSE NULL END
+                        SEPARATOR '; '
+                    ) as manual_review_details
+                FROM messages m
+                INNER JOIN users u ON m.user_id = u.id
+                WHERE m.created_at >= ? AND m.created_at <= ?
+                AND u.is_active = 1
+                GROUP BY u.id, u.username, u.email, u.first_name, u.last_name, u.account_type, u.profile_image
+                HAVING total_message_count > 0
+                ORDER BY total_message_count DESC, u.username ASC
             ");
             
             // Prepare the end date with time component
             $endDateTime = $endDate . ' 23:59:59';
-            $stmt->bind_param("ssss", $startDate, $endDateTime, $startDate, $endDateTime);
+            $stmt->bind_param("ss", $startDate, $endDateTime);
             $stmt->execute();
             $result = $stmt->get_result();
             
