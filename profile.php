@@ -17,6 +17,11 @@ require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/GoogleOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
+require_once __DIR__ . '/includes/SecurityManager.php';
+
+// Initialize security manager
+$securityManager = new SecurityManager();
+$securityManager->initializeSecureSession();
 
 $userModel = new User();
 $messageModel = new Message();
@@ -293,6 +298,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle SMS preferences update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_sms') {
+    $smsEnabled = isset($_POST['sms_enabled']) && $_POST['sms_enabled'] === '1';
+    $phoneNumber = trim($_POST['phone_number'] ?? '');
+    
+    if ($smsEnabled && empty($phoneNumber)) {
+        $error_message = 'Phone number is required when enabling SMS notifications.';
+    } else {
+        $result = $userModel->updateSmsPreferences($_SESSION['user_id'], $smsEnabled, $phoneNumber);
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh user data to reflect changes in the UI
+            $user = $userModel->getUserById($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
+
+// Handle SMS verification code sending
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_sms_verification') {
+    $result = $userModel->sendSmsVerificationCode($_SESSION['user_id']);
+    if ($result['success']) {
+        $success_message = $result['message'];
+    } else {
+        $error_message = $result['message'];
+    }
+}
+
+// Handle SMS verification code verification
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'verify_sms_code') {
+    $verificationCode = trim($_POST['verification_code'] ?? '');
+    if (empty($verificationCode)) {
+        $error_message = 'Please enter the verification code.';
+    } else {
+        $result = $userModel->verifySmsCode($_SESSION['user_id'], $verificationCode);
+        if ($result['success']) {
+            $success_message = $result['message'];
+            // Refresh user data to reflect changes in the UI
+            $user = $userModel->getUserById($_SESSION['user_id']);
+        } else {
+            $error_message = $result['message'];
+        }
+    }
+}
+
+// Get user SMS preferences
+$smsPreferences = $userModel->getUserSmsPreferences($_SESSION['user_id']);
+
 $pageTitle = 'Profile | Aetia Talent Agency';
 ob_start();
 ?>
@@ -420,41 +474,84 @@ ob_start();
             <?php if ($user['approval_status'] === 'approved'): ?>
             <div class="card has-background-dark mt-4">
                 <div class="card-content">
-                    <h4 class="title is-6 has-text-light mb-3">
-                        <span class="icon has-text-success"><i class="fas fa-chart-line"></i></span>
-                        Activity Summary
-                    </h4>
+                    <div class="level is-mobile" style="cursor: pointer;" onclick="toggleActivityBreakdown()">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <h4 class="title is-6 has-text-light mb-0">
+                                    <span class="icon has-text-success"><i class="fas fa-chart-line"></i></span>
+                                    Activity Summary
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <span class="icon has-text-light" id="activity-toggle-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Current Month Stats -->
                     <div class="columns is-mobile mb-3">
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light is-size-7">Messages</p>
-                            <p class="title is-6 has-text-info mb-0"><?= $currentMonthMessages ?></p>
+                            <p class="heading has-text-grey-light is-size-7">This Month</p>
+                            <p class="subtitle is-6 has-text-grey-light mb-1">Messages</p>
+                            <p class="title is-5 has-text-info mb-0"><?= $currentMonthMessages ?></p>
                         </div>
                         <div class="column has-text-centered">
-                            <p class="heading has-text-grey-light is-size-7">Expected</p>
-                            <p class="title is-6 has-text-success mb-0">$<?= number_format($currentMonthBilling, 2) ?></p>
+                            <p class="heading has-text-grey-light is-size-7">This Month</p>
+                            <p class="subtitle is-6 has-text-grey-light mb-1">Expected</p>
+                            <p class="title is-5 has-text-success mb-0">$<?= number_format($currentMonthBilling, 2) ?></p>
                         </div>
                     </div>
                     
-                    <!-- Monthly Breakdown -->
-                    <div class="content">
-                        <?php foreach (array_reverse($yearlyBillingData) as $monthData): ?>
-                        <div class="level is-mobile mb-2 has-background-grey-darker" style="padding: 12px 16px; border-radius: 6px;">
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <span class="has-text-light is-size-7 has-text-weight-semibold">
-                                        <?= $monthData['month'] ?>
-                                    </span>
+                    <!-- Monthly Breakdown (Collapsible) -->
+                    <div id="activity-breakdown" style="display: none;">
+                        <hr class="has-background-grey-light" style="margin: 1rem 0;">
+                        <p class="has-text-grey-light is-size-7 mb-3">
+                            <strong>Monthly Breakdown (<?= date('Y') ?>)</strong>
+                        </p>
+                        <div class="content">
+                            <?php foreach (array_reverse($yearlyBillingData) as $monthData): ?>
+                            <div class="level is-mobile mb-2 has-background-grey-darker" style="padding: 12px 16px; border-radius: 6px;">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="has-text-light is-size-7 has-text-weight-semibold">
+                                            <?= $monthData['month'] ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <div class="level-item">
+                                        <div class="has-text-right">
+                                            <p class="has-text-success is-size-7 has-text-weight-bold mb-0">$<?= number_format($monthData['total_fee'], 2) ?></p>
+                                            <p class="has-text-grey-light is-size-7"><?= $monthData['message_count'] ?> messages</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="level-right">
-                                <div class="level-item">
-                                    <span class="has-text-success is-size-7 has-text-weight-bold">$<?= number_format($monthData['total_fee'], 2) ?></span>
+                            <?php endforeach; ?>
+                            
+                            <!-- Year Total -->
+                            <div class="level is-mobile mt-3 pt-3" style="border-top: 1px solid #4a4a4a;">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="has-text-light is-size-6 has-text-weight-bold">
+                                            <?= date('Y') ?> Total
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <div class="level-item">
+                                        <div class="has-text-right">
+                                            <p class="has-text-success is-size-6 has-text-weight-bold mb-0">$<?= number_format($totalYearBilling, 2) ?></p>
+                                            <p class="has-text-grey-light is-size-7"><?= $totalYearMessages ?> messages</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
@@ -912,11 +1009,249 @@ ob_start();
                     </div>
                 </div>
             </div>
+            
+            <!-- SMS Notifications Settings -->
+            <div class="card has-background-dark mt-4">
+                <div class="card-content">
+                    <h4 class="title is-5 has-text-light mb-4">
+                        <span class="icon has-text-warning"><i class="fas fa-sms"></i></span>
+                        SMS Notifications
+                    </h4>
+                    <div class="notification is-info is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong>Optional SMS Notifications:</strong> Enable SMS notifications to receive important updates directly to your phone.</p>
+                            <p>You can enable or disable this feature at any time. Your phone number will be kept secure and only used for Aetia notifications.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="notification is-warning is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong><i class="fas fa-dollar-sign"></i> Additional Service - SMS Pricing:</strong></p>
+                            <p>SMS notifications are charged at <strong>$0.30 per message</strong> sent to your phone.</p>
+                            <p class="is-size-7">This covers our SMS provider costs and service fees. You will only be charged when SMS messages are actually sent to your phone number.</p>
+                        </div>
+                    </div>
+                    
+                    <?php 
+                    $smsEnabled = $smsPreferences['success'] ? $smsPreferences['sms_enabled'] : false;
+                    $phoneNumber = $smsPreferences['success'] ? $smsPreferences['phone_number'] : '';
+                    $phoneVerified = $smsPreferences['success'] ? $smsPreferences['phone_verified'] : false;
+                    ?>
+                    
+                    <form method="POST" action="profile.php">
+                        <input type="hidden" name="action" value="update_sms">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                        
+                        <!-- SMS Enable/Disable -->
+                        <div class="field">
+                            <div class="control">
+                                <label class="checkbox has-text-light">
+                                    <input type="checkbox" name="sms_enabled" value="1" <?= $smsEnabled ? 'checked' : '' ?> onchange="toggleSmsFields(this.checked)">
+                                    <span class="ml-2">Enable SMS Notifications</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Phone Number Field -->
+                        <div id="sms-fields" style="<?= $smsEnabled ? '' : 'display: none;' ?>">
+                            <div class="field">
+                                <label class="label has-text-light">Phone Number</label>
+                                <?php 
+                                // Parse existing phone number to determine country code and number
+                                $currentCountryCode = '+1'; // Default to USA
+                                $currentPhoneNumber = '';
+                                if (!empty($phoneNumber)) {
+                                    if (strpos($phoneNumber, '+1') === 0) {
+                                        $currentCountryCode = '+1';
+                                        $currentPhoneNumber = substr($phoneNumber, 2);
+                                    } elseif (strpos($phoneNumber, '+61') === 0) {
+                                        $currentCountryCode = '+61';
+                                        $currentPhoneNumber = substr($phoneNumber, 3);
+                                    } else {
+                                        // Keep original for unsupported countries
+                                        $currentPhoneNumber = $phoneNumber;
+                                    }
+                                }
+                                ?>
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <div class="select">
+                                            <select name="country_code" class="has-background-grey-darker has-text-light" style="border-color: #4a4a4a; background-color: #363636; color: #f5f5f5;">
+                                                <option value="+1" <?= $currentCountryCode === '+1' ? 'selected' : '' ?>>🇺🇸 +1 (USA)</option>
+                                                <option value="+61" <?= $currentCountryCode === '+61' ? 'selected' : '' ?>>🇦🇺 +61 (Australia)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="control is-expanded has-icons-left">
+                                        <input class="input has-background-grey-darker has-text-light" 
+                                               type="tel" 
+                                               name="phone_number_local" 
+                                               placeholder="e.g., 5551234567 or 412345678" 
+                                               value="<?= htmlspecialchars($currentPhoneNumber) ?>"
+                                               pattern="\d{7,14}"
+                                               title="Please enter your phone number without country code">
+                                        <span class="icon is-small is-left">
+                                            <i class="fas fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="help has-text-grey-light">
+                                    Select your country and enter your phone number without the country code.
+                                    <br><span class="has-text-info"><i class="fas fa-info-circle"></i> Examples: For USA: 5551234567 | For Australia: 412345678</span>
+                                    <br><span class="has-text-warning"><i class="fas fa-globe"></i> Support for more countries coming soon!</span>
+                                </p>
+                                <!-- Hidden field to combine country code and phone number -->
+                                <input type="hidden" name="phone_number" id="combined_phone_number" value="<?= htmlspecialchars($phoneNumber) ?>">
+                            </div>
+                            
+                            <!-- Verification Status -->
+                            <?php if ($smsEnabled && $phoneNumber): ?>
+                            <div class="field">
+                                <label class="label has-text-light">Verification Status</label>
+                                <div class="tags">
+                                    <?php if ($phoneVerified): ?>
+                                        <span class="tag is-success">
+                                            <span class="icon"><i class="fas fa-check-circle"></i></span>
+                                            <span>Phone Verified</span>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-warning">
+                                            <span class="icon"><i class="fas fa-clock"></i></span>
+                                            <span>Verification Required</span>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-warning" type="submit">
+                                    <span class="icon"><i class="fas fa-save"></i></span>
+                                    <span>Update SMS Settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Phone Verification Section -->
+                    <?php if ($smsEnabled && $phoneNumber && !$phoneVerified): ?>
+                    <hr class="has-background-grey">
+                    <div class="notification is-warning is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong>Phone Verification Required:</strong> Please verify your phone number to enable SMS notifications.</p>
+                            <div class="notification is-info is-dark has-text-white mt-3" style="background-color: rgba(50, 115, 220, 0.2); border-left: 4px solid #3273dc;">
+                                <p class="is-size-7"><strong>💰 One-Time Verification Charges:</strong></p>
+                                <ul class="is-size-7" style="margin-left: 1rem;">
+                                    <li><strong>SMS Delivery:</strong> $0.30</li>
+                                    <li><strong>Verification Service:</strong> $0.10</li>
+                                    <li><strong>Total:</strong> $0.40 (one-time charge for phone verification)</li>
+                                </ul>
+                                <p class="is-size-7 mt-2"><em>Future SMS notifications will be charged at $0.30 per message only.</em></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="columns">
+                        <div class="column is-half">
+                            <form method="POST" action="profile.php" style="display: inline;">
+                                <input type="hidden" name="action" value="send_sms_verification">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                                <button class="button is-info" type="submit">
+                                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                                    <span>Send Verification Code</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="column is-half">
+                            <form method="POST" action="profile.php">
+                                <input type="hidden" name="action" value="verify_sms_code">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
+                                <div class="field has-addons">
+                                    <div class="control is-expanded">
+                                        <input class="input has-background-grey-darker has-text-light" 
+                                               type="text" 
+                                               name="verification_code" 
+                                               placeholder="Enter 6-digit code"
+                                               maxlength="6"
+                                               pattern="\d{6}"
+                                               required>
+                                    </div>
+                                    <div class="control">
+                                        <button class="button is-success" type="submit">
+                                            <span class="icon"><i class="fas fa-check"></i></span>
+                                            <span>Verify</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+function toggleSmsFields(enabled) {
+    const smsFields = document.getElementById('sms-fields');
+    if (enabled) {
+        smsFields.style.display = 'block';
+    } else {
+        smsFields.style.display = 'none';
+    }
+}
+
+function combinePhoneNumber() {
+    const countryCode = document.querySelector('select[name="country_code"]').value;
+    const localNumber = document.querySelector('input[name="phone_number_local"]').value;
+    const combinedField = document.getElementById('combined_phone_number');
+    
+    if (localNumber.trim()) {
+        combinedField.value = countryCode + localNumber.replace(/\D/g, ''); // Remove non-digits from local number
+    } else {
+        combinedField.value = '';
+    }
+}
+
+// Add event listeners for real-time phone number combination
+document.addEventListener('DOMContentLoaded', function() {
+    const countrySelect = document.querySelector('select[name="country_code"]');
+    const phoneInput = document.querySelector('input[name="phone_number_local"]');
+    
+    if (countrySelect && phoneInput) {
+        countrySelect.addEventListener('change', combinePhoneNumber);
+        phoneInput.addEventListener('input', combinePhoneNumber);
+        
+        // Also listen for form submission to ensure the combination is updated
+        const smsForm = phoneInput.closest('form');
+        if (smsForm) {
+            smsForm.addEventListener('submit', function(e) {
+                combinePhoneNumber();
+            });
+        }
+    }
+});
+
+function toggleActivityBreakdown() {
+    const breakdown = document.getElementById('activity-breakdown');
+    const icon = document.getElementById('activity-toggle-icon');
+    const iconElement = icon.querySelector('i');
+    
+    if (breakdown.style.display === 'none' || breakdown.style.display === '') {
+        // Expand
+        breakdown.style.display = 'block';
+        iconElement.className = 'fas fa-chevron-up';
+    } else {
+        // Collapse
+        breakdown.style.display = 'none';
+        iconElement.className = 'fas fa-chevron-down';
+    }
+}
+
 function copyPublicEmail() {
     const emailInput = document.getElementById('publicEmail');
     const email = emailInput.value;

@@ -100,6 +100,11 @@ class Database {
                 public_email VARCHAR(100) NULL,
                 abn_acn VARCHAR(20) NULL,
                 address TEXT NULL,
+                sms_enabled BOOLEAN DEFAULT FALSE,
+                phone_number VARCHAR(20) DEFAULT NULL,
+                phone_verified BOOLEAN DEFAULT FALSE,
+                phone_verification_code VARCHAR(10) DEFAULT NULL,
+                phone_verification_expires DATETIME DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
@@ -357,10 +362,55 @@ class Database {
             
             $this->mysqli->query($createBillingReportsTable);
 
+            // Create SMS logs table
+            $createSmsLogsTable = "
+            CREATE TABLE IF NOT EXISTS sms_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT DEFAULT NULL,
+                to_number VARCHAR(20) NOT NULL,
+                message_content TEXT NOT NULL,
+                provider VARCHAR(20) NOT NULL DEFAULT 'twilio',
+                success BOOLEAN DEFAULT FALSE,
+                response_message TEXT DEFAULT NULL,
+                provider_message_id VARCHAR(100) DEFAULT NULL,
+                purpose VARCHAR(50) DEFAULT 'notification',
+                client_ip VARCHAR(45) DEFAULT NULL,
+                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_user_id (user_id),
+                INDEX idx_sent_at (sent_at),
+                INDEX idx_success (success),
+                INDEX idx_provider (provider),
+                INDEX idx_purpose (purpose),
+                INDEX idx_client_ip (client_ip),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            )";
+            
+            $this->mysqli->query($createSmsLogsTable);
+
+            // Create SMS verification attempts table
+            $createSmsVerificationTable = "
+            CREATE TABLE IF NOT EXISTS sms_verification_attempts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                phone_number VARCHAR(20) NOT NULL,
+                verification_code VARCHAR(10) NOT NULL,
+                attempts INT DEFAULT 1,
+                last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                verified BOOLEAN DEFAULT FALSE,
+                INDEX idx_user_id (user_id),
+                INDEX idx_phone_number (phone_number),
+                INDEX idx_expires_at (expires_at),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )";
+            
+            $this->mysqli->query($createSmsVerificationTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
             $this->addMissingContactColumns();
+            $this->addMissingSmsTables();
             $this->updateSocialConnectionsPlatforms();
 
             // Create initial admin user if no users exist
@@ -435,7 +485,12 @@ class Database {
                 'signup_email_sent' => 'BOOLEAN DEFAULT FALSE',
                 'public_email' => 'VARCHAR(100) NULL',
                 'abn_acn' => 'VARCHAR(20) NULL',
-                'address' => 'TEXT NULL'
+                'address' => 'TEXT NULL',
+                'sms_enabled' => 'BOOLEAN DEFAULT FALSE',
+                'phone_number' => 'VARCHAR(20) DEFAULT NULL',
+                'phone_verified' => 'BOOLEAN DEFAULT FALSE',
+                'phone_verification_code' => 'VARCHAR(10) DEFAULT NULL',
+                'phone_verification_expires' => 'DATETIME DEFAULT NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {
@@ -658,6 +713,73 @@ class Database {
             }
         } catch (Exception $e) {
             error_log("Update social connections platforms error: " . $e->getMessage());
+            // Don't throw exception - continue normal operation
+        }
+    }
+    
+    // Add missing SMS tables for existing databases
+    private function addMissingSmsTables() {
+        try {
+            // Check if sms_logs table exists
+            $checkSmsLogsTable = "SHOW TABLES LIKE 'sms_logs'";
+            $result = $this->mysqli->query($checkSmsLogsTable);
+            if ($result && $result->num_rows == 0) {
+                // Create SMS logs table
+                $createSmsLogsTable = "
+                CREATE TABLE sms_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT DEFAULT NULL,
+                    to_number VARCHAR(20) NOT NULL,
+                    message_content TEXT NOT NULL,
+                    provider VARCHAR(20) NOT NULL DEFAULT 'twilio',
+                    success BOOLEAN DEFAULT FALSE,
+                    response_message TEXT DEFAULT NULL,
+                    provider_message_id VARCHAR(100) DEFAULT NULL,
+                    purpose VARCHAR(50) DEFAULT 'notification',
+                    client_ip VARCHAR(45) DEFAULT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_sent_at (sent_at),
+                    INDEX idx_success (success),
+                    INDEX idx_provider (provider),
+                    INDEX idx_purpose (purpose),
+                    INDEX idx_client_ip (client_ip),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                )";
+                
+                if ($this->mysqli->query($createSmsLogsTable)) {
+                    error_log("Created sms_logs table for existing database");
+                }
+            }
+            
+            // Check if sms_verification_attempts table exists
+            $checkSmsVerificationTable = "SHOW TABLES LIKE 'sms_verification_attempts'";
+            $result = $this->mysqli->query($checkSmsVerificationTable);
+            if ($result && $result->num_rows == 0) {
+                // Create SMS verification attempts table
+                $createSmsVerificationTable = "
+                CREATE TABLE sms_verification_attempts (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    phone_number VARCHAR(20) NOT NULL,
+                    verification_code VARCHAR(10) NOT NULL,
+                    attempts INT DEFAULT 1,
+                    last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    verified BOOLEAN DEFAULT FALSE,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_phone_number (phone_number),
+                    INDEX idx_expires_at (expires_at),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )";
+                
+                if ($this->mysqli->query($createSmsVerificationTable)) {
+                    error_log("Created sms_verification_attempts table for existing database");
+                }
+            }
+            
+        } catch (Exception $e) {
+            error_log("Add missing SMS tables error: " . $e->getMessage());
             // Don't throw exception - continue normal operation
         }
     }
