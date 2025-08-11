@@ -231,6 +231,28 @@ class SecurityManager {
     }
     
     /**
+     * Public method to log security events from external services
+     */
+    public function logSecurityEventPublic($event, $userId, $action, $additionalData = []) {
+        $this->logSecurityEvent($event, $userId, $action);
+        
+        // Log additional data if provided
+        if (!empty($additionalData)) {
+            $timestamp = date('Y-m-d H:i:s');
+            $additionalInfo = json_encode($additionalData);
+            $logEntry = sprintf(
+                "[%s] %s_DETAILS - User: %s, Action: %s, Data: %s\n",
+                $timestamp,
+                $event,
+                $userId,
+                $action,
+                $additionalInfo
+            );
+            error_log($logEntry, 3, $this->auditLogFile);
+        }
+    }
+    
+    /**
      * Log security events
      */
     private function logSecurityEvent($event, $userId, $action) {

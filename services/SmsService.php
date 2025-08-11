@@ -47,7 +47,7 @@ class SmsService {
         
         // For security, only allow local server requests or your specific server IP
         if (!in_array($clientIP, $allowedIPs) && !$this->isLocalhost($clientIP)) {
-            $this->securityManager->logSecurityEvent(
+            $this->securityManager->logSecurityEventPublic(
                 'SMS_ACCESS_DENIED_EXTERNAL_IP', 
                 $_SESSION['user_id'] ?? 'unknown', 
                 'sms_service_access',
