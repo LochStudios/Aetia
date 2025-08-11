@@ -293,15 +293,24 @@ class SmsService {
             // Send SMS using Twilio API
             $result = $this->sendSmsWithTwilio($to, $message);
             
-            // Log the SMS attempt with security context
+            // Check if this is admin testing
+            $isAdmin = $this->isAdminUser($userId);
+            
+            // Log the SMS attempt with security context (skips for admin testing)
             $this->logSmsAttempt($to, $message, $result, $userId, $purpose);
             
             // Log successful send for security audit
             if ($result['success']) {
                 $this->logSecurityEvent('SMS_SENT_SUCCESS', $userId, $purpose, [
                     'phone' => substr($to, 0, 4) . '****', // Partial phone for privacy
-                    'message_length' => strlen($message)
+                    'message_length' => strlen($message),
+                    'admin_testing' => $isAdmin
                 ]);
+                
+                // Add admin testing notice to success message
+                if ($isAdmin && ($purpose === 'verification' || $purpose === 'test')) {
+                    $result['message'] .= ' (Admin testing - no cost logged)';
+                }
             }
             
             return $result;
@@ -660,10 +669,41 @@ class SmsService {
     }
     
     /**
+     * Check if user is admin (skip cost logging for testing)
+     */
+    private function isAdminUser($userId) {
+        if (!$userId) return false;
+        
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("SELECT username FROM users WHERE id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $userData = $result->fetch_assoc();
+            $stmt->close();
+            
+            return $userData && strtolower($userData['username']) === 'admin';
+            
+        } catch (Exception $e) {
+            error_log('Failed to check admin user: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Log SMS attempt to database with security context
      */
     private function logSmsAttempt($to, $message, $result, $userId = null, $purpose = 'notification') {
         try {
+            // Skip cost logging for admin user testing
+            $isAdmin = $this->isAdminUser($userId);
+            if ($isAdmin && ($purpose === 'verification' || $purpose === 'test')) {
+                error_log("SMS_ADMIN_TEST: Skipping cost logging for admin user testing. Purpose: {$purpose}, Phone: " . substr($to, 0, 4) . '****');
+                return; // Don't log admin test SMS to avoid charges
+            }
+            
             $this->ensureConnection();
             
             $stmt = $this->mysqli->prepare("
