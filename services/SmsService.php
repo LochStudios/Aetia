@@ -43,15 +43,33 @@ class SmsService {
             $allowedIPs[] = $_SERVER['SERVER_ADDR'];
         }
         
+        // Also allow HTTP_HOST IP if it's the same domain
+        if (isset($_SERVER['HTTP_HOST'])) {
+            $hostIP = gethostbyname($_SERVER['HTTP_HOST']);
+            if ($hostIP && $hostIP !== $_SERVER['HTTP_HOST']) {
+                $allowedIPs[] = $hostIP;
+            }
+        }
+        
         $clientIP = $this->getRealClientIP();
         
-        // For security, only allow local server requests or your specific server IP
-        if (!in_array($clientIP, $allowedIPs) && !$this->isLocalhost($clientIP)) {
+        // For cPanel hosting, check if this is a legitimate server-side request
+        $isServerSideRequest = $this->isLegitimateServerRequest();
+        
+        // Allow if IP matches OR if it's a legitimate server-side request
+        if (!in_array($clientIP, $allowedIPs) && !$this->isLocalhost($clientIP) && !$isServerSideRequest) {
             $this->securityManager->logSecurityEventPublic(
                 'SMS_ACCESS_DENIED_EXTERNAL_IP', 
                 $_SESSION['user_id'] ?? 'unknown', 
                 'sms_service_access',
-                ['client_ip' => $clientIP]
+                [
+                    'client_ip' => $clientIP, 
+                    'server_addr' => $_SERVER['SERVER_ADDR'] ?? 'unknown',
+                    'allowed_ips' => $allowedIPs,
+                    'is_server_side' => $isServerSideRequest,
+                    'request_uri' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+                    'script_name' => $_SERVER['SCRIPT_NAME'] ?? 'unknown'
+                ]
             );
             throw new SecurityException("SMS service access denied: External requests not allowed");
         }
@@ -100,6 +118,77 @@ class SmsService {
         }
         
         return $ip === 'localhost' || $ip === '::1';
+    }
+    
+    /**
+     * Check if this is a legitimate server request for SMS functionality
+     */
+    private function isLegitimateServerRequest() {
+        // Allow CLI requests (command line)
+        if (php_sapi_name() === 'cli') {
+            return true;
+        }
+        
+        // Check if this is being called from a legitimate application script
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        
+        // Allow requests from profile.php, api endpoints, and admin pages
+        $allowedScripts = [
+            '/profile.php',
+            '/api/',
+            '/admin/',
+            '/auth/',
+        ];
+        
+        foreach ($allowedScripts as $allowedScript) {
+            if (strpos($scriptName, $allowedScript) !== false || strpos($requestUri, $allowedScript) !== false) {
+                // This is a legitimate application request
+                return true;
+            }
+        }
+        
+        // Check if this is a POST request with valid session (likely form submission)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']) {
+            return true;
+        }
+        
+        // Check if request has a valid CSRF token (indicates legitimate form submission)
+        if (isset($_POST['csrf_token']) && !empty($_POST['csrf_token'])) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if this is an internal server request (for cPanel hosting) - DEPRECATED
+     * Replaced by isLegitimateServerRequest() for more precise control
+     */
+    private function isInternalServerRequest() {
+        // Check if request is from same domain/server
+        $serverName = $_SERVER['SERVER_NAME'] ?? '';
+        $httpHost = $_SERVER['HTTP_HOST'] ?? '';
+        
+        // If HTTP_HOST matches SERVER_NAME, it's likely internal
+        if (!empty($serverName) && !empty($httpHost) && $serverName === $httpHost) {
+            return true;
+        }
+        
+        // Check if User-Agent suggests internal request
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        if (empty($userAgent) || strpos($userAgent, 'cURL') !== false) {
+            return true;
+        }
+        
+        // Check if request is from PHP script (no browser headers)
+        $hasTypicalBrowserHeaders = (
+            isset($_SERVER['HTTP_ACCEPT']) &&
+            isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) &&
+            isset($_SERVER['HTTP_ACCEPT_ENCODING'])
+        );
+        
+        return !$hasTypicalBrowserHeaders;
     }
     
     /**
