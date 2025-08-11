@@ -1023,7 +1023,6 @@ ob_start();
                             <p>You can enable or disable this feature at any time. Your phone number will be kept secure and only used for Aetia notifications.</p>
                         </div>
                     </div>
-                    
                     <div class="notification is-warning is-dark has-text-white mb-4">
                         <div class="content">
                             <p><strong><i class="fas fa-dollar-sign"></i> Additional Service - SMS Pricing:</strong></p>
@@ -1031,17 +1030,21 @@ ob_start();
                             <p class="is-size-7">This covers our SMS provider costs and service fees. You will only be charged when SMS messages are actually sent to your phone number.</p>
                         </div>
                     </div>
-                    
+                    <div class="notification is-info is-dark has-text-white mb-4">
+                        <div class="content">
+                            <p><strong><i class="fas fa-phone"></i> SMS Sender Information:</strong></p>
+                            <p>Messages from us will come from: <strong>+1 (202) 559-4813</strong> (US number)</p>
+                            <p class="is-size-7">This is our official SMS service number. Please save this number to easily identify our messages.</p>
+                        </div>
+                    </div>
                     <?php 
                     $smsEnabled = $smsPreferences['success'] ? $smsPreferences['sms_enabled'] : false;
                     $phoneNumber = $smsPreferences['success'] ? $smsPreferences['phone_number'] : '';
                     $phoneVerified = $smsPreferences['success'] ? $smsPreferences['phone_verified'] : false;
                     ?>
-                    
                     <form method="POST" action="profile.php">
                         <input type="hidden" name="action" value="update_sms">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
-                        
                         <!-- SMS Enable/Disable -->
                         <div class="field">
                             <div class="control">
@@ -1051,7 +1054,6 @@ ob_start();
                                 </label>
                             </div>
                         </div>
-                        
                         <!-- Phone Number Field -->
                         <div id="sms-fields" style="<?= $smsEnabled ? '' : 'display: none;' ?>">
                             <div class="field">
@@ -1103,7 +1105,6 @@ ob_start();
                                 <!-- Hidden field to combine country code and phone number -->
                                 <input type="hidden" name="phone_number" id="combined_phone_number" value="<?= htmlspecialchars($phoneNumber) ?>">
                             </div>
-                            
                             <!-- Verification Status -->
                             <?php if ($smsEnabled && $phoneNumber): ?>
                             <div class="field">
@@ -1133,7 +1134,6 @@ ob_start();
                             </div>
                         </div>
                     </form>
-                    
                     <!-- Phone Verification Section -->
                     <?php if ($smsEnabled && $phoneNumber && !$phoneVerified): ?>
                     <hr class="has-background-grey">
@@ -1151,7 +1151,6 @@ ob_start();
                             </div>
                         </div>
                     </div>
-                    
                     <div class="columns">
                         <div class="column is-half">
                             <form method="POST" action="profile.php" style="display: inline;">
