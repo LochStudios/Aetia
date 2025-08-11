@@ -1128,7 +1128,7 @@ class Message {
                 $smsStmt->execute();
                 $smsResult = $smsStmt->get_result();
                 $smsData = $smsResult->fetch_assoc();
-                $smsCount = $smsData ? $smsData['sms_count'] : 0;
+                $smsCount = $smsData ? intval($smsData['sms_count']) : 0;
                 $smsStmt->close();
                 
                 // Calculate fees according to contract terms
@@ -1137,6 +1137,7 @@ class Message {
                 $smsFee = $smsCount * 0.30; // $0.30 per SMS
                 $totalFee = $standardFee + $manualReviewFee + $smsFee;
                 
+                // Ensure all SMS fields are properly set
                 $row['sms_count'] = $smsCount;
                 $row['standard_fee'] = $standardFee;
                 $row['manual_review_fee'] = $manualReviewFee;

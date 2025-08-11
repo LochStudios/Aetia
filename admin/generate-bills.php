@@ -121,6 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 if (empty($billData)) {
                     $error = 'No client activity found for ' . date('F Y', strtotime($firstDay));
                 } else {
+                    // Clear any previous error messages since we found data
+                    $error = '';
+                    
                     // Save the billing report to database
                     $saveResult = $messageModel->saveBillingReport($firstDay, $lastDay, $billData, $_SESSION['user_id']);
                     
@@ -474,25 +477,25 @@ ob_start();
                     <div class="level-item">
                         <div>
                             <p class="heading">SMS Sent</p>
-                            <p class="title has-text-link"><?= array_sum(array_column($billData, 'sms_count')) ?></p>
+                            <p class="title has-text-link"><?= isset($billData) ? array_sum(array_column($billData, 'sms_count')) : 0 ?></p>
                         </div>
                     </div>
                     <div class="level-item">
                         <div>
                             <p class="heading">Service Fees</p>
-                            <p class="title has-text-info">$<?= number_format(array_sum(array_column($billData, 'standard_fee')), 2) ?></p>
+                            <p class="title has-text-info">$<?= isset($billData) ? number_format(array_sum(array_column($billData, 'standard_fee')), 2) : '0.00' ?></p>
                         </div>
                     </div>
                     <div class="level-item">
                         <div>
                             <p class="heading">Review Fees</p>
-                            <p class="title has-text-warning">$<?= number_format(array_sum(array_column($billData, 'manual_review_fee')), 2) ?></p>
+                            <p class="title has-text-warning">$<?= isset($billData) ? number_format(array_sum(array_column($billData, 'manual_review_fee')), 2) : '0.00' ?></p>
                         </div>
                     </div>
                     <div class="level-item">
                         <div>
                             <p class="heading">SMS Fees</p>
-                            <p class="title has-text-link">$<?= number_format(array_sum(array_column($billData, 'sms_fee')), 2) ?></p>
+                            <p class="title has-text-link">$<?= isset($billData) && !empty($billData) ? number_format(array_sum(array_column($billData, 'sms_fee')), 2) : '0.00' ?></p>
                         </div>
                     </div>
                     <div class="level-item">
@@ -588,7 +591,7 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-centered">
-                                    <?php if ($client['sms_count'] > 0): ?>
+                                    <?php if (isset($client['sms_count']) && $client['sms_count'] > 0): ?>
                                         <span class="tag is-link is-small-compact" title="SMS Messages Sent">
                                             <?= $client['sms_count'] ?>
                                         </span>
@@ -611,7 +614,7 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
-                                    <?php if ($client['sms_fee'] > 0): ?>
+                                    <?php if (isset($client['sms_fee']) && $client['sms_fee'] > 0): ?>
                                         <span class="has-text-weight-semibold has-text-link is-size-7">
                                             $<?= number_format($client['sms_fee'], 2) ?>
                                         </span>
