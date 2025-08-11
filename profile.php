@@ -1078,7 +1078,7 @@ ob_start();
                                         <div class="select">
                                             <select name="country_code" class="has-background-grey-darker has-text-light" style="border-color: #4a4a4a; background-color: #363636; color: #f5f5f5;">
                                                 <option value="+1" <?= $currentCountryCode === '+1' ? 'selected' : '' ?>>🇺🇸 +1 (USA)</option>
-                                                <option value="+61" <?= $currentCountryCode === '+61' ? 'selected' : '' ?>>🇦🇺 +61 (Australia)</option>
+                                                <!-- <option value="+61" <?= $currentCountryCode === '+61' ? 'selected' : '' ?>>🇦🇺 +61 (Australia)</option> -->
                                             </select>
                                         </div>
                                     </div>
@@ -1097,7 +1097,7 @@ ob_start();
                                 </div>
                                 <p class="help has-text-grey-light">
                                     Select your country and enter your phone number without the country code.
-                                    <br><span class="has-text-info"><i class="fas fa-info-circle"></i> Examples: For USA: 5551234567 | For Australia: 412345678</span>
+                                    <br><span class="has-text-info"><i class="fas fa-info-circle"></i> Example: For USA: 5551234567</span>
                                     <br><span class="has-text-warning"><i class="fas fa-globe"></i> Support for more countries coming soon!</span>
                                 </p>
                                 <!-- Hidden field to combine country code and phone number -->
