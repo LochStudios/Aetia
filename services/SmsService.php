@@ -141,7 +141,7 @@ class SmsService {
      * Validate Twilio configuration
      */
     private function validateConfig() {
-        $required = ['account_sid', 'auth_token', 'from_number'];
+        $required = ['account_sid', 'auth_token'];
         
         foreach ($required as $field) {
             if (empty($this->config[$field])) {
@@ -252,7 +252,19 @@ class SmsService {
     private function sendSmsWithTwilio($to, $message) {
         $accountSid = $this->config['account_sid'];
         $authToken = $this->config['auth_token'];
-        $fromNumber = $this->config['from_number'];
+        
+        // Get appropriate from number based on destination country
+        $fromNumber = $this->getFromNumberForDestination($to);
+        
+        if (empty($fromNumber)) {
+            $countryCode = $this->getCountryCodeFromPhone($to);
+            $supportedCountries = array_keys(self::getSupportedCountries());
+            
+            return [
+                'success' => false,
+                'message' => "SMS service not configured for {$countryCode} numbers. Please add a Twilio phone number for this country in your SMS configuration. Supported countries: " . implode(', ', $supportedCountries) . ". Visit https://console.twilio.com/us1/develop/phone-numbers/manage/incoming to get phone numbers."
+            ];
+        }
         
         // Prepare API request
         $url = "https://api.twilio.com/2010-04-01/Accounts/{$accountSid}/Messages.json";
@@ -301,6 +313,48 @@ class SmsService {
                 'provider_response' => $responseData
             ];
         }
+    }
+    
+    /**
+     * Get appropriate from number based on destination phone number
+     */
+    private function getFromNumberForDestination($phoneNumber) {
+        $countryCode = $this->getCountryCodeFromPhone($phoneNumber);
+        
+        // Check for country-specific from numbers first
+        if (isset($this->config['from_numbers']) && is_array($this->config['from_numbers'])) {
+            if (isset($this->config['from_numbers'][$countryCode])) {
+                return $this->config['from_numbers'][$countryCode];
+            }
+        }
+        
+        // Fall back to legacy single from_number
+        if (isset($this->config['from_number']) && !empty($this->config['from_number'])) {
+            return $this->config['from_number'];
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Extract country code from phone number
+     */
+    private function getCountryCodeFromPhone($phoneNumber) {
+        // Remove all non-numeric characters except + at the beginning
+        $cleaned = preg_replace('/[^\d+]/', '', $phoneNumber);
+        
+        if (preg_match('/^\+1\d{10}$/', $cleaned)) {
+            return '+1'; // USA
+        } elseif (preg_match('/^\+61\d{8,9}$/', $cleaned)) {
+            return '+61'; // Australia
+        }
+        
+        // Extract first 1-3 digits after +
+        if (preg_match('/^\+(\d{1,3})/', $cleaned, $matches)) {
+            return '+' . $matches[1];
+        }
+        
+        return 'unknown';
     }
     
     /**
