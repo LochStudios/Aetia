@@ -73,33 +73,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             case 'create_bill_from_period':
                 $billingPeriodStart = $_POST['billing_period_start'];
                 $billingPeriodEnd = $_POST['billing_period_end'];
+                $customBillAmount = floatval($_POST['custom_bill_amount'] ?? 0);
+                $calculatedAmount = floatval($_POST['calculated_amount'] ?? 0);
                 
-                // Get billing data for the period
-                $billingData = $messageModel->getBillingDataWithManualReview($billingPeriodStart, $billingPeriodEnd);
-                $userBillingData = null;
-                
-                foreach ($billingData as $client) {
-                    if ($client['user_id'] == $userId) {
-                        $userBillingData = $client;
-                        break;
-                    }
-                }
-                
-                if (!$userBillingData) {
-                    $error = 'No billing data found for this user in the selected period.';
+                // Validate custom amount
+                if ($customBillAmount < 1.00) {
+                    $error = 'Bill amount must be at least $1.00.';
+                } elseif ($customBillAmount > $calculatedAmount) {
+                    $error = 'Bill amount cannot exceed the calculated amount of $' . number_format($calculatedAmount, 2) . '.';
                 } else {
-                    $result = $billingService->createUserBill(
-                        $userId, 
-                        $billingPeriodStart, 
-                        $billingPeriodEnd, 
-                        $userBillingData, 
-                        $_SESSION['user_id']
-                    );
+                    // Get billing data for the period
+                    $billingData = $messageModel->getBillingDataWithManualReview($billingPeriodStart, $billingPeriodEnd);
+                    $userBillingData = null;
                     
-                    if ($result['success']) {
-                        $message = 'Bill created successfully.';
+                    foreach ($billingData as $client) {
+                        if ($client['user_id'] == $userId) {
+                            $userBillingData = $client;
+                            break;
+                        }
+                    }
+                    
+                    if (!$userBillingData) {
+                        $error = 'No billing data found for this user in the selected period.';
                     } else {
-                        $error = $result['message'];
+                        // Override the total fee with the custom amount
+                        $userBillingData['total_fee'] = $customBillAmount;
+                        $userBillingData['custom_amount'] = true;
+                        $userBillingData['calculated_amount'] = $calculatedAmount;
+                        
+                        $result = $billingService->createUserBill(
+                            $userId, 
+                            $billingPeriodStart, 
+                            $billingPeriodEnd, 
+                            $userBillingData, 
+                            $_SESSION['user_id']
+                        );
+                        
+                        if ($result['success']) {
+                            $message = 'Bill created successfully for $' . number_format($customBillAmount, 2) . 
+                                      ($customBillAmount != $calculatedAmount ? 
+                                       ' (Custom amount - calculated was $' . number_format($calculatedAmount, 2) . ')' : '');
+                        } else {
+                            $error = $result['message'];
+                        }
                     }
                 }
                 break;
@@ -510,7 +526,7 @@ ob_start();
                                 <td>
                                     <?php if (!$period['existing_bill']): ?>
                                         <button class="button is-primary is-small" 
-                                                onclick="createBillFromPeriod('<?= $period['period_start'] ?>', '<?= $period['period_end'] ?>', '<?= $period['period_name'] ?>')">
+                                                onclick="createBillFromPeriod('<?= $period['period_start'] ?>', '<?= $period['period_end'] ?>', '<?= $period['period_name'] ?>', '<?= $period['billing_data']['total_fee'] ?? 0 ?>')">>
                                             <span class="icon is-small">
                                                 <i class="fas fa-plus"></i>
                                             </span>
@@ -905,21 +921,32 @@ ob_start();
         </header>
         <form method="POST">
             <input type="hidden" name="action" value="create_bill_from_period">
+            <input type="hidden" name="calculated_amount" id="calculatedAmount">
             <section class="modal-card-body">
                 <div class="field">
                     <label class="label">Billing Period Start</label>
                     <div class="control">
-                        <input class="input" type="date" name="billing_period_start" required>
+                        <input class="input" type="date" name="billing_period_start" id="billPeriodStart" required readonly>
                     </div>
                 </div>
                 <div class="field">
                     <label class="label">Billing Period End</label>
                     <div class="control">
-                        <input class="input" type="date" name="billing_period_end" required>
+                        <input class="input" type="date" name="billing_period_end" id="billPeriodEnd" required readonly>
                     </div>
                 </div>
-                <div class="notification is-info is-light">
-                    <p><strong>Note:</strong> This will create a bill based on the user's activity during the specified period. The system will automatically calculate fees based on messages, manual reviews, and SMS usage.</p>
+                <div class="field">
+                    <label class="label">Bill Amount</label>
+                    <div class="control">
+                        <input class="input" type="number" name="custom_bill_amount" id="customBillAmount" step="0.01" min="1.00" required>
+                    </div>
+                    <p class="help">
+                        <span>Minimum: $1.00 | Maximum: $<span id="maxAmount">0.00</span> (calculated amount)</span>
+                    </p>
+                </div>
+                <div class="notification is-info">
+                    <p><strong>Custom Bill Amount:</strong> Enter the amount you want to bill for this period. This is useful when your invoice amount differs from the calculated amount.</p>
+                    <p><strong>Calculated Amount:</strong> $<span id="displayCalculatedAmount">0.00</span> based on user activity</p>
                 </div>
             </section>
             <footer class="modal-card-foot">
@@ -1264,20 +1291,42 @@ function populateInvoiceNumber() {
 }
 
 // Create bill from period
-function createBillFromPeriod(periodStart, periodEnd, periodName) {
-    if (confirm(`Create a bill for ${periodName}?\n\nThis will create a bill based on the user's activity during this period.`)) {
-        // Set the values in the create bill modal
-        const form = document.querySelector('#createBillModal form');
-        const startInput = form.querySelector('input[name="billing_period_start"]');
-        const endInput = form.querySelector('input[name="billing_period_end"]');
-        
-        startInput.value = periodStart;
-        endInput.value = periodEnd;
-        
-        // Submit the form
-        form.submit();
-    }
+function createBillFromPeriod(periodStart, periodEnd, periodName, calculatedAmount) {
+    // Populate the modal with the period information
+    document.getElementById('billPeriodStart').value = periodStart;
+    document.getElementById('billPeriodEnd').value = periodEnd;
+    document.getElementById('calculatedAmount').value = calculatedAmount;
+    document.getElementById('maxAmount').textContent = parseFloat(calculatedAmount).toFixed(2);
+    document.getElementById('displayCalculatedAmount').textContent = parseFloat(calculatedAmount).toFixed(2);
+    
+    // Set the custom amount field to the calculated amount by default
+    const customAmountField = document.getElementById('customBillAmount');
+    customAmountField.value = parseFloat(calculatedAmount).toFixed(2);
+    customAmountField.max = calculatedAmount;
+    
+    // Show the modal
+    document.getElementById('createBillModal').classList.add('is-active');
 }
+
+// Validate custom bill amount
+document.addEventListener('DOMContentLoaded', function() {
+    const customAmountField = document.getElementById('customBillAmount');
+    if (customAmountField) {
+        customAmountField.addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            const max = parseFloat(this.max);
+            const min = parseFloat(this.min);
+            
+            if (value > max) {
+                this.setCustomValidity(`Amount cannot exceed $${max.toFixed(2)} (calculated amount)`);
+            } else if (value < min) {
+                this.setCustomValidity(`Amount must be at least $${min.toFixed(2)}`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
 </script>
 
 <?php
