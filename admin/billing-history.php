@@ -5,6 +5,18 @@ session_start();
 // Include timezone utilities
 require_once __DIR__ . '/../includes/timezone.php';
 
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../models/Message.php';
+require_once __DIR__ . '/../services/BillingService.php';
+require_once __DIR__ . '/../services/DocumentService.php';
+require_once __DIR__ . '/../includes/SecurityManager.php';
+require_once __DIR__ . '/../includes/FormTokenManager.php';
+
+$userModel = new User();
+$messageModel = new Message();
+$billingService = new BillingService();
+$documentService = new DocumentService();
+
 // Redirect if not logged in
 if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
     header('Location: ../login.php');
@@ -181,6 +193,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $error = $result['message'];
                 }
                 break;
+                
+            case 'link_existing_invoice':
+                $billId = intval($_POST['bill_id']);
+                $documentId = intval($_POST['document_id']);
+                $invoiceType = $_POST['invoice_type'] ?? 'generated_invoice';
+                $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] == '1';
+                
+                $result = $billingService->linkExistingDocumentToBill($billId, $documentId, $invoiceType, $isPrimary);
+                
+                if ($result['success']) {
+                    $message = 'Existing invoice linked to bill successfully.';
+                } else {
+                    $error = $result['message'];
+                }
+                break;
         }
     } catch (Exception $e) {
         error_log("Billing history action error: " . $e->getMessage());
@@ -191,6 +218,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // Get user bills
 $userBills = $billingService->getUserBills($userId);
 $billingStats = $billingService->getUserBillingStats($userId);
+
+// Get existing invoice documents
+$allUserDocuments = $documentService->getUserDocuments($userId);
+$existingInvoices = array_filter($allUserDocuments, function($doc) {
+    return strtolower($doc['document_type']) === 'invoice' && !$doc['archived'];
+});
 
 // Get user display name
 $userDisplayName = !empty($user['first_name']) ? 

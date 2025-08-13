@@ -36,6 +36,12 @@ $userDisplayName = !empty($currentUser['first_name']) ?
 $userBills = $billingService->getUserBills($_SESSION['user_id']);
 $billingStats = $billingService->getUserBillingStats($_SESSION['user_id']);
 
+// Get existing invoice documents from DocumentService
+$allUserDocuments = $documentService->getUserDocuments($_SESSION['user_id']);
+$existingInvoices = array_filter($allUserDocuments, function($doc) {
+    return strtolower($doc['document_type']) === 'invoice' && !$doc['archived'];
+});
+
 $pageTitle = 'Billing History | Aetia';
 ob_start();
 ?>
@@ -244,6 +250,114 @@ ob_start();
             </div>
         <?php endif; ?>
     </div>
+
+    <!-- Existing Invoice Documents -->
+    <?php if (!empty($existingInvoices)): ?>
+    <div class="box">
+        <h3 class="title is-4">
+            <span class="icon"><i class="fas fa-file-pdf"></i></span>
+            Additional Invoice Documents
+        </h3>
+        <p class="subtitle is-6 has-text-grey">
+            These are invoice documents you've uploaded or received that aren't linked to specific billing periods above.
+        </p>
+
+        <div class="table-container">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Document Name</th>
+                        <th>Upload Date</th>
+                        <th>File Size</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($existingInvoices as $invoice): ?>
+                        <tr>
+                            <td>
+                                <div class="media">
+                                    <div class="media-left">
+                                        <span class="icon is-large has-text-danger">
+                                            <?php 
+                                            $ext = strtolower(pathinfo($invoice['original_filename'], PATHINFO_EXTENSION));
+                                            if ($ext === 'pdf'): ?>
+                                                <i class="fas fa-file-pdf fa-2x"></i>
+                                            <?php elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])): ?>
+                                                <i class="fas fa-file-image fa-2x"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-file fa-2x"></i>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="is-size-6 has-text-weight-bold">
+                                            <?= htmlspecialchars($invoice['original_filename']) ?>
+                                        </p>
+                                        <p class="is-size-7 has-text-grey">
+                                            <?= strtoupper($invoice['mime_type']) ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <time datetime="<?= $invoice['uploaded_at'] ?>">
+                                    <?= date('M j, Y', strtotime($invoice['uploaded_at'])) ?>
+                                </time>
+                                <br>
+                                <small class="has-text-grey">
+                                    <?= date('g:i A', strtotime($invoice['uploaded_at'])) ?>
+                                </small>
+                            </td>
+                            <td>
+                                <?php 
+                                $fileSize = $invoice['file_size'];
+                                if ($fileSize > 1024 * 1024) {
+                                    echo number_format($fileSize / (1024 * 1024), 1) . ' MB';
+                                } elseif ($fileSize > 1024) {
+                                    echo number_format($fileSize / 1024, 1) . ' KB';
+                                } else {
+                                    echo $fileSize . ' bytes';
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($invoice['description'])): ?>
+                                    <span class="has-text-grey-dark">
+                                        <?= htmlspecialchars($invoice['description']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <em class="has-text-grey">No description</em>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <a href="api/download-document.php?document_id=<?= $invoice['id'] ?>" 
+                                           class="button is-primary is-small">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-download"></i>
+                                            </span>
+                                            <span>Download</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="notification is-info is-light mt-4">
+            <div class="content">
+                <p><strong>Note:</strong> These documents are stored separately from your billing history above. 
+                If you need these invoices linked to specific billing periods, please contact support.</p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Billing Information -->
     <div class="box">

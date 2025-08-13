@@ -624,5 +624,96 @@ class BillingService {
             return ['success' => false, 'message' => 'An error occurred while sending the invoice email.'];
         }
     }
+    
+    /**
+     * Link an existing document from user_documents to a bill
+     */
+    public function linkExistingDocumentToBill($billId, $documentId, $invoiceType = 'generated_invoice', $isPrimary = false) {
+        try {
+            $this->ensureConnection();
+            
+            // Start transaction
+            $this->mysqli->begin_transaction();
+            
+            // First verify the bill exists and get its user_id
+            $stmt = $this->mysqli->prepare("SELECT user_id FROM user_bills WHERE id = ?");
+            $stmt->bind_param("i", $billId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $bill = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$bill) {
+                throw new Exception("Bill not found");
+            }
+            
+            // Verify the document exists and belongs to the same user
+            $stmt = $this->mysqli->prepare("
+                SELECT id, user_id, original_filename, s3_key, s3_url, file_size, mime_type 
+                FROM user_documents 
+                WHERE id = ? AND user_id = ? AND archived = 0
+            ");
+            $stmt->bind_param("ii", $documentId, $bill['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $document = $result->fetch_assoc();
+            $stmt->close();
+            
+            if (!$document) {
+                throw new Exception("Document not found or doesn't belong to the bill's user");
+            }
+            
+            // Check if this document is already linked to this bill
+            $stmt = $this->mysqli->prepare("
+                SELECT id FROM user_invoice_documents 
+                WHERE bill_id = ? AND linked_document_id = ?
+            ");
+            $stmt->bind_param("ii", $billId, $documentId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $existing = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($existing) {
+                throw new Exception("This document is already linked to this bill");
+            }
+            
+            // If setting as primary, clear other primary flags for this bill
+            if ($isPrimary) {
+                $stmt = $this->mysqli->prepare("
+                    UPDATE user_invoice_documents 
+                    SET is_primary_invoice = 0 
+                    WHERE bill_id = ?
+                ");
+                $stmt->bind_param("i", $billId);
+                $stmt->execute();
+                $stmt->close();
+            }
+            
+            // Insert the link
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO user_invoice_documents (
+                    bill_id, linked_document_id, invoice_type, is_primary_invoice,
+                    created_at
+                ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ");
+            $stmt->bind_param("iisi", $billId, $documentId, $invoiceType, $isPrimary);
+            $stmt->execute();
+            $stmt->close();
+            
+            $this->mysqli->commit();
+            
+            return [
+                'success' => true, 
+                'message' => 'Document linked to bill successfully',
+                'linked_document_id' => $documentId
+            ];
+            
+        } catch (Exception $e) {
+            $this->mysqli->rollback();
+            error_log("Link existing document error: " . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
 }
 ?>
