@@ -141,9 +141,22 @@ class DocumentService {
                 return ['success' => false, 'message' => 'File type not allowed.'];
             }
             
-            // Generate unique filename
+            // Generate unique filename based on document type
             $uniqueId = uniqid();
-            $s3Key = "user-documents/{$userId}/{$documentType}/{$uniqueId}.{$fileExtension}";
+            $folderPath = "user-documents/{$userId}";
+            
+            // Create specific folders for different document types
+            if ($documentType === 'invoice') {
+                $folderPath .= "/invoices";
+            } elseif ($documentType === 'contract') {
+                $folderPath .= "/contracts";
+            } elseif ($documentType === 'identity') {
+                $folderPath .= "/identity";
+            } else {
+                $folderPath .= "/general";
+            }
+            
+            $s3Key = "{$folderPath}/{$uniqueId}.{$fileExtension}";
             
             // Upload to S3 (simplified - you'll need AWS SDK for production)
             $s3Url = $this->uploadToS3($file['tmp_name'], $s3Key, $file['type']);

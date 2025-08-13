@@ -592,6 +592,11 @@ ob_start();
                     <span class="icon"><i class="fas fa-file-contract"></i></span>
                     <span>View Documents</span>
                 </a>
+                <!-- Billing History Button -->
+                <a href="billing-history.php?user_id=<?= $user['id'] ?>" class="button is-link is-small">
+                    <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                    <span>Billing</span>
+                </a>
                 </div>
             </div>
         </div>

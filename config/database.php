@@ -415,6 +415,66 @@ class Database {
             
             $this->mysqli->query($createSmsVerificationTable);
 
+            // Create user bills table for individual user billing
+            $createUserBillsTable = "
+            CREATE TABLE IF NOT EXISTS user_bills (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                billing_period_start DATE NOT NULL,
+                billing_period_end DATE NOT NULL,
+                standard_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                manual_review_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                sms_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                message_count INT NOT NULL DEFAULT 0,
+                manual_review_count INT NOT NULL DEFAULT 0,
+                sms_count INT NOT NULL DEFAULT 0,
+                bill_status ENUM('draft', 'sent', 'overdue', 'paid', 'cancelled') DEFAULT 'draft',
+                invoice_sent_date TIMESTAMP NULL,
+                due_date DATE NULL,
+                payment_date TIMESTAMP NULL,
+                payment_method VARCHAR(100) NULL,
+                payment_reference VARCHAR(255) NULL,
+                account_credit DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                notes TEXT NULL,
+                created_by INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_user_id (user_id),
+                INDEX idx_billing_period (billing_period_start, billing_period_end),
+                INDEX idx_bill_status (bill_status),
+                INDEX idx_due_date (due_date),
+                INDEX idx_created_at (created_at),
+                UNIQUE KEY unique_user_period (user_id, billing_period_start, billing_period_end)
+            )";
+            
+            $this->mysqli->query($createUserBillsTable);
+
+            // Create user invoice documents table to link invoices to bills
+            $createUserInvoiceDocumentsTable = "
+            CREATE TABLE IF NOT EXISTS user_invoice_documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_bill_id INT NOT NULL,
+                document_id INT NOT NULL,
+                invoice_type ENUM('generated', 'payment_receipt', 'credit_note') DEFAULT 'generated',
+                invoice_number VARCHAR(100) NULL,
+                invoice_amount DECIMAL(10,2) NULL,
+                is_primary_invoice BOOLEAN DEFAULT FALSE,
+                uploaded_by INT NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_bill_id) REFERENCES user_bills(id) ON DELETE CASCADE,
+                FOREIGN KEY (document_id) REFERENCES user_documents(id) ON DELETE CASCADE,
+                FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_user_bill (user_bill_id),
+                INDEX idx_document (document_id),
+                INDEX idx_invoice_type (invoice_type),
+                UNIQUE KEY unique_bill_document (user_bill_id, document_id)
+            )";
+            
+            $this->mysqli->query($createUserInvoiceDocumentsTable);
+
             // Add new columns to existing tables (for existing databases)
             $this->addMissingColumns();
             $this->addMissingMessageColumns();
