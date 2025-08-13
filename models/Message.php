@@ -1338,5 +1338,74 @@ class Message {
             return ['success' => false, 'message' => 'Database error occurred'];
         }
     }
+    
+    /**
+     * Get billing data with manual review, adjusted for already invoiced amounts
+     * This subtracts previously invoiced amounts from the calculated billing
+     */
+    public function getAdjustedBillingDataWithManualReview($startDate, $endDate) {
+        try {
+            // Get the standard billing data
+            $billingData = $this->getBillingDataWithManualReview($startDate, $endDate);
+            
+            if (empty($billingData)) {
+                return $billingData;
+            }
+            
+            // Initialize BillingService to get invoiced amounts
+            require_once __DIR__ . '/../services/BillingService.php';
+            $billingService = new BillingService();
+            
+            // Adjust each user's billing data
+            foreach ($billingData as &$client) {
+                $userId = $client['user_id'];
+                
+                // Get total amount already invoiced for this user in this period
+                $invoicedAmount = $billingService->getInvoicedAmountForPeriod($userId, $startDate, $endDate);
+                
+                // Store original amounts for reference
+                $client['original_total_fee'] = $client['total_fee'];
+                $client['invoiced_amount'] = $invoicedAmount;
+                
+                // Calculate adjusted amount (what still needs to be billed)
+                $adjustedAmount = $client['total_fee'] - $invoicedAmount;
+                $client['adjusted_total_fee'] = max(0, $adjustedAmount); // Don't go negative
+                
+                // Add breakdown of what has been invoiced
+                $client['invoiced_breakdown'] = $billingService->getInvoicedBreakdownForPeriod($userId, $startDate, $endDate);
+                
+                // Calculate remaining amounts proportionally
+                if ($client['total_fee'] > 0 && $adjustedAmount > 0) {
+                    $adjustmentRatio = $adjustedAmount / $client['total_fee'];
+                    
+                    // Adjust individual fees proportionally
+                    $client['adjusted_standard_fee'] = $client['standard_fee'] * $adjustmentRatio;
+                    $client['adjusted_manual_review_fee'] = $client['manual_review_fee'] * $adjustmentRatio;
+                    $client['adjusted_sms_fee'] = $client['sms_fee'] * $adjustmentRatio;
+                } else {
+                    // Already fully invoiced - set adjusted amounts to 0
+                    $client['adjusted_standard_fee'] = 0;
+                    $client['adjusted_manual_review_fee'] = 0;
+                    $client['adjusted_sms_fee'] = 0;
+                }
+                
+                // Add status indicator
+                if ($invoicedAmount >= $client['total_fee']) {
+                    $client['billing_status'] = 'fully_invoiced';
+                } elseif ($invoicedAmount > 0) {
+                    $client['billing_status'] = 'partially_invoiced';
+                } else {
+                    $client['billing_status'] = 'not_invoiced';
+                }
+            }
+            
+            return $billingData;
+            
+        } catch (Exception $e) {
+            error_log("Get adjusted billing data error: " . $e->getMessage());
+            // Fall back to regular billing data if adjustment fails
+            return $this->getBillingDataWithManualReview($startDate, $endDate);
+        }
+    }
 }
 ?>

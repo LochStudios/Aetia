@@ -628,7 +628,7 @@ class BillingService {
     /**
      * Link an existing document from user_documents to a bill
      */
-    public function linkExistingDocumentToBill($billId, $documentId, $invoiceType = 'generated_invoice', $isPrimary = false) {
+    public function linkExistingDocumentToBill($billId, $documentId, $invoiceType = 'generated_invoice', $invoiceNumber = '', $invoiceAmount = 0, $isPrimary = false) {
         try {
             $this->ensureConnection();
             
@@ -693,11 +693,11 @@ class BillingService {
             // Insert the link
             $stmt = $this->mysqli->prepare("
                 INSERT INTO user_invoice_documents (
-                    bill_id, linked_document_id, invoice_type, is_primary_invoice,
-                    created_at
-                ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    user_bill_id, document_id, invoice_type, invoice_number, 
+                    invoice_amount, is_primary_invoice, uploaded_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->bind_param("iisi", $billId, $documentId, $invoiceType, $isPrimary);
+            $stmt->bind_param("iissdii", $billId, $documentId, $invoiceType, $invoiceNumber, $invoiceAmount, $isPrimary, $_SESSION['user_id']);
             $stmt->execute();
             $stmt->close();
             
@@ -713,6 +713,84 @@ class BillingService {
             $this->mysqli->rollback();
             error_log("Link existing document error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Get total amount already invoiced for a user in a specific period
+     * This is used to subtract from new billing calculations
+     */
+    public function getInvoicedAmountForPeriod($userId, $periodStart, $periodEnd) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT COALESCE(SUM(uid.invoice_amount), 0) as total_invoiced
+                FROM user_invoice_documents uid
+                INNER JOIN user_bills ub ON uid.user_bill_id = ub.id
+                WHERE ub.user_id = ? 
+                  AND ub.billing_period_start >= ? 
+                  AND ub.billing_period_end <= ?
+                  AND uid.invoice_type IN ('generated', 'generated_invoice')
+                  AND uid.invoice_amount > 0
+            ");
+            
+            $stmt->bind_param("iss", $userId, $periodStart, $periodEnd);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $data = $result->fetch_assoc();
+            $stmt->close();
+            
+            return (float)($data['total_invoiced'] ?? 0);
+            
+        } catch (Exception $e) {
+            error_log("Get invoiced amount for period error: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get invoiced amounts breakdown for a user in a specific period
+     */
+    public function getInvoicedBreakdownForPeriod($userId, $periodStart, $periodEnd) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT 
+                    ub.billing_period_start,
+                    ub.billing_period_end,
+                    uid.invoice_type,
+                    uid.invoice_number,
+                    uid.invoice_amount,
+                    uid.uploaded_at,
+                    ud.original_filename
+                FROM user_invoice_documents uid
+                INNER JOIN user_bills ub ON uid.user_bill_id = ub.id
+                LEFT JOIN user_documents ud ON uid.document_id = ud.id
+                WHERE ub.user_id = ? 
+                  AND ub.billing_period_start >= ? 
+                  AND ub.billing_period_end <= ?
+                  AND uid.invoice_type IN ('generated', 'generated_invoice')
+                  AND uid.invoice_amount > 0
+                ORDER BY uid.uploaded_at DESC
+            ");
+            
+            $stmt->bind_param("iss", $userId, $periodStart, $periodEnd);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $invoices = [];
+            while ($row = $result->fetch_assoc()) {
+                $invoices[] = $row;
+            }
+            
+            $stmt->close();
+            return $invoices;
+            
+        } catch (Exception $e) {
+            error_log("Get invoiced breakdown for period error: " . $e->getMessage());
+            return [];
         }
     }
 }

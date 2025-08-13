@@ -93,32 +93,35 @@ if ($selectedMonth >= 1 && $selectedMonth <= 12 && $selectedYear >= 2000 && $sel
 // Handle bill generation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'generate_bills') {
-        // Get the selected month and year, default to previous month
-        $selectedMonth = isset($_POST['month']) ? intval($_POST['month']) : date('n', strtotime('last month'));
-        $selectedYear = isset($_POST['year']) ? intval($_POST['year']) : date('Y', strtotime('last month'));
-        
-        // Validate month and year inputs
-        if ($selectedMonth < 1 || $selectedMonth > 12) {
-            $error = 'Invalid month selected.';
-        } elseif ($selectedYear < 2000 || $selectedYear > date('Y')) {
-            $error = 'Invalid year selected.';
-        } else {
-            // Calculate the first and last day of the selected month
-            $firstDay = sprintf('%04d-%02d-01', $selectedYear, $selectedMonth);
-            $lastDay = date('Y-m-t', strtotime($firstDay)); // Last day of the month
-            
-            try {
-                $database = new Database();
-                $mysqli = $database->getConnection();
+                // Get the selected month and year, default to previous month
+                $selectedMonth = isset($_POST['month']) ? intval($_POST['month']) : date('n', strtotime('last month'));
+                $selectedYear = isset($_POST['year']) ? intval($_POST['year']) : date('Y', strtotime('last month'));
+                $showAdjustedBilling = isset($_POST['show_adjusted_billing']) && $_POST['show_adjusted_billing'] == '1';
                 
-                if (!$mysqli) {
-                    throw new Exception('Database connection failed');
-                }
-                
-                // Use the new billing method that includes manual review fees
-                $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
-                
-                if (empty($billData)) {
+                // Validate month and year inputs
+                if ($selectedMonth < 1 || $selectedMonth > 12) {
+                    $error = 'Invalid month selected.';
+                } elseif ($selectedYear < 2000 || $selectedYear > date('Y')) {
+                    $error = 'Invalid year selected.';
+                } else {
+                    // Calculate the first and last day of the selected month
+                    $firstDay = sprintf('%04d-%02d-01', $selectedYear, $selectedMonth);
+                    $lastDay = date('Y-m-t', strtotime($firstDay)); // Last day of the month
+                    
+                    try {
+                        $database = new Database();
+                        $mysqli = $database->getConnection();
+                        
+                        if (!$mysqli) {
+                            throw new Exception('Database connection failed');
+                        }
+                        
+                        // Use adjusted billing method if requested, otherwise use standard method
+                        if ($showAdjustedBilling) {
+                            $billData = $messageModel->getAdjustedBillingDataWithManualReview($firstDay, $lastDay);
+                        } else {
+                            $billData = $messageModel->getBillingDataWithManualReview($firstDay, $lastDay);
+                        }                if (empty($billData)) {
                     $error = 'No client activity found for ' . date('F Y', strtotime($firstDay));
                 } else {
                     // Clear any previous error messages since we found data
@@ -129,12 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     
                     if ($saveResult['success']) {
                         $action = $saveResult['action'];
-                        $message = 'Bill data ' . ($action === 'updated' ? 'updated' : 'generated') . ' successfully for ' . date('F Y', strtotime($firstDay)) . '. Found ' . count($billData) . ' clients with activity.';
+                        $billingType = $showAdjustedBilling ? ' (adjusted for existing invoices)' : '';
+                        $message = 'Bill data ' . ($action === 'updated' ? 'updated' : 'generated') . ' successfully for ' . date('F Y', strtotime($firstDay)) . $billingType . '. Found ' . count($billData) . ' clients with activity.';
                         
                         // Update saved report for display
                         $savedReport = $messageModel->getSavedBillingReport($firstDay, $lastDay);
                     } else {
-                        $message = 'Bill data generated successfully for ' . date('F Y', strtotime($firstDay)) . '. Found ' . count($billData) . ' clients with activity. Warning: Could not save to database.';
+                        $billingType = $showAdjustedBilling ? ' (adjusted for existing invoices)' : '';
+                        $message = 'Bill data generated successfully for ' . date('F Y', strtotime($firstDay)) . $billingType . '. Found ' . count($billData) . ' clients with activity. Warning: Could not save to database.';
                         error_log("Failed to save billing report: " . $saveResult['message']);
                     }
                     
@@ -378,6 +383,20 @@ ob_start();
             
             <div class="field">
                 <div class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="show_adjusted_billing" value="1" 
+                               <?= isset($_POST['show_adjusted_billing']) ? 'checked' : '' ?>>
+                        <strong>Show adjusted billing</strong> (subtract already invoiced amounts)
+                    </label>
+                </div>
+                <p class="help has-text-info">
+                    <span class="icon"><i class="fas fa-info-circle"></i></span>
+                    When checked, shows billing amounts adjusted for invoices already issued via the Billing Management system
+                </p>
+            </div>
+            
+            <div class="field">
+                <div class="control">
                     <button type="submit" class="button is-primary is-medium">
                         <span class="icon"><i class="fas fa-calculator"></i></span>
                         <span><?= !empty($billData) ? 'Update Bills' : 'Generate Bills' ?></span>
@@ -601,31 +620,74 @@ ob_start();
                                 </td>
                                 <td class="has-text-right">
                                     <span class="has-text-weight-semibold has-text-info is-size-7">
-                                        $<?= number_format($client['standard_fee'], 2) ?>
+                                        $<?= number_format(isset($client['adjusted_standard_fee']) ? $client['adjusted_standard_fee'] : $client['standard_fee'], 2) ?>
                                     </span>
+                                    <?php if (isset($client['adjusted_standard_fee']) && $client['adjusted_standard_fee'] != $client['standard_fee']): ?>
+                                        <br><small class="has-text-grey" title="Original amount">
+                                            ($<?= number_format($client['standard_fee'], 2) ?>)
+                                        </small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
-                                    <?php if ($client['manual_review_fee'] > 0): ?>
+                                    <?php 
+                                    $reviewFee = isset($client['adjusted_manual_review_fee']) ? $client['adjusted_manual_review_fee'] : $client['manual_review_fee'];
+                                    if ($reviewFee > 0): ?>
                                         <span class="has-text-weight-semibold has-text-warning is-size-7">
-                                            $<?= number_format($client['manual_review_fee'], 2) ?>
+                                            $<?= number_format($reviewFee, 2) ?>
                                         </span>
+                                        <?php if (isset($client['adjusted_manual_review_fee']) && $client['adjusted_manual_review_fee'] != $client['manual_review_fee']): ?>
+                                            <br><small class="has-text-grey" title="Original amount">
+                                                ($<?= number_format($client['manual_review_fee'], 2) ?>)
+                                            </small>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="has-text-grey is-size-7">$0.00</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
-                                    <?php if (isset($client['sms_fee']) && $client['sms_fee'] > 0): ?>
+                                    <?php 
+                                    $smsFee = isset($client['adjusted_sms_fee']) ? $client['adjusted_sms_fee'] : ($client['sms_fee'] ?? 0);
+                                    if ($smsFee > 0): ?>
                                         <span class="has-text-weight-semibold has-text-link is-size-7">
-                                            $<?= number_format($client['sms_fee'], 2) ?>
+                                            $<?= number_format($smsFee, 2) ?>
                                         </span>
+                                        <?php if (isset($client['adjusted_sms_fee']) && $client['adjusted_sms_fee'] != ($client['sms_fee'] ?? 0)): ?>
+                                            <br><small class="has-text-grey" title="Original amount">
+                                                ($<?= number_format($client['sms_fee'] ?? 0, 2) ?>)
+                                            </small>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="has-text-grey is-size-7">$0.00</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
-                                    <span class="has-text-weight-bold has-text-success is-size-6">
-                                        $<?= number_format($client['total_fee'], 2) ?>
+                                    <?php 
+                                    $totalFee = isset($client['adjusted_total_fee']) ? $client['adjusted_total_fee'] : $client['total_fee'];
+                                    $colorClass = isset($client['billing_status']) ? 
+                                        ($client['billing_status'] == 'fully_invoiced' ? 'has-text-grey' : 
+                                         ($client['billing_status'] == 'partially_invoiced' ? 'has-text-warning' : 'has-text-success')) : 'has-text-success';
+                                    ?>
+                                    <span class="has-text-weight-bold <?= $colorClass ?> is-size-6">
+                                        $<?= number_format($totalFee, 2) ?>
                                     </span>
+                                    <?php if (isset($client['billing_status'])): ?>
+                                        <br><small class="tag is-small is-<?= 
+                                            $client['billing_status'] == 'fully_invoiced' ? 'success' : 
+                                            ($client['billing_status'] == 'partially_invoiced' ? 'warning' : 'light') 
+                                        ?>">
+                                            <?= ucfirst(str_replace('_', ' ', $client['billing_status'])) ?>
+                                        </small>
+                                    <?php endif; ?>
+                                    <?php if (isset($client['adjusted_total_fee']) && $client['adjusted_total_fee'] != $client['total_fee']): ?>
+                                        <br><small class="has-text-grey" title="Original total">
+                                            ($<?= number_format($client['total_fee'], 2) ?>)
+                                        </small>
+                                    <?php endif; ?>
+                                    <?php if (isset($client['invoiced_amount']) && $client['invoiced_amount'] > 0): ?>
+                                        <br><small class="has-text-info" title="Already invoiced">
+                                            Invoiced: $<?= number_format($client['invoiced_amount'], 2) ?>
+                                        </small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="has-text-centered">
                                     <div class="is-size-7">

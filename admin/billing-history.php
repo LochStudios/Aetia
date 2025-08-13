@@ -198,9 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $billId = intval($_POST['bill_id']);
                 $documentId = intval($_POST['document_id']);
                 $invoiceType = $_POST['invoice_type'] ?? 'generated_invoice';
+                $invoiceNumber = $_POST['invoice_number'] ?? '';
+                $invoiceAmount = floatval($_POST['invoice_amount'] ?? 0);
                 $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] == '1';
                 
-                $result = $billingService->linkExistingDocumentToBill($billId, $documentId, $invoiceType, $isPrimary);
+                $result = $billingService->linkExistingDocumentToBill($billId, $documentId, $invoiceType, $invoiceNumber, $invoiceAmount, $isPrimary);
                 
                 if ($result['success']) {
                     $message = 'Existing invoice linked to bill successfully.';
@@ -827,6 +829,26 @@ ob_start();
                                 <option value="credit_note">Credit Note</option>
                                 <option value="other">Other</option>
                             </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Invoice Number (Optional)</label>
+                            <div class="control">
+                                <input class="input" type="text" name="invoice_number" placeholder="INV-2024-001">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Invoice Amount</label>
+                            <div class="control">
+                                <input class="input" type="number" name="invoice_amount" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                            <p class="help">Amount invoiced to track against future billing calculations</p>
                         </div>
                     </div>
                 </div>
