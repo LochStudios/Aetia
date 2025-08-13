@@ -836,10 +836,11 @@ ob_start();
                 <div class="columns">
                     <div class="column">
                         <div class="field">
-                            <label class="label">Invoice Number (Optional)</label>
+                            <label class="label">Invoice Number</label>
                             <div class="control">
-                                <input class="input" type="text" name="invoice_number" placeholder="INV-2024-001">
+                                <input class="input" type="text" name="invoice_number" id="linkInvoiceNumber" placeholder="INV-2024-001" readonly>
                             </div>
+                            <p class="help">Auto-populated from document filename</p>
                         </div>
                     </div>
                     <div class="column">
@@ -932,7 +933,7 @@ ob_start();
                 <div class="field">
                     <label class="label">Invoice File</label>
                     <div class="control">
-                        <input class="input" type="file" name="invoice_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <input class="input" type="file" name="invoice_file" id="invoiceFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required onchange="populateInvoiceNumber()">
                     </div>
                     <p class="help">Supported formats: PDF, DOC, DOCX, JPG, PNG (max 10MB)</p>
                 </div>
@@ -953,8 +954,9 @@ ob_start();
                         <div class="field">
                             <label class="label">Invoice Number</label>
                             <div class="control">
-                                <input class="input" type="text" name="invoice_number" placeholder="INV-2024-001">
+                                <input class="input" type="text" name="invoice_number" id="uploadInvoiceNumber" placeholder="INV-2024-001" readonly>
                             </div>
+                            <p class="help">Auto-populated from selected filename</p>
                         </div>
                     </div>
                     <div class="column">
@@ -1222,7 +1224,25 @@ document.addEventListener('DOMContentLoaded', function() {
 function showLinkDocumentModal(documentId, documentName) {
     document.getElementById('linkDocumentId').value = documentId;
     document.getElementById('linkDocumentName').textContent = documentName;
+    
+    // Auto-populate invoice number with document name (remove .pdf extension if present)
+    const invoiceNumber = documentName.replace(/\.pdf$/i, '');
+    document.getElementById('linkInvoiceNumber').value = invoiceNumber;
+    
     document.getElementById('linkDocumentModal').classList.add('is-active');
+}
+
+// Auto-populate invoice number from selected file
+function populateInvoiceNumber() {
+    const fileInput = document.getElementById('invoiceFileInput');
+    const invoiceNumberInput = document.getElementById('uploadInvoiceNumber');
+    
+    if (fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        // Remove file extension and use as invoice number
+        const invoiceNumber = fileName.replace(/\.[^/.]+$/, '');
+        invoiceNumberInput.value = invoiceNumber;
+    }
 }
 
 // Create bill from period
