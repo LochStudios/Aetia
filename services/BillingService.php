@@ -54,8 +54,8 @@ class BillingService {
                 return ['success' => false, 'message' => 'Bill already exists for this period.'];
             }
             
-            // Calculate due date (14 days from creation)
-            $dueDate = date('Y-m-d', strtotime('+14 days'));
+            // Calculate due date (Net 14: billing period end + 14 days)
+            $dueDate = date('Y-m-d', strtotime($billingPeriodEnd . ' +14 days'));
             
             // Prepare variables for bind_param (cannot pass expressions by reference)
             $smsFee = $billingData['sms_fee'] ?? 0;
