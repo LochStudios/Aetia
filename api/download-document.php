@@ -14,12 +14,13 @@ require_once __DIR__ . '/../services/DocumentService.php';
 $userModel = new User();
 $documentService = new DocumentService();
 
-// Get document ID from URL
-$documentId = intval($_GET['id'] ?? 0);
+// Get document ID from URL - accept both 'id' and 'document_id' parameters
+$documentId = intval($_GET['id'] ?? $_GET['document_id'] ?? 0);
 $isPreview = isset($_GET['preview']) && $_GET['preview'] == '1';
 $forceDownload = isset($_GET['force']) && $_GET['force'] == '1';
 
 if ($documentId <= 0) {
+    error_log("Download error: Invalid document ID provided: " . $_GET['id'] ?? $_GET['document_id'] ?? 'none');
     http_response_code(400);
     exit('Invalid document ID');
 }
@@ -27,6 +28,7 @@ if ($documentId <= 0) {
 $document = $documentService->getDocument($documentId);
 
 if (!$document) {
+    error_log("Download error: Document not found for ID: $documentId by user ID: " . $_SESSION['user_id']);
     http_response_code(404);
     exit('Document not found');
 }
@@ -36,6 +38,7 @@ $isAdmin = $userModel->isUserAdmin($_SESSION['user_id']);
 
 // Security check: Admin can access all documents, users can only access their own
 if (!$isAdmin && $document['user_id'] != $_SESSION['user_id']) {
+    error_log("Download error: Access denied for document ID: $documentId. User ID: " . $_SESSION['user_id'] . ", Document User ID: " . $document['user_id'] . ", Is Admin: " . ($isAdmin ? 'yes' : 'no'));
     http_response_code(403);
     exit('Access denied');
 }
