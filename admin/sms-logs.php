@@ -434,7 +434,7 @@ ob_start();
                     <?php foreach ($smsStats as $stat): ?>
                     <tr>
                         <td>
-                            <span class="tag is-info is-light">
+                            <span class="tag is-info">
                                 <?= htmlspecialchars(ucfirst($stat['purpose'])) ?>
                             </span>
                         </td>
@@ -545,7 +545,7 @@ ob_start();
                             </span>
                         </td>
                         <td>
-                            <span class="tag is-info is-light">
+                            <span class="tag is-info">
                                 <?= htmlspecialchars(ucfirst($log['purpose'])) ?>
                             </span>
                         </td>

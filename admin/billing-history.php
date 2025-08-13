@@ -475,7 +475,7 @@ ob_start();
                                             <?= $period['billing_data']['manual_review_count'] ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">0</span>
+                                        <span class="tag is-dark">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -484,7 +484,7 @@ ob_start();
                                             <?= $period['billing_data']['sms_count'] ?>
                                         </span>
                                     <?php else: ?>
-                                        <span class="tag is-light">0</span>
+                                        <span class="tag is-dark">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
