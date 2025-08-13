@@ -685,6 +685,34 @@ class BillingService {
             $stmt->close();
             
             if ($existing) {
+                // Check if the existing record has an invalid invoice_type and fix it
+                $stmt = $this->mysqli->prepare("
+                    SELECT invoice_type FROM user_invoice_documents 
+                    WHERE user_bill_id = ? AND document_id = ?
+                ");
+                $stmt->bind_param("ii", $billId, $documentId);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $existingRecord = $result->fetch_assoc();
+                $stmt->close();
+                
+                // If it has an invalid invoice_type, update it to 'generated'
+                if ($existingRecord && !in_array($existingRecord['invoice_type'], ['generated', 'payment_receipt', 'credit_note'])) {
+                    $stmt = $this->mysqli->prepare("
+                        UPDATE user_invoice_documents 
+                        SET invoice_type = 'generated' 
+                        WHERE user_bill_id = ? AND document_id = ?
+                    ");
+                    $stmt->bind_param("ii", $billId, $documentId);
+                    $stmt->execute();
+                    $stmt->close();
+                    
+                    return [
+                        'success' => true, 
+                        'message' => 'Document link repaired successfully'
+                    ];
+                }
+                
                 throw new Exception("This document is already linked to this bill");
             }
             
