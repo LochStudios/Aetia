@@ -49,6 +49,16 @@ if (!$isAdmin) {
 $message = '';
 $error = '';
 
+// Handle repair action via URL parameter
+if (isset($_GET['repair_invoices']) && $_GET['repair_invoices'] === '1') {
+    $result = $billingService->repairInvalidInvoiceTypes();
+    if ($result['success']) {
+        $message = $result['message'];
+    } else {
+        $error = $result['message'];
+    }
+}
+
 // Get user ID from query parameter
 $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 
