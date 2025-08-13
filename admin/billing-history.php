@@ -261,8 +261,11 @@ $billingStats = $billingService->getUserBillingStats($userId);
 
 // Get existing invoice documents
 $allUserDocuments = $documentService->getUserDocuments($userId);
-$existingInvoices = array_filter($allUserDocuments, function($doc) {
-    return strtolower($doc['document_type']) === 'invoice' && !$doc['archived'];
+$linkedDocumentIds = $billingService->getLinkedDocumentIds($userId);
+$existingInvoices = array_filter($allUserDocuments, function($doc) use ($linkedDocumentIds) {
+    return strtolower($doc['document_type']) === 'invoice' 
+           && !$doc['archived'] 
+           && !in_array($doc['id'], $linkedDocumentIds);
 });
 
 // Get user display name

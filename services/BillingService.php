@@ -833,6 +833,37 @@ class BillingService {
     }
     
     /**
+     * Get all document IDs that are already linked to bills for a user
+     */
+    public function getLinkedDocumentIds($userId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT DISTINCT uid.document_id
+                FROM user_invoice_documents uid
+                INNER JOIN user_bills ub ON uid.user_bill_id = ub.id
+                WHERE ub.user_id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $linkedIds = [];
+            while ($row = $result->fetch_assoc()) {
+                $linkedIds[] = $row['document_id'];
+            }
+            
+            $stmt->close();
+            return $linkedIds;
+            
+        } catch (Exception $e) {
+            error_log("Get linked document IDs error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Repair invalid invoice types in the database
      */
     public function repairInvalidInvoiceTypes() {
