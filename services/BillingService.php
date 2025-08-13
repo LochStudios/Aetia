@@ -676,7 +676,7 @@ class BillingService {
             // Check if this document is already linked to this bill
             $stmt = $this->mysqli->prepare("
                 SELECT id FROM user_invoice_documents 
-                WHERE bill_id = ? AND linked_document_id = ?
+                WHERE user_bill_id = ? AND document_id = ?
             ");
             $stmt->bind_param("ii", $billId, $documentId);
             $stmt->execute();
@@ -693,7 +693,7 @@ class BillingService {
                 $stmt = $this->mysqli->prepare("
                     UPDATE user_invoice_documents 
                     SET is_primary_invoice = 0 
-                    WHERE bill_id = ?
+                    WHERE user_bill_id = ?
                 ");
                 $stmt->bind_param("i", $billId);
                 $stmt->execute();
