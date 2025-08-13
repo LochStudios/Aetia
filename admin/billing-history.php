@@ -473,6 +473,193 @@ ob_start();
             </div>
         <?php endif; ?>
     </div>
+
+    <!-- Existing Invoice Documents -->
+    <?php if (!empty($existingInvoices)): ?>
+    <div class="box">
+        <h3 class="title is-4">
+            <span class="icon"><i class="fas fa-file-pdf"></i></span>
+            Existing Invoice Documents
+        </h3>
+        <p class="subtitle is-6 has-text-grey mb-4">
+            These are invoice documents already uploaded that aren't linked to specific bills. You can link them to bills above.
+        </p>
+
+        <div class="table-container">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Upload Date</th>
+                        <th>Size</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($existingInvoices as $invoice): ?>
+                        <tr>
+                            <td>
+                                <div class="media">
+                                    <div class="media-left">
+                                        <span class="icon is-large has-text-danger">
+                                            <?php 
+                                            $ext = strtolower(pathinfo($invoice['original_filename'], PATHINFO_EXTENSION));
+                                            if ($ext === 'pdf'): ?>
+                                                <i class="fas fa-file-pdf fa-2x"></i>
+                                            <?php elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])): ?>
+                                                <i class="fas fa-file-image fa-2x"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-file fa-2x"></i>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="is-size-6 has-text-weight-bold">
+                                            <?= htmlspecialchars($invoice['original_filename']) ?>
+                                        </p>
+                                        <p class="is-size-7 has-text-grey">
+                                            ID: <?= $invoice['id'] ?> | <?= strtoupper($invoice['mime_type']) ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <time datetime="<?= $invoice['uploaded_at'] ?>">
+                                    <?= date('M j, Y', strtotime($invoice['uploaded_at'])) ?>
+                                </time>
+                                <br>
+                                <small class="has-text-grey">
+                                    <?= date('g:i A', strtotime($invoice['uploaded_at'])) ?>
+                                </small>
+                            </td>
+                            <td>
+                                <?php 
+                                $fileSize = $invoice['file_size'];
+                                if ($fileSize > 1024 * 1024) {
+                                    echo number_format($fileSize / (1024 * 1024), 1) . ' MB';
+                                } elseif ($fileSize > 1024) {
+                                    echo number_format($fileSize / 1024, 1) . ' KB';
+                                } else {
+                                    echo $fileSize . ' bytes';
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($invoice['description'])): ?>
+                                    <span class="has-text-grey-dark">
+                                        <?= htmlspecialchars($invoice['description']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <em class="has-text-grey">No description</em>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <button class="button is-info is-small" 
+                                                onclick="showLinkDocumentModal(<?= $invoice['id'] ?>, '<?= htmlspecialchars($invoice['original_filename']) ?>')">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-link"></i>
+                                            </span>
+                                            <span>Link to Bill</span>
+                                        </button>
+                                    </div>
+                                    <div class="control">
+                                        <a href="../api/download-document.php?document_id=<?= $invoice['id'] ?>" 
+                                           class="button is-light is-small">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-download"></i>
+                                            </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="notification is-info is-light">
+            <div class="content">
+                <p><strong>Note:</strong> Use the "Link to Bill" button to associate these documents with specific bills. 
+                Once linked, they'll appear in the bill's invoice list above.</p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+</div>
+
+<!-- Link Document Modal -->
+<div class="modal" id="linkDocumentModal">
+    <div class="modal-background" onclick="closeModal('linkDocumentModal')"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">
+                <span class="icon"><i class="fas fa-link"></i></span>
+                Link Document to Bill
+            </p>
+            <button class="delete" aria-label="close" onclick="closeModal('linkDocumentModal')"></button>
+        </header>
+        <form method="POST">
+            <input type="hidden" name="action" value="link_existing_invoice">
+            <input type="hidden" name="document_id" id="linkDocumentId">
+            <section class="modal-card-body">
+                <div class="content">
+                    <p>You are about to link the document <strong id="linkDocumentName"></strong> to a bill.</p>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Select Bill</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="bill_id" required>
+                                <option value="">Choose a bill...</option>
+                                <?php foreach ($userBills as $bill): ?>
+                                    <option value="<?= $bill['id'] ?>">
+                                        <?= date('F Y', strtotime($bill['billing_period_start'])) ?> - 
+                                        $<?= number_format($bill['total_amount'] ?? 0, 2) ?> 
+                                        (<?= ucfirst($bill['bill_status']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Invoice Type</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="invoice_type">
+                                <option value="generated_invoice">Generated Invoice</option>
+                                <option value="payment_receipt">Payment Receipt</option>
+                                <option value="credit_note">Credit Note</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" name="is_primary" value="1">
+                            Set as primary invoice for this bill
+                        </label>
+                    </div>
+                </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-info" type="submit">
+                    <span class="icon"><i class="fas fa-link"></i></span>
+                    <span>Link Document</span>
+                </button>
+                <button class="button" type="button" onclick="closeModal('linkDocumentModal')">Cancel</button>
+            </footer>
+        </form>
+    </div>
 </div>
 
 <!-- Create Bill Modal -->
@@ -819,6 +1006,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Show link document modal
+function showLinkDocumentModal(documentId, documentName) {
+    document.getElementById('linkDocumentId').value = documentId;
+    document.getElementById('linkDocumentName').textContent = documentName;
+    document.getElementById('linkDocumentModal').classList.add('is-active');
+}
 </script>
 
 <?php
