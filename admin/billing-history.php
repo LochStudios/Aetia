@@ -460,7 +460,11 @@ ob_start();
                     // Check if bill already exists for this period
                     $existingBill = null;
                     foreach ($userBills as $bill) {
-                        if ($bill['billing_period_start'] === $periodStart && $bill['billing_period_end'] === $periodEnd) {
+                        $billStart = date('Y-m-01', strtotime($bill['billing_period_start']));
+                        $billEnd = date('Y-m-t', strtotime($bill['billing_period_start']));
+                        
+                        // Check if the bill falls within this period (same month/year)
+                        if ($billStart === $periodStart && $billEnd === $periodEnd) {
                             $existingBill = $bill;
                             break;
                         }
@@ -668,14 +672,19 @@ ob_start();
                                 </td>
                                 <td>
                                     <?php if (!empty($bill['invoices'])): ?>
-                                        <div class="tags">
+                                        <div class="content">
                                             <?php foreach ($bill['invoices'] as $invoice): ?>
-                                                <span class="tag is-small is-<?= $invoice['invoice_type'] === 'generated' ? 'primary' : 'info' ?>">
-                                                    <?= ucfirst($invoice['invoice_type']) ?>
-                                                    <?php if ($invoice['is_primary_invoice']): ?>
-                                                        <span class="icon is-small"><i class="fas fa-star"></i></span>
-                                                    <?php endif; ?>
-                                                </span>
+                                                <div class="is-flex is-align-items-center mb-1">
+                                                    <span class="tag is-small is-<?= $invoice['invoice_type'] === 'generated' ? 'primary' : 'info' ?> mr-2">
+                                                        <?= ucfirst($invoice['invoice_type']) ?>
+                                                        <?php if ($invoice['is_primary_invoice']): ?>
+                                                            <span class="icon is-small"><i class="fas fa-star"></i></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    <span class="has-text-white is-size-7">
+                                                        <?= htmlspecialchars($invoice['original_filename'] ?? 'Unknown') ?>
+                                                    </span>
+                                                </div>
                                             <?php endforeach; ?>
                                         </div>
                                     <?php else: ?>
