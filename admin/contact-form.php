@@ -578,7 +578,7 @@ ob_start();
 <script>
 // Form tokens for JavaScript submissions
 const formTokens = {
-    deleteContact: '<?= FormTokenManager::generateToken('delete_contact') ?>'
+    deleteContact: '<?= $contactId ? FormTokenManager::generateToken('delete_contact_' . $contactId) : '' ?>'
 };
 
 function updateFilters(filterType, value) {
@@ -620,17 +620,31 @@ function deleteContact(contactId) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // Create and submit delete form
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.innerHTML = `
-                <input type="hidden" name="form_name" value="delete_contact_${contactId}">
-                <input type="hidden" name="form_token" value="${formTokens.deleteContact}">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="contact_id" value="${contactId}">
-            `;
-            document.body.appendChild(form);
-            form.submit();
+            // Generate a fresh token for this specific delete operation
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `action=delete&contact_id=${contactId}&form_name=delete_contact_${contactId}&form_token=${formTokens.deleteContact}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Redirect to the list page after successful deletion
+                    window.location.href = 'contact-form.php';
+                } else {
+                    throw new Error('Delete request failed');
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to delete contact submission. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
         }
     });
 }
