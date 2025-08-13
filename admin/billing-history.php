@@ -926,14 +926,16 @@ ob_start();
                 <div class="field">
                     <label class="label">Billing Period Start</label>
                     <div class="control">
-                        <input class="input" type="date" name="billing_period_start" id="billPeriodStart" required readonly>
+                        <input class="input" type="date" name="billing_period_start" id="billPeriodStart" required>
                     </div>
+                    <p class="help">Start date for this billing period</p>
                 </div>
                 <div class="field">
                     <label class="label">Billing Period End</label>
                     <div class="control">
-                        <input class="input" type="date" name="billing_period_end" id="billPeriodEnd" required readonly>
+                        <input class="input" type="date" name="billing_period_end" id="billPeriodEnd" required>
                     </div>
+                    <p class="help">End date for this billing period</p>
                 </div>
                 <div class="field">
                     <label class="label">Bill Amount</label>
@@ -946,7 +948,8 @@ ob_start();
                 </div>
                 <div class="notification is-info">
                     <p><strong>Custom Bill Amount:</strong> Enter the amount you want to bill for this period. This is useful when your invoice amount differs from the calculated amount.</p>
-                    <p><strong>Calculated Amount:</strong> $<span id="displayCalculatedAmount">0.00</span> based on user activity</p>
+                    <p><strong>Billing Period:</strong> You can adjust the start and end dates if needed to match your billing requirements.</p>
+                    <p><strong>Calculated Amount:</strong> $<span id="displayCalculatedAmount">0.00</span> based on user activity for the suggested period</p>
                 </div>
             </section>
             <footer class="modal-card-foot">
@@ -1311,6 +1314,9 @@ function createBillFromPeriod(periodStart, periodEnd, periodName, calculatedAmou
 // Validate custom bill amount
 document.addEventListener('DOMContentLoaded', function() {
     const customAmountField = document.getElementById('customBillAmount');
+    const startDateField = document.getElementById('billPeriodStart');
+    const endDateField = document.getElementById('billPeriodEnd');
+    
     if (customAmountField) {
         customAmountField.addEventListener('input', function() {
             const value = parseFloat(this.value);
@@ -1325,6 +1331,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.setCustomValidity('');
             }
         });
+    }
+    
+    // Date validation
+    if (startDateField && endDateField) {
+        function validateDates() {
+            const startDate = new Date(startDateField.value);
+            const endDate = new Date(endDateField.value);
+            
+            if (startDate && endDate && startDate >= endDate) {
+                endDateField.setCustomValidity('End date must be after start date');
+            } else {
+                endDateField.setCustomValidity('');
+            }
+        }
+        
+        startDateField.addEventListener('change', validateDates);
+        endDateField.addEventListener('change', validateDates);
     }
 });
 </script>
