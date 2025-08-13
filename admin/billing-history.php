@@ -251,15 +251,23 @@ ob_start();
             <div>
                 <h2 class="title is-2 has-text-info">
                     <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                    Billing History
+                    Billing Management
                 </h2>
                 <p class="subtitle">
-                    Managing billing for <strong><?= htmlspecialchars($userDisplayName) ?></strong> (@<?= htmlspecialchars($user['username']) ?>)
+                    Managing invoices and payments for <strong><?= htmlspecialchars($userDisplayName) ?></strong> (@<?= htmlspecialchars($user['username']) ?>)
+                </p>
+                <p class="has-text-grey">
+                    <span class="icon"><i class="fas fa-info-circle"></i></span>
+                    Create bills from <a href="generate-bills.php" class="has-text-link">Generate Bills</a> data, upload invoices, and track payments
                 </p>
             </div>
         </div>
         <div class="level-right">
             <div class="buttons">
+                <a href="generate-bills.php" class="button is-info is-outlined" target="_blank">
+                    <span class="icon"><i class="fas fa-external-link-alt"></i></span>
+                    <span>Generate Bills</span>
+                </a>
                 <a href="users.php" class="button is-outlined">
                     <span class="icon"><i class="fas fa-arrow-left"></i></span>
                     <span>Back to Users</span>
@@ -373,17 +381,198 @@ ob_start();
     </div>
     <?php endif; ?>
 
-    <!-- Bills List -->
+    <!-- Available Billing Periods from Generate Bills -->
     <div class="box">
         <h3 class="title is-4">
-            <span class="icon"><i class="fas fa-file-invoice"></i></span>
-            Bills History
+            <span class="icon"><i class="fas fa-calendar-check"></i></span>
+            Available Billing Periods
         </h3>
+        <p class="subtitle is-6 has-text-grey mb-4">
+            These are billing periods that have been generated in the <a href="generate-bills.php" class="has-text-link">Generate Bills</a> system. 
+            Create individual bills from these periods to track invoices and payments.
+        </p>
+
+        <?php
+        // Get available billing periods for this user from the generate-bills system
+        $availablePeriods = [];
+        try {
+            // Check for recent billing periods (last 12 months)
+            for ($i = 0; $i < 12; $i++) {
+                $periodStart = date('Y-m-01', strtotime("-$i months"));
+                $periodEnd = date('Y-m-t', strtotime("-$i months"));
+                
+                $billingData = $messageModel->getBillingDataWithManualReview($periodStart, $periodEnd);
+                $userFound = false;
+                $userBillingData = null;
+                
+                foreach ($billingData as $client) {
+                    if ($client['user_id'] == $userId) {
+                        $userFound = true;
+                        $userBillingData = $client;
+                        break;
+                    }
+                }
+                
+                if ($userFound) {
+                    // Check if bill already exists for this period
+                    $existingBill = null;
+                    foreach ($userBills as $bill) {
+                        if ($bill['billing_period_start'] === $periodStart && $bill['billing_period_end'] === $periodEnd) {
+                            $existingBill = $bill;
+                            break;
+                        }
+                    }
+                    
+                    $availablePeriods[] = [
+                        'period_start' => $periodStart,
+                        'period_end' => $periodEnd,
+                        'billing_data' => $userBillingData,
+                        'existing_bill' => $existingBill,
+                        'period_name' => date('F Y', strtotime($periodStart))
+                    ];
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error fetching available periods: " . $e->getMessage());
+        }
+        ?>
+
+        <?php if (!empty($availablePeriods)): ?>
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Messages</th>
+                            <th>Manual Reviews</th>
+                            <th>SMS</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($availablePeriods as $period): ?>
+                            <tr>
+                                <td>
+                                    <strong><?= $period['period_name'] ?></strong>
+                                    <br>
+                                    <small class="has-text-grey">
+                                        <?= date('M j', strtotime($period['period_start'])) ?> - 
+                                        <?= date('M j, Y', strtotime($period['period_end'])) ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="tag is-success">
+                                        <?= $period['billing_data']['total_message_count'] ?? 0 ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if (($period['billing_data']['manual_review_count'] ?? 0) > 0): ?>
+                                        <span class="tag is-warning">
+                                            <?= $period['billing_data']['manual_review_count'] ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">0</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (($period['billing_data']['sms_count'] ?? 0) > 0): ?>
+                                        <span class="tag is-link">
+                                            <?= $period['billing_data']['sms_count'] ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag is-light">0</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <strong class="has-text-success">
+                                        $<?= number_format($period['billing_data']['total_fee'] ?? 0, 2) ?>
+                                    </strong>
+                                </td>
+                                <td>
+                                    <?php if ($period['existing_bill']): ?>
+                                        <span class="tag is-primary">
+                                            Bill Created
+                                        </span>
+                                        <br>
+                                        <small class="has-text-grey">
+                                            <?= ucfirst($period['existing_bill']['bill_status']) ?>
+                                        </small>
+                                    <?php else: ?>
+                                        <span class="tag is-warning">
+                                            Not Created
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!$period['existing_bill']): ?>
+                                        <button class="button is-primary is-small" 
+                                                onclick="createBillFromPeriod('<?= $period['period_start'] ?>', '<?= $period['period_end'] ?>', '<?= $period['period_name'] ?>')">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-plus"></i>
+                                            </span>
+                                            <span>Create Bill</span>
+                                        </button>
+                                    <?php else: ?>
+                                        <div class="buttons is-grouped">
+                                            <a href="#bill-<?= $period['existing_bill']['id'] ?>" class="button is-info is-small">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-eye"></i>
+                                                </span>
+                                                <span>View Bill</span>
+                                            </a>
+                                            <a href="generate-bills.php?month=<?= date('n', strtotime($period['period_start'])) ?>&year=<?= date('Y', strtotime($period['period_start'])) ?>" 
+                                               class="button is-light is-small" target="_blank">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </span>
+                                                <span>View in Generate Bills</span>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="notification is-info is-light">
+                <p><strong>No billing periods found</strong></p>
+                <p>This user doesn't have any activity in recent billing periods generated in the 
+                <a href="generate-bills.php" class="has-text-link">Generate Bills</a> system.</p>
+            </div>
+        <?php endif; ?>
+
+        <div class="notification is-info is-light">
+            <div class="content">
+                <p><strong>How this works:</strong></p>
+                <ol>
+                    <li>Use <a href="generate-bills.php" class="has-text-link"><strong>Generate Bills</strong></a> to analyze message activity and create billing data</li>
+                    <li>Come here to <strong>create individual bills</strong> from that generated data</li>
+                    <li><strong>Upload invoices</strong> and link them to the bills</li>
+                    <li><strong>Track payment status</strong> and apply account credits</li>
+                    <li><strong>Send invoice emails</strong> to users</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bills History -->
+    <div class="box">
+        <h3 class="title is-4">
+            <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+            Individual Bills & Invoice Management
+        </h3>
+        <p class="subtitle is-6 has-text-grey mb-4">
+            Manage individual bills created from billing periods. Upload invoices, track payments, and apply credits.
+        </p>
 
         <?php if (empty($userBills)): ?>
             <div class="notification is-info is-light">
-                <p><strong>No bills found for this user.</strong></p>
-                <p>Click "Create Bill" to generate a bill from existing billing data.</p>
+                <p><strong>No individual bills found for this user.</strong></p>
+                <p>Create bills from the billing periods above to start tracking invoices and payments for this user.</p>
             </div>
         <?php else: ?>
             <div class="table-container">
@@ -1012,6 +1201,22 @@ function showLinkDocumentModal(documentId, documentName) {
     document.getElementById('linkDocumentId').value = documentId;
     document.getElementById('linkDocumentName').textContent = documentName;
     document.getElementById('linkDocumentModal').classList.add('is-active');
+}
+
+// Create bill from period
+function createBillFromPeriod(periodStart, periodEnd, periodName) {
+    if (confirm(`Create a bill for ${periodName}?\n\nThis will create a bill based on the user's activity during this period.`)) {
+        // Set the values in the create bill modal
+        const form = document.querySelector('#createBillModal form');
+        const startInput = form.querySelector('input[name="billing_period_start"]');
+        const endInput = form.querySelector('input[name="billing_period_end"]');
+        
+        startInput.value = periodStart;
+        endInput.value = periodEnd;
+        
+        // Submit the form
+        form.submit();
+    }
 }
 </script>
 
