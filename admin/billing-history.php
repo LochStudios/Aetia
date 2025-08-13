@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $paymentMethod = !empty($_POST['payment_method']) ? $_POST['payment_method'] : null;
                 $paymentReference = !empty($_POST['payment_reference']) ? $_POST['payment_reference'] : null;
                 $notes = !empty($_POST['notes']) ? $_POST['notes'] : null;
+                $dueDate = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
                 
                 $result = $billingService->updateBillStatus(
                     $billId, 
@@ -162,7 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $paymentDate, 
                     $paymentMethod, 
                     $paymentReference, 
-                    $notes
+                    $notes,
+                    $dueDate
                 );
                 
                 if ($result['success']) {
@@ -1086,6 +1088,12 @@ ob_start();
                     </div>
                 </div>
                 <div class="field">
+                    <label class="label">Due Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="due_date" placeholder="Update due date">
+                    </div>
+                </div>
+                <div class="field">
                     <label class="label">Notes</label>
                     <div class="control">
                         <textarea class="textarea" name="notes" placeholder="Additional notes about this bill..."></textarea>
@@ -1190,6 +1198,9 @@ function showUpdateStatusModal(billId) {
     }
     if (bill.payment_reference) {
         document.querySelector('input[name="payment_reference"]').value = bill.payment_reference;
+    }
+    if (bill.due_date) {
+        document.querySelector('input[name="due_date"]').value = bill.due_date.split(' ')[0];
     }
     if (bill.notes) {
         document.querySelector('textarea[name="notes"]').value = bill.notes;

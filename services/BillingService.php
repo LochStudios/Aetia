@@ -335,7 +335,7 @@ class BillingService {
     /**
      * Update bill status
      */
-    public function updateBillStatus($billId, $status, $paymentDate = null, $paymentMethod = null, $paymentReference = null, $notes = null) {
+    public function updateBillStatus($billId, $status, $paymentDate = null, $paymentMethod = null, $paymentReference = null, $notes = null, $dueDate = null) {
         try {
             $this->ensureConnection();
             
@@ -364,6 +364,12 @@ class BillingService {
             if ($notes !== null) {
                 $updateFields[] = 'notes = ?';
                 $params[] = $notes;
+                $types .= 's';
+            }
+            
+            if ($dueDate !== null) {
+                $updateFields[] = 'due_date = ?';
+                $params[] = $dueDate;
                 $types .= 's';
             }
             
