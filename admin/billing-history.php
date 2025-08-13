@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             case 'link_existing_invoice':
                 $billId = intval($_POST['bill_id']);
                 $documentId = intval($_POST['document_id']);
-                $invoiceType = $_POST['invoice_type'] ?? 'generated_invoice';
+                $invoiceType = $_POST['invoice_type'] ?? 'generated';
                 $invoiceNumber = $_POST['invoice_number'] ?? '';
                 $invoiceAmount = floatval($_POST['invoice_amount'] ?? 0);
                 $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] == '1';
@@ -860,10 +860,9 @@ ob_start();
                     <div class="control">
                         <div class="select is-fullwidth">
                             <select name="invoice_type">
-                                <option value="generated_invoice">Generated Invoice</option>
+                                <option value="generated">Generated Invoice</option>
                                 <option value="payment_receipt">Payment Receipt</option>
                                 <option value="credit_note">Credit Note</option>
-                                <option value="other">Other</option>
                             </select>
                         </div>
                     </div>

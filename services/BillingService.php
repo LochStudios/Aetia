@@ -638,7 +638,7 @@ class BillingService {
     /**
      * Link an existing document from user_documents to a bill
      */
-    public function linkExistingDocumentToBill($billId, $documentId, $invoiceType = 'generated_invoice', $invoiceNumber = '', $invoiceAmount = 0, $isPrimary = false) {
+    public function linkExistingDocumentToBill($billId, $documentId, $invoiceType = 'generated', $invoiceNumber = '', $invoiceAmount = 0, $isPrimary = false) {
         try {
             $this->ensureConnection();
             
