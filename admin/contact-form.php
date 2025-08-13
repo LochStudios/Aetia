@@ -425,7 +425,7 @@ ob_start();
                 <!-- Message Content -->
                 <div class="content">
                     <h5 class="title is-6">Message:</h5>
-                    <div class="box has-background-light">
+                    <div class="box has-background-grey-dark has-text-light">
                         <?= nl2br(htmlspecialchars($currentContact['message'])) ?>
                     </div>
                 </div>
@@ -434,7 +434,7 @@ ob_start();
                 <?php if ($currentContact['response_notes']): ?>
                 <div class="content">
                     <h5 class="title is-6">Response Notes:</h5>
-                    <div class="box has-background-success-light">
+                    <div class="box has-background-info-dark has-text-light">
                         <?= nl2br(htmlspecialchars($currentContact['response_notes'])) ?>
                     </div>
                 </div>
