@@ -591,7 +591,7 @@ class BillingService {
             
             <div class='highlight-box' style='background-color: #2a2d2e; border-left-color: #ffdd57;'>
                 <p style='color: #b0b3b5; font-size: 14px; margin: 0;'>
-                    <strong>Payment Terms:</strong> Payment is due within 14 days of the invoice date. 
+                    <strong>Payment Terms:</strong> Payment is due within 14 days of the billing period end date (Net 14). 
                     If you have any questions about this invoice, please contact our billing team.
                 </p>
             </div>

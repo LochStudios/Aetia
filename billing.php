@@ -372,7 +372,7 @@ ob_start();
                     <h4 class="title is-6">Payment Terms</h4>
                     <ul>
                         <li>Invoices are generated monthly based on your service usage</li>
-                        <li>Payment is due within 14 days of the invoice date</li>
+                        <li>Payment is due within 14 days of the billing period end date (Net 14)</li>
                         <li>Standard service fees are based on messages processed</li>
                         <li>Manual review services incur additional fees of $1.00 per email</li>
                         <li>SMS notifications are charged per message sent</li>
