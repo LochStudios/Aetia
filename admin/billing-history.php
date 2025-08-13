@@ -1191,6 +1191,132 @@ ob_start();
     </div>
 </div>
 
+<!-- Bill Details Modal -->
+<div class="modal" id="billDetailsModal">
+    <div class="modal-background" onclick="closeModal('billDetailsModal')"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">
+                <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                Bill Details
+            </p>
+            <button class="delete" aria-label="close" onclick="closeModal('billDetailsModal')"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="content">
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Billing Period:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billPeriod" class="has-text-weight-semibold"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Total Amount:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billAmount" class="has-text-weight-semibold has-text-success"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Status:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billStatus" class="tag"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Messages:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billMessages"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Manual Reviews:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billReviews"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">SMS Count:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billSms"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal" id="creditField" style="display: none;">
+                    <div class="field-label is-normal">
+                        <label class="label">Account Credit:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <span id="billCredit" class="has-text-warning has-text-weight-semibold"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal" id="notesField" style="display: none;">
+                    <div class="field-label is-normal">
+                        <label class="label">Notes:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <div class="content">
+                                    <p id="billNotes"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button" type="button" onclick="closeModal('billDetailsModal')">Close</button>
+        </footer>
+    </div>
+</div>
+
 <script>
 // Bill data for JavaScript
 const billsData = <?= json_encode($userBills) ?>;
@@ -1276,15 +1402,60 @@ function showBillDetails(billId) {
     const bill = billsData.find(b => b.id == billId);
     if (!bill) return;
     
-    alert('Bill Details:\n\n' +
-          'Period: ' + new Date(bill.billing_period_start).toLocaleDateString() + ' - ' + new Date(bill.billing_period_end).toLocaleDateString() + '\n' +
-          'Amount: $' + parseFloat(bill.total_amount).toFixed(2) + '\n' +
-          'Status: ' + bill.bill_status.charAt(0).toUpperCase() + bill.bill_status.slice(1) + '\n' +
-          'Messages: ' + bill.message_count + '\n' +
-          'Manual Reviews: ' + bill.manual_review_count + '\n' +
-          'SMS Count: ' + bill.sms_count + '\n' +
-          (bill.account_credit > 0 ? 'Account Credit: $' + parseFloat(bill.account_credit).toFixed(2) + '\n' : '') +
-          (bill.notes ? 'Notes: ' + bill.notes : ''));
+    // Populate modal fields
+    document.getElementById('billPeriod').textContent = 
+        new Date(bill.billing_period_start).toLocaleDateString() + ' - ' + 
+        new Date(bill.billing_period_end).toLocaleDateString();
+    
+    document.getElementById('billAmount').textContent = '$' + parseFloat(bill.total_amount).toFixed(2);
+    
+    // Set status with appropriate styling
+    const statusElement = document.getElementById('billStatus');
+    const status = bill.bill_status.charAt(0).toUpperCase() + bill.bill_status.slice(1);
+    statusElement.textContent = status;
+    statusElement.className = 'tag';
+    
+    // Add appropriate color based on status
+    switch(bill.bill_status) {
+        case 'pending':
+            statusElement.classList.add('is-warning');
+            break;
+        case 'paid':
+            statusElement.classList.add('is-success');
+            break;
+        case 'overdue':
+            statusElement.classList.add('is-danger');
+            break;
+        default:
+            statusElement.classList.add('is-light');
+    }
+    
+    document.getElementById('billMessages').textContent = bill.message_count || '0';
+    document.getElementById('billReviews').textContent = bill.manual_review_count || '0';
+    document.getElementById('billSms').textContent = bill.sms_count || '0';
+    
+    // Show/hide credit field
+    const creditField = document.getElementById('creditField');
+    const creditElement = document.getElementById('billCredit');
+    if (bill.account_credit && parseFloat(bill.account_credit) > 0) {
+        creditElement.textContent = '$' + parseFloat(bill.account_credit).toFixed(2);
+        creditField.style.display = 'block';
+    } else {
+        creditField.style.display = 'none';
+    }
+    
+    // Show/hide notes field
+    const notesField = document.getElementById('notesField');
+    const notesElement = document.getElementById('billNotes');
+    if (bill.notes && bill.notes.trim()) {
+        notesElement.textContent = bill.notes;
+        notesField.style.display = 'block';
+    } else {
+        notesField.style.display = 'none';
+    }
+    
+    // Show the modal
+    document.getElementById('billDetailsModal').classList.add('is-active');
 }
 
 function closeModal(modalId) {
