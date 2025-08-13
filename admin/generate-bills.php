@@ -576,8 +576,8 @@ ob_start();
                                                 <?= htmlspecialchars($client['username']) ?>
                                             <?php endif; ?>
                                         </div>
-                                        <div class="has-text-grey is-size-7">
-                                            <a href="users.php?user_id=<?= $client['user_id'] ?>" target="_blank" class="has-text-grey">
+                                        <div class="has-text-white is-size-7">
+                                            <a href="users.php?user_id=<?= $client['user_id'] ?>" target="_blank" class="has-text-white">
                                                 @<?= htmlspecialchars($client['username']) ?>
                                             </a>
                                         </div>

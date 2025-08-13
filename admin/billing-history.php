@@ -258,7 +258,7 @@ ob_start();
                 <p class="subtitle">
                     Managing invoices and payments for <strong><?= htmlspecialchars($userDisplayName) ?></strong> (@<?= htmlspecialchars($user['username']) ?>)
                 </p>
-                <p class="has-text-grey">
+                <p class="has-text-white">
                     <span class="icon"><i class="fas fa-info-circle"></i></span>
                     Create bills from <a href="generate-bills.php" class="has-text-link">Generate Bills</a> data, upload invoices, and track payments
                 </p>
@@ -389,7 +389,7 @@ ob_start();
             <span class="icon"><i class="fas fa-calendar-check"></i></span>
             Available Billing Periods
         </h3>
-        <p class="subtitle is-6 has-text-grey mb-4">
+        <p class="subtitle is-6 has-text-white mb-4">
             These are billing periods that have been generated in the <a href="generate-bills.php" class="has-text-link">Generate Bills</a> system. 
             Create individual bills from these periods to track invoices and payments.
         </p>
@@ -459,7 +459,7 @@ ob_start();
                                 <td>
                                     <strong><?= $period['period_name'] ?></strong>
                                     <br>
-                                    <small class="has-text-grey">
+                                    <small class="has-text-white">
                                         <?= date('M j', strtotime($period['period_start'])) ?> - 
                                         <?= date('M j, Y', strtotime($period['period_end'])) ?>
                                     </small>
@@ -567,7 +567,7 @@ ob_start();
             <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
             Individual Bills & Invoice Management
         </h3>
-        <p class="subtitle is-6 has-text-grey mb-4">
+        <p class="subtitle is-6 has-text-white mb-4">
             Manage individual bills created from billing periods. Upload invoices, track payments, and apply credits.
         </p>
 
@@ -595,7 +595,7 @@ ob_start();
                                 <td>
                                     <strong><?= date('M Y', strtotime($bill['billing_period_start'])) ?></strong>
                                     <br>
-                                    <small class="has-text-grey">
+                                    <small class="has-text-white">
                                         <?= date('M j', strtotime($bill['billing_period_start'])) ?> - 
                                         <?= date('M j, Y', strtotime($bill['billing_period_end'])) ?>
                                     </small>
@@ -622,7 +622,7 @@ ob_start();
                                             <br><small class="has-text-danger">Overdue</small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span class="has-text-grey">Not set</span>
+                                        <span class="has-text-white">Not set</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -638,7 +638,7 @@ ob_start();
                                             <?php endforeach; ?>
                                         </div>
                                     <?php else: ?>
-                                        <span class="has-text-grey">No invoices</span>
+                                        <span class="has-text-white">No invoices</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -672,7 +672,7 @@ ob_start();
             <span class="icon"><i class="fas fa-file-pdf"></i></span>
             Existing Invoice Documents
         </h3>
-        <p class="subtitle is-6 has-text-grey mb-4">
+        <p class="subtitle is-6 has-text-white mb-4">
             These are invoice documents already uploaded that aren't linked to specific bills. You can link them to bills above.
         </p>
 
@@ -709,7 +709,7 @@ ob_start();
                                         <p class="is-size-6 has-text-weight-bold">
                                             <?= htmlspecialchars($invoice['original_filename']) ?>
                                         </p>
-                                        <p class="is-size-7 has-text-grey">
+                                        <p class="is-size-7 has-text-white">
                                             ID: <?= $invoice['id'] ?> | <?= strtoupper($invoice['mime_type']) ?>
                                         </p>
                                     </div>
@@ -720,7 +720,7 @@ ob_start();
                                     <?= date('M j, Y', strtotime($invoice['uploaded_at'])) ?>
                                 </time>
                                 <br>
-                                <small class="has-text-grey">
+                                <small class="has-text-white">
                                     <?= date('g:i A', strtotime($invoice['uploaded_at'])) ?>
                                 </small>
                             </td>
@@ -738,11 +738,11 @@ ob_start();
                             </td>
                             <td>
                                 <?php if (!empty($invoice['description'])): ?>
-                                    <span class="has-text-grey-dark">
+                                    <span class="has-text-white">
                                         <?= htmlspecialchars($invoice['description']) ?>
                                     </span>
                                 <?php else: ?>
-                                    <em class="has-text-grey">No description</em>
+                                    <em class="has-text-white">No description</em>
                                 <?php endif; ?>
                             </td>
                             <td>
