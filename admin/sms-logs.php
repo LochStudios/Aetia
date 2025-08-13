@@ -525,10 +525,10 @@ ob_start();
                     <tr>
                         <td>
                             <span class="has-text-weight-semibold">
-                                <?= formatDateTime($log['sent_at'], 'M j, Y') ?>
+                                <?= formatDateForUser($log['sent_at'], 'M j, Y') ?>
                             </span><br>
                             <small class="has-text-grey">
-                                <?= formatDateTime($log['sent_at'], 'g:i A') ?>
+                                <?= formatDateForUser($log['sent_at'], 'g:i A') ?>
                             </small>
                         </td>
                         <td>
