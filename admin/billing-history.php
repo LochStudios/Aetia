@@ -228,6 +228,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $error = $result['message'];
                 }
                 break;
+                
+            case 'repair_invoice_types':
+                $result = $billingService->repairInvalidInvoiceTypes();
+                
+                if ($result['success']) {
+                    $message = $result['message'];
+                } else {
+                    $error = $result['message'];
+                }
+                break;
         }
     } catch (Exception $e) {
         error_log("Billing history action error: " . $e->getMessage());

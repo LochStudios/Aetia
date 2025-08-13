@@ -831,5 +831,32 @@ class BillingService {
             return [];
         }
     }
+    
+    /**
+     * Repair invalid invoice types in the database
+     */
+    public function repairInvalidInvoiceTypes() {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                UPDATE user_invoice_documents 
+                SET invoice_type = 'generated' 
+                WHERE invoice_type NOT IN ('generated', 'payment_receipt', 'credit_note')
+            ");
+            $stmt->execute();
+            $affectedRows = $stmt->affected_rows;
+            $stmt->close();
+            
+            return [
+                'success' => true, 
+                'message' => "Repaired $affectedRows invalid invoice type records"
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Repair invoice types error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to repair invoice types'];
+        }
+    }
 }
 ?>
