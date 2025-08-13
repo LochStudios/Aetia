@@ -75,19 +75,19 @@ ob_start();
         </div>
         <div class="column is-3">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_billed'], 2) ?></p>
+                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_billed'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Total Billed</p>
             </div>
         </div>
         <div class="column is-3">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-warning">$<?= number_format($billingStats['total_pending'], 2) ?></p>
+                <p class="title is-4 has-text-warning">$<?= number_format($billingStats['total_pending'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Outstanding Balance</p>
             </div>
         </div>
         <div class="column is-3">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-link">$<?= number_format($billingStats['total_credits'], 2) ?></p>
+                <p class="title is-4 has-text-link">$<?= number_format($billingStats['total_credits'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Account Credits</p>
             </div>
         </div>
@@ -153,22 +153,22 @@ ob_start();
                                 </td>
                                 <td>
                                     <div class="content">
-                                        <?php if ($bill['standard_fee'] > 0): ?>
-                                            <p class="mb-1">Service: <strong>$<?= number_format($bill['standard_fee'], 2) ?></strong></p>
+                                        <?php if (($bill['standard_fee'] ?? 0) > 0): ?>
+                                            <p class="mb-1">Service: <strong>$<?= number_format($bill['standard_fee'] ?? 0, 2) ?></strong></p>
                                         <?php endif; ?>
-                                        <?php if ($bill['manual_review_fee'] > 0): ?>
-                                            <p class="mb-1 has-text-warning">Reviews: <strong>$<?= number_format($bill['manual_review_fee'], 2) ?></strong></p>
+                                        <?php if (($bill['manual_review_fee'] ?? 0) > 0): ?>
+                                            <p class="mb-1 has-text-warning">Reviews: <strong>$<?= number_format($bill['manual_review_fee'] ?? 0, 2) ?></strong></p>
                                         <?php endif; ?>
-                                        <?php if ($bill['sms_fee'] > 0): ?>
-                                            <p class="mb-1 has-text-link">SMS: <strong>$<?= number_format($bill['sms_fee'], 2) ?></strong></p>
+                                        <?php if (($bill['sms_fee'] ?? 0) > 0): ?>
+                                            <p class="mb-1 has-text-link">SMS: <strong>$<?= number_format($bill['sms_fee'] ?? 0, 2) ?></strong></p>
                                         <?php endif; ?>
                                         <hr class="my-2">
                                         <p class="mb-0">
-                                            <strong class="has-text-success">Total: $<?= number_format($bill['total_amount'], 2) ?></strong>
+                                            <strong class="has-text-success">Total: $<?= number_format($bill['total_amount'] ?? 0, 2) ?></strong>
                                         </p>
-                                        <?php if ($bill['account_credit'] > 0): ?>
+                                        <?php if (($bill['account_credit'] ?? 0) > 0): ?>
                                             <p class="mb-0 has-text-link">
-                                                <small>Credit: $<?= number_format($bill['account_credit'], 2) ?></small>
+                                                <small>Credit: $<?= number_format($bill['account_credit'] ?? 0, 2) ?></small>
                                             </p>
                                         <?php endif; ?>
                                     </div>

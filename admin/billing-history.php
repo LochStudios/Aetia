@@ -309,31 +309,31 @@ ob_start();
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_billed'], 2) ?></p>
+                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_billed'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Total Billed</p>
             </div>
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_paid'], 2) ?></p>
+                <p class="title is-4 has-text-success">$<?= number_format($billingStats['total_paid'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Total Paid</p>
             </div>
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-warning">$<?= number_format($billingStats['total_pending'], 2) ?></p>
+                <p class="title is-4 has-text-warning">$<?= number_format($billingStats['total_pending'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Pending</p>
             </div>
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-danger">$<?= number_format($billingStats['total_overdue'], 2) ?></p>
+                <p class="title is-4 has-text-danger">$<?= number_format($billingStats['total_overdue'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Overdue</p>
             </div>
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
-                <p class="title is-4 has-text-link">$<?= number_format($billingStats['total_credits'], 2) ?></p>
+                <p class="title is-4 has-text-link">$<?= number_format($billingStats['total_credits'] ?? 0, 2) ?></p>
                 <p class="subtitle is-6">Credits</p>
             </div>
         </div>

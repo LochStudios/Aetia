@@ -503,12 +503,12 @@ class BillingService {
             
             $stmt = $this->mysqli->prepare("
                 SELECT 
-                    COUNT(*) as total_bills,
-                    SUM(total_amount) as total_billed,
-                    SUM(account_credit) as total_credits,
-                    SUM(CASE WHEN bill_status = 'paid' THEN total_amount ELSE 0 END) as total_paid,
-                    SUM(CASE WHEN bill_status = 'overdue' THEN total_amount ELSE 0 END) as total_overdue,
-                    SUM(CASE WHEN bill_status IN ('draft', 'sent') THEN total_amount ELSE 0 END) as total_pending
+                    COALESCE(COUNT(*), 0) as total_bills,
+                    COALESCE(SUM(total_amount), 0) as total_billed,
+                    COALESCE(SUM(account_credit), 0) as total_credits,
+                    COALESCE(SUM(CASE WHEN bill_status = 'paid' THEN total_amount ELSE 0 END), 0) as total_paid,
+                    COALESCE(SUM(CASE WHEN bill_status = 'overdue' THEN total_amount ELSE 0 END), 0) as total_overdue,
+                    COALESCE(SUM(CASE WHEN bill_status IN ('draft', 'sent') THEN total_amount ELSE 0 END), 0) as total_pending
                 FROM user_bills 
                 WHERE user_id = ?
             ");
@@ -518,6 +518,14 @@ class BillingService {
             $result = $stmt->get_result();
             $stats = $result->fetch_assoc();
             $stmt->close();
+            
+            // Ensure all values are numeric
+            $stats['total_bills'] = (int)($stats['total_bills'] ?? 0);
+            $stats['total_billed'] = (float)($stats['total_billed'] ?? 0);
+            $stats['total_credits'] = (float)($stats['total_credits'] ?? 0);
+            $stats['total_paid'] = (float)($stats['total_paid'] ?? 0);
+            $stats['total_overdue'] = (float)($stats['total_overdue'] ?? 0);
+            $stats['total_pending'] = (float)($stats['total_pending'] ?? 0);
             
             return $stats;
             
