@@ -676,6 +676,13 @@ ob_start();
             These are invoice documents already uploaded that aren't linked to specific bills. You can link them to bills above.
         </p>
 
+        <?php if (empty($userBills)): ?>
+            <div class="notification is-warning">
+                <p><strong>No bills available for linking.</strong></p>
+                <p>Create bills from the billing periods above first, then you can link these invoice documents to specific bills.</p>
+            </div>
+        <?php endif; ?>
+
         <div class="table-container">
             <table class="table is-fullwidth is-striped is-hoverable">
                 <thead>
@@ -747,15 +754,26 @@ ob_start();
                             </td>
                             <td>
                                 <div class="field is-grouped">
-                                    <div class="control">
-                                        <button class="button is-info is-small" 
-                                                onclick="showLinkDocumentModal(<?= $invoice['id'] ?>, '<?= htmlspecialchars($invoice['original_filename']) ?>')">
-                                            <span class="icon is-small">
-                                                <i class="fas fa-link"></i>
-                                            </span>
-                                            <span>Link to Bill</span>
-                                        </button>
-                                    </div>
+                                    <?php if (!empty($userBills)): ?>
+                                        <div class="control">
+                                            <button class="button is-info is-small" 
+                                                    onclick="showLinkDocumentModal(<?= $invoice['id'] ?>, '<?= htmlspecialchars($invoice['original_filename']) ?>')">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-link"></i>
+                                                </span>
+                                                <span>Link to Bill</span>
+                                            </button>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="control">
+                                            <button class="button is-light is-small" disabled title="Create bills first from the billing periods above">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-link"></i>
+                                                </span>
+                                                <span>Link to Bill</span>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="control">
                                         <a href="../api/download-document.php?document_id=<?= $invoice['id'] ?>" 
                                            class="button is-light is-small">
