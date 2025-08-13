@@ -527,16 +527,16 @@ ob_start();
                             <span class="has-text-weight-semibold">
                                 <?= formatDateForUser($log['sent_at'], 'M j, Y') ?>
                             </span><br>
-                            <small class="has-text-grey">
+                            <small class="has-text-white">
                                 <?= formatDateForUser($log['sent_at'], 'g:i A') ?>
                             </small>
                         </td>
                         <td>
                             <?php if ($log['username']): ?>
                             <span class="has-text-weight-semibold"><?= htmlspecialchars($log['username']) ?></span><br>
-                            <small class="has-text-grey">ID: <?= $log['user_id'] ?></small>
+                            <small class="has-text-white">ID: <?= $log['user_id'] ?></small>
                             <?php else: ?>
-                            <span class="has-text-grey">No user</span>
+                            <span class="has-text-white">No user</span>
                             <?php endif; ?>
                         </td>
                         <td>

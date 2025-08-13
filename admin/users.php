@@ -312,7 +312,7 @@ ob_start();
                                         <img src="view-user-profile-image.php?user_id=<?= $user['id'] ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
                                     <?php else: ?>
                                         <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
-                                            <span class="icon is-large has-text-grey">
+                                            <span class="icon is-large has-text-white">
                                                 <i class="fas fa-user fa-2x"></i>
                                             </span>
                                         </div>
@@ -323,7 +323,7 @@ ob_start();
                                         <img src="<?= htmlspecialchars($user['profile_image']) ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
                                     <?php else: ?>
                                         <div class="has-background-light is-flex is-align-items-center is-justify-content-center" style="width:64px;height:64px;border-radius:50%;">
-                                            <span class="icon is-large has-text-grey">
+                                            <span class="icon is-large has-text-white">
                                                 <i class="fas fa-user fa-2x"></i>
                                             </span>
                                         </div>

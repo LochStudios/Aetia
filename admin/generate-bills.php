@@ -623,7 +623,7 @@ ob_start();
                                         $<?= number_format(isset($client['adjusted_standard_fee']) ? $client['adjusted_standard_fee'] : $client['standard_fee'], 2) ?>
                                     </span>
                                     <?php if (isset($client['adjusted_standard_fee']) && $client['adjusted_standard_fee'] != $client['standard_fee']): ?>
-                                        <br><small class="has-text-grey" title="Original amount">
+                                        <br><small class="has-text-white" title="Original amount">
                                             ($<?= number_format($client['standard_fee'], 2) ?>)
                                         </small>
                                     <?php endif; ?>
@@ -636,12 +636,12 @@ ob_start();
                                             $<?= number_format($reviewFee, 2) ?>
                                         </span>
                                         <?php if (isset($client['adjusted_manual_review_fee']) && $client['adjusted_manual_review_fee'] != $client['manual_review_fee']): ?>
-                                            <br><small class="has-text-grey" title="Original amount">
+                                            <br><small class="has-text-white" title="Original amount">
                                                 ($<?= number_format($client['manual_review_fee'], 2) ?>)
                                             </small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span class="has-text-grey is-size-7">$0.00</span>
+                                        <span class="has-text-white is-size-7">$0.00</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
@@ -652,19 +652,19 @@ ob_start();
                                             $<?= number_format($smsFee, 2) ?>
                                         </span>
                                         <?php if (isset($client['adjusted_sms_fee']) && $client['adjusted_sms_fee'] != ($client['sms_fee'] ?? 0)): ?>
-                                            <br><small class="has-text-grey" title="Original amount">
+                                            <br><small class="has-text-white" title="Original amount">
                                                 ($<?= number_format($client['sms_fee'] ?? 0, 2) ?>)
                                             </small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span class="has-text-grey is-size-7">$0.00</span>
+                                        <span class="has-text-white is-size-7">$0.00</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="has-text-right">
                                     <?php 
                                     $totalFee = isset($client['adjusted_total_fee']) ? $client['adjusted_total_fee'] : $client['total_fee'];
                                     $colorClass = isset($client['billing_status']) ? 
-                                        ($client['billing_status'] == 'fully_invoiced' ? 'has-text-grey' : 
+                                        ($client['billing_status'] == 'fully_invoiced' ? 'has-text-white' : 
                                          ($client['billing_status'] == 'partially_invoiced' ? 'has-text-warning' : 'has-text-success')) : 'has-text-success';
                                     ?>
                                     <span class="has-text-weight-bold <?= $colorClass ?> is-size-6">
@@ -679,7 +679,7 @@ ob_start();
                                         </small>
                                     <?php endif; ?>
                                     <?php if (isset($client['adjusted_total_fee']) && $client['adjusted_total_fee'] != $client['total_fee']): ?>
-                                        <br><small class="has-text-grey" title="Original total">
+                                        <br><small class="has-text-white" title="Original total">
                                             ($<?= number_format($client['total_fee'], 2) ?>)
                                         </small>
                                     <?php endif; ?>
@@ -692,7 +692,7 @@ ob_start();
                                 <td class="has-text-centered">
                                     <div class="is-size-7">
                                         <div><?= isset($client['first_message_date']) ? date('M j', strtotime($client['first_message_date'])) : 'N/A' ?></div>
-                                        <div class="has-text-grey">to</div>
+                                        <div class="has-text-white">to</div>
                                         <div><?= isset($client['last_message_date']) ? date('M j', strtotime($client['last_message_date'])) : 'N/A' ?></div>
                                     </div>
                                 </td>
