@@ -57,6 +57,10 @@ class BillingService {
             // Calculate due date (14 days from creation)
             $dueDate = date('Y-m-d', strtotime('+14 days'));
             
+            // Prepare variables for bind_param (cannot pass expressions by reference)
+            $smsFee = $billingData['sms_fee'] ?? 0;
+            $smsCount = $billingData['sms_count'] ?? 0;
+            
             // Create the bill
             $stmt = $this->mysqli->prepare("
                 INSERT INTO user_bills (
@@ -74,11 +78,11 @@ class BillingService {
                 $billingPeriodEnd,
                 $billingData['standard_fee'],
                 $billingData['manual_review_fee'],
-                $billingData['sms_fee'] ?? 0,
+                $smsFee,
                 $billingData['total_fee'],
                 $billingData['total_message_count'],
                 $billingData['manual_review_count'],
-                $billingData['sms_count'] ?? 0,
+                $smsCount,
                 $dueDate,
                 $createdBy
             );
