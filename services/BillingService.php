@@ -697,7 +697,7 @@ class BillingService {
                 $stmt->close();
                 
                 // If it has an invalid invoice_type, update it to 'generated'
-                if ($existingRecord && !in_array($existingRecord['invoice_type'], ['generated', 'payment_receipt', 'credit_note'])) {
+                if ($existingRecord && (!$existingRecord['invoice_type'] || !in_array($existingRecord['invoice_type'], ['generated', 'payment_receipt', 'credit_note']))) {
                     $stmt = $this->mysqli->prepare("
                         UPDATE user_invoice_documents 
                         SET invoice_type = 'generated' 
@@ -873,7 +873,9 @@ class BillingService {
             $stmt = $this->mysqli->prepare("
                 UPDATE user_invoice_documents 
                 SET invoice_type = 'generated' 
-                WHERE invoice_type NOT IN ('generated', 'payment_receipt', 'credit_note')
+                WHERE invoice_type NOT IN ('generated', 'payment_receipt', 'credit_note') 
+                   OR invoice_type IS NULL 
+                   OR invoice_type = ''
             ");
             $stmt->execute();
             $affectedRows = $stmt->affected_rows;

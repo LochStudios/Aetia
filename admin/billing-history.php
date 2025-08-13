@@ -676,13 +676,13 @@ ob_start();
                                             <?php foreach ($bill['invoices'] as $invoice): ?>
                                                 <div class="is-flex is-align-items-center mb-1">
                                                     <span class="tag is-small is-<?= $invoice['invoice_type'] === 'generated' ? 'primary' : 'info' ?> mr-2">
-                                                        <?= ucfirst($invoice['invoice_type']) ?>
+                                                        <?= ucfirst($invoice['invoice_type'] ?: 'Generated') ?>
                                                         <?php if ($invoice['is_primary_invoice']): ?>
                                                             <span class="icon is-small"><i class="fas fa-star"></i></span>
                                                         <?php endif; ?>
                                                     </span>
                                                     <span class="has-text-white is-size-7">
-                                                        <?= htmlspecialchars($invoice['original_filename'] ?? 'Unknown') ?>
+                                                        <?= htmlspecialchars($invoice['original_filename'] ?? 'No filename') ?>
                                                     </span>
                                                 </div>
                                             <?php endforeach; ?>
