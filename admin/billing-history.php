@@ -636,7 +636,7 @@ ob_start();
                     </thead>
                     <tbody>
                         <?php foreach ($userBills as $bill): ?>
-                            <tr>
+                            <tr id="bill-<?= $bill['id'] ?>">
                                 <td>
                                     <strong><?= date('M Y', strtotime($bill['billing_period_start'])) ?></strong>
                                     <br>
