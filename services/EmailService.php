@@ -600,7 +600,8 @@ class EmailService {
     public function sendAdminNotification($subject, $message, $adminEmails = []) {
         if (empty($adminEmails)) {
             // Get admin emails from database if not provided
-            $adminEmails = $this->getAdminEmails();
+            $talentEmail = 'talent@aetia.com.au';
+            $adminEmails = [$talentEmail];
         }
         
         $content = "
@@ -645,19 +646,11 @@ class EmailService {
         
         $body = $this->wrapInDarkTemplate($subject, $content);
         
-        // Send to admin emails
-        $adminEmails = $this->getAdminEmails();
-        foreach ($adminEmails as $email) {
-            $this->sendEmail($email, $subject, $body, '', [], $contactData['email']);
-        }
+        // Send specifically to talent@aetia.com.au for contact form submissions
+        $talentEmail = 'talent@aetia.com.au';
+        $this->sendEmail($talentEmail, $subject, $body, '', [], $contactData['email']);
         
         return true;
-    }
-    
-    private function getAdminEmails() {
-        // This method would typically query the database for admin emails
-        // For now, return a default admin email
-        return [$this->config['from_email']];
     }
     
     /** Test email configuration */
