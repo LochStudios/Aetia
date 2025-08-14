@@ -132,6 +132,23 @@ class FormTokenManager {
     }
     
     /**
+     * Record a successful form submission to prevent rapid successive submissions
+     * @param string $formName The name/identifier of the form
+     */
+    public static function recordSubmission($formName) {
+        // Ensure session is started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $recentKey = 'recent_submissions';
+        if (!isset($_SESSION[$recentKey])) {
+            $_SESSION[$recentKey] = [];
+        }
+        // Record this submission
+        $_SESSION[$recentKey][$formName] = time();
+    }
+    
+    /**
      * Generate a form token field for HTML forms
      * @param string $formName The name/identifier of the form
      * @return string HTML input field with the token

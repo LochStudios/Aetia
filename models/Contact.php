@@ -25,26 +25,69 @@ class Contact {
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return ['success' => false, 'message' => 'Invalid email address'];
             }
-            // Get GeoIP information if available
+            // Get GeoIP information using free IP geolocation service
             $geoData = null;
-            if ($ipAddress && function_exists('geoip_record_by_name')) {
+            if ($ipAddress && $ipAddress !== '127.0.0.1' && $ipAddress !== '::1') {
                 try {
-                    $geoRecord = geoip_record_by_name($ipAddress);
-                    if ($geoRecord) {
+                    // Use ip-api.com (free service, 1000 requests/hour)
+                    $geoUrl = "http://ip-api.com/json/{$ipAddress}?fields=status,message,country,countryCode,region,regionName,city,lat,lon,timezone,query";
+                    $context = stream_context_create([
+                        'http' => [
+                            'timeout' => 5, // 5 second timeout
+                            'user_agent' => 'Aetia-Contact-Form/1.0'
+                        ]
+                    ]);
+                    $response = file_get_contents($geoUrl, false, $context);
+                    if ($response !== false) {
+                        $geoRecord = json_decode($response, true);
+                        if ($geoRecord && $geoRecord['status'] === 'success') {
+                            $geoData = json_encode([
+                                'country_code' => $geoRecord['countryCode'] ?? null,
+                                'country_name' => $geoRecord['country'] ?? null,
+                                'region' => $geoRecord['regionName'] ?? null,
+                                'region_code' => $geoRecord['region'] ?? null,
+                                'city' => $geoRecord['city'] ?? null,
+                                'latitude' => $geoRecord['lat'] ?? null,
+                                'longitude' => $geoRecord['lon'] ?? null,
+                                'timezone' => $geoRecord['timezone'] ?? null,
+                                'ip_address' => $geoRecord['query'] ?? $ipAddress,
+                                'service' => 'ip-api.com',
+                                'timestamp' => date('Y-m-d H:i:s')
+                            ]);
+                        } else {
+                            // API returned an error
+                            $geoData = json_encode([
+                                'ip_address' => $ipAddress,
+                                'error' => $geoRecord['message'] ?? 'Unknown API error',
+                                'service' => 'ip-api.com',
+                                'timestamp' => date('Y-m-d H:i:s')
+                            ]);
+                        }
+                    } else {
+                        // Failed to connect to API
                         $geoData = json_encode([
-                            'country_code' => $geoRecord['country_code'] ?? null,
-                            'country_name' => $geoRecord['country_name'] ?? null,
-                            'region' => $geoRecord['region'] ?? null,
-                            'city' => $geoRecord['city'] ?? null,
-                            'latitude' => $geoRecord['latitude'] ?? null,
-                            'longitude' => $geoRecord['longitude'] ?? null,
-                            'timezone' => $geoRecord['timezone'] ?? null
+                            'ip_address' => $ipAddress,
+                            'error' => 'Failed to connect to geolocation service',
+                            'service' => 'ip-api.com',
+                            'timestamp' => date('Y-m-d H:i:s')
                         ]);
                     }
                 } catch (Exception $e) {
-                    // GeoIP lookup failed, continue without geo data
+                    // GeoIP lookup failed, store basic info
                     error_log('GeoIP lookup failed for IP ' . $ipAddress . ': ' . $e->getMessage());
+                    $geoData = json_encode([
+                        'ip_address' => $ipAddress,
+                        'error' => 'GeoIP lookup exception: ' . $e->getMessage(),
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ]);
                 }
+            } else {
+                // Local IP or invalid IP
+                $geoData = json_encode([
+                    'ip_address' => $ipAddress,
+                    'note' => 'Local/private IP address - no geolocation available',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
             }
             // Prevent spam - check for recent submissions from same IP
             if ($ipAddress) {
@@ -342,6 +385,10 @@ class Contact {
             if (!$data) {
                 return null;
             }
+            // Handle error cases
+            if (isset($data['error']) || isset($data['note'])) {
+                return $data['error'] ?? $data['note'] ?? 'Location unavailable';
+            }
             $location = [];
             if (!empty($data['city'])) {
                 $location[] = $data['city'];
@@ -352,9 +399,9 @@ class Contact {
             if (!empty($data['country_name'])) {
                 $location[] = $data['country_name'];
             }
-            return implode(', ', $location);
+            return !empty($location) ? implode(', ', $location) : 'Location unavailable';
         } catch (Exception $e) {
-            return null;
+            return 'Location unavailable';
         }
     }
 
