@@ -285,6 +285,7 @@ ob_start();
             <li><a href="index.php"><span class="icon is-small"><i class="fas fa-shield-alt"></i></span><span>Admin</span></a></li>
             <li><a href="users.php"><span class="icon is-small"><i class="fas fa-users-cog"></i></span><span>Users</span></a></li>
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-file-invoice-dollar"></i></span><span>Billing History</span></a></li>
+            <li><a href="fix-primary-connections.php"><span class="icon is-small"><i class="fas fa-tools"></i></span><span>Fix Social Connections</span></a></li>
         </ul>
     </nav>
 

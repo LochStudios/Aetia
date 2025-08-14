@@ -244,6 +244,10 @@ ob_start();
                 <span class="icon is-small"><i class="fas fa-sms"></i></span>
                 <span>SMS Logs</span>
             </a></li>
+            <li><a href="fix-primary-connections.php">
+                <span class="icon is-small"><i class="fas fa-tools"></i></span>
+                <span>Fix Social Connections</span>
+            </a></li>
         </ul>
     </nav>
     

@@ -146,6 +146,7 @@ ob_start();
             <li class="is-active"><a href="#" aria-current="page"><span class="icon is-small"><i class="fas fa-envelope"></i></span><span>Contact Forms</span></a></li>
             <li><a href="contracts.php"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>Contracts</span></a></li>
             <li><a href="generate-bills.php"><span class="icon is-small"><i class="fas fa-receipt"></i></span><span>Generate Bills</span></a></li>
+            <li><a href="fix-primary-connections.php"><span class="icon is-small"><i class="fas fa-tools"></i></span><span>Fix Social Connections</span></a></li>
         </ul>
     </nav>
     

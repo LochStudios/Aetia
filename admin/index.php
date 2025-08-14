@@ -186,6 +186,7 @@ ob_start();
             <li><a href="contracts.php"><span class="icon is-small"><i class="fas fa-file-contract"></i></span><span>Contracts</span></a></li>
             <li><a href="generate-bills.php"><span class="icon is-small"><i class="fas fa-receipt"></i></span><span>Generate Bills</span></a></li>
             <li><a href="archived-messages.php"><span class="icon is-small"><i class="fas fa-archive"></i></span><span>Archived Messages</span></a></li>
+            <li><a href="fix-primary-connections.php"><span class="icon is-small"><i class="fas fa-tools"></i></span><span>Fix Social Connections</span></a></li>
         </ul>
     </nav>
     
@@ -238,6 +239,11 @@ ob_start();
             <div class="action-icon"><i class="fas fa-receipt"></i></div>
             <div class="action-title">Generate Bills</div>
             <div class="action-desc">Generate client billing information</div>
+        </a>
+        <a href="fix-primary-connections.php" class="action-card">
+            <div class="action-icon"><i class="fas fa-tools"></i></div>
+            <div class="action-title">Fix Social Connections</div>
+            <div class="action-desc">Fix primary social connection issues</div>
         </a>
     </div>
     
