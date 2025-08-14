@@ -307,6 +307,20 @@ class User {
         try {
             $this->ensureConnection();
             
+            // Start transaction to ensure data consistency
+            $this->mysqli->begin_transaction();
+            // If this is being set as primary, unset all other primary connections first
+            if ($isPrimary) {
+                $stmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 0 WHERE user_id = ?");
+                $stmt->bind_param("i", $userId);
+                $result = $stmt->execute();
+                $stmt->close();
+                if (!$result) {
+                    $this->mysqli->rollback();
+                    error_log("Failed to unset existing primary connections for user $userId");
+                    return false;
+                }
+            }
             $stmt = $this->mysqli->prepare("
                 INSERT INTO social_connections (user_id, platform, social_id, social_username, access_token, refresh_token, expires_at, social_data, is_primary) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -325,6 +339,7 @@ class User {
                 $error = $this->mysqli->error;
                 error_log("Failed to add social connection - MySQL error: " . $error);
                 $stmt->close();
+                $this->mysqli->rollback();
                 return false;
             }
             
@@ -332,8 +347,10 @@ class User {
             error_log("AddSocialConnection - Successfully inserted, affected rows: $affectedRows");
             
             $stmt->close();
+            $this->mysqli->commit();
             return true;
         } catch (Exception $e) {
+            $this->mysqli->rollback();
             error_log("Add social connection error: " . $e->getMessage());
             return false;
         }
@@ -1875,6 +1892,102 @@ class User {
             
         } catch (Exception $e) {
             error_log("Mark SMS verification success error: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Fix primary social connection issues for a specific user or all users
+     * Returns array with success status and details of fixes applied
+     */
+    public function fixPrimarySocialConnections($userId = null) {
+        try {
+            $this->ensureConnection();
+            $fixes = [];
+            // Get users with multiple primary connections
+            $query = $userId ? 
+                "SELECT user_id, COUNT(*) as primary_count, GROUP_CONCAT(platform ORDER BY created_at ASC) as platforms FROM social_connections WHERE is_primary = 1 AND user_id = ? GROUP BY user_id HAVING COUNT(*) > 1" :
+                "SELECT user_id, COUNT(*) as primary_count, GROUP_CONCAT(platform ORDER BY created_at ASC) as platforms FROM social_connections WHERE is_primary = 1 GROUP BY user_id HAVING COUNT(*) > 1";
+            if ($userId) {
+                $stmt = $this->mysqli->prepare($query);
+                $stmt->bind_param("i", $userId);
+                $stmt->execute();
+                $result = $stmt->get_result();
+            } else {
+                $result = $this->mysqli->query($query);
+            }
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $this->mysqli->begin_transaction();
+                    try {
+                        // Set all connections to non-primary for this user
+                        $updateStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 0 WHERE user_id = ?");
+                        $updateStmt->bind_param("i", $row['user_id']);
+                        $updateStmt->execute();
+                        $updateStmt->close();
+                        // Set the oldest connection as primary
+                        $primaryStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 1 WHERE user_id = ? ORDER BY created_at ASC LIMIT 1");
+                        $primaryStmt->bind_param("i", $row['user_id']);
+                        $primaryStmt->execute();
+                        $affected = $this->mysqli->affected_rows;
+                        $primaryStmt->close();
+                        if ($affected > 0) {
+                            $this->mysqli->commit();
+                            $fixes[] = "Fixed user {$row['user_id']}: had {$row['primary_count']} primary connections [{$row['platforms']}], set oldest as primary";
+                        } else {
+                            $this->mysqli->rollback();
+                            $fixes[] = "Failed to fix user {$row['user_id']}";
+                        }
+                    } catch (Exception $e) {
+                        $this->mysqli->rollback();
+                        $fixes[] = "Error fixing user {$row['user_id']}: " . $e->getMessage();
+                    }
+                }
+            }
+            if ($userId) {
+                $stmt->close();
+            }
+            // Also check for social users with no primary connections
+            $noPrimaryQuery = $userId ?
+                "SELECT DISTINCT sc.user_id FROM social_connections sc JOIN users u ON sc.user_id = u.id WHERE sc.user_id = ? AND sc.user_id NOT IN (SELECT user_id FROM social_connections WHERE is_primary = 1) AND u.account_type != 'manual'" :
+                "SELECT DISTINCT sc.user_id FROM social_connections sc JOIN users u ON sc.user_id = u.id WHERE sc.user_id NOT IN (SELECT user_id FROM social_connections WHERE is_primary = 1) AND u.account_type != 'manual'";
+            if ($userId) {
+                $stmt2 = $this->mysqli->prepare($noPrimaryQuery);
+                $stmt2->bind_param("i", $userId);
+                $stmt2->execute();
+                $result2 = $stmt2->get_result();
+            } else {
+                $result2 = $this->mysqli->query($noPrimaryQuery);
+            }
+            if ($result2 && $result2->num_rows > 0) {
+                while ($row = $result2->fetch_assoc()) {
+                    $primaryStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 1 WHERE user_id = ? ORDER BY created_at ASC LIMIT 1");
+                    $primaryStmt->bind_param("i", $row['user_id']);
+                    $success = $primaryStmt->execute();
+                    $affected = $this->mysqli->affected_rows;
+                    $primaryStmt->close();
+                    if ($success && $affected > 0) {
+                        $fixes[] = "Fixed user {$row['user_id']}: had no primary connection, set oldest as primary";
+                    } else {
+                        $fixes[] = "Failed to fix user {$row['user_id']} (no primary connection)";
+                    }
+                }
+            }
+            if ($userId && isset($stmt2)) {
+                $stmt2->close();
+            }
+            return [
+                'success' => true,
+                'fixes' => $fixes,
+                'count' => count($fixes)
+            ];
+        } catch (Exception $e) {
+            error_log("Fix primary social connections error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'fixes' => [],
+                'count' => 0
+            ];
         }
     }
 }
