@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/BillingService.php';
 require_once __DIR__ . '/services/DocumentService.php';
+require_once __DIR__ . '/includes/LinkConverter.php';
 
 $userModel = new User();
 $billingService = new BillingService();
@@ -324,8 +325,8 @@ ob_start();
                             </td>
                             <td>
                                 <?php if (!empty($invoice['description'])): ?>
-                                    <span class="has-text-grey-dark">
-                                        <?= htmlspecialchars($invoice['description']) ?>
+                                    <span class="has-text-white">
+                                        <?= LinkConverter::processMessageText($invoice['description']) ?>
                                     </span>
                                 <?php else: ?>
                                     <em class="has-text-grey">No description</em>
