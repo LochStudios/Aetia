@@ -1156,3 +1156,10 @@ button[disabled], input[disabled] {
     margin: 0 -0.75rem;
     padding: 0 0.75rem;
 }
+
+/* Contact details label spacing (used in admin/contact-form.php) */
+.contact-details p { margin-bottom: .5rem; }
+.contact-details p strong { display: inline-block; width: 10.5rem; min-width: 8rem; margin-right: .75rem; }
+@media (max-width: 768px) {
+    .contact-details p strong { display: block; width: auto; margin-bottom: .25rem; }
+}

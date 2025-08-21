@@ -381,7 +381,7 @@ ob_start();
                 </div>
                 
                 <!-- Contact Details -->
-                <div class="content">
+                <div class="content contact-details">
                     <div class="columns is-gapless mb-3">
                         <div class="column is-half">
                             <p class="mb-2"><strong>Submitted:</strong> <?= convertToUserTimezone($currentContact['created_at']) ?></p>
