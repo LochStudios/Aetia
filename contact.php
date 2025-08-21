@@ -380,6 +380,8 @@ ob_start();
                     <?php if (!empty($turnstile_explicit)): ?>
                         <input type="hidden" name="cf-turnstile-response" id="cf-turnstile-response" value="">
                     <?php endif; ?>
+                    <!-- Idempotency key for Turnstile siteverify (client-generated UUID v4) -->
+                    <input type="hidden" name="turnstile_idempotency_key" id="turnstile-idempotency-key" value="">
                 </div>
             </div>
             <?php endif; ?>
@@ -440,6 +442,30 @@ document.addEventListener('DOMContentLoaded', function() {
             submitButton.innerHTML = '<span class="icon"><i class="fas fa-paper-plane"></i></span><span>Send Message</span>';
         }, 10000);
     });
+});
+// Generate UUIDv4 for idempotency key
+function generateUUIDv4() {
+    // https://stackoverflow.com/a/2117523
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+// Ensure idempotency key exists on the form
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        var idField = document.getElementById('turnstile-idempotency-key');
+        if (idField && !idField.value) {
+            idField.value = generateUUIDv4();
+        }
+        // Set before explicit execute as well
+        var form = document.getElementById('contact-form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (idField && !idField.value) idField.value = generateUUIDv4();
+            });
+        }
+    } catch (e) { console.error(e); }
 });
 // Turnstile callbacks (only declared when widget is present)
 function onTurnstileSuccess(token) {
