@@ -236,7 +236,7 @@ class Database {
                 email VARCHAR(100) NOT NULL,
                 subject VARCHAR(255) DEFAULT NULL,
                 message TEXT NOT NULL,
-                status ENUM('new', 'read', 'responded', 'closed') DEFAULT 'new',
+                status ENUM('new', 'spam', 'read', 'responded', 'closed') DEFAULT 'new',
                 priority ENUM('low', 'normal', 'high') DEFAULT 'normal',
                 ip_address VARCHAR(45),
                 user_agent TEXT,
@@ -748,20 +748,69 @@ class Database {
     // Add missing columns to existing contact_submissions table
     private function addMissingContactColumns() {
         try {
-            // Check if columns exist and add them if they don't
-            $columnsToAdd = [
-                'geo_data' => 'JSON'
-            ];
-            foreach ($columnsToAdd as $columnName => $columnDefinition) {
-                // Check if column exists
-                $checkColumn = "SHOW COLUMNS FROM contact_submissions LIKE '{$columnName}'";
-                $result = $this->mysqli->query($checkColumn);
-                if ($result && $result->num_rows == 0) {
-                    // Column doesn't exist, add it
-                    $alterQuery = "ALTER TABLE contact_submissions ADD COLUMN {$columnName} {$columnDefinition}";
-                    if ($this->mysqli->query($alterQuery)) {
-                        error_log("Added column '{$columnName}' to contact_submissions table");
+            // Ensure contact_submissions table exists
+            $checkTable = "SHOW TABLES LIKE 'contact_submissions'";
+            $tableResult = $this->mysqli->query($checkTable);
+            if (!($tableResult && $tableResult->num_rows > 0)) {
+                return;
+            }
+            // Ensure status column exists and has the expected ENUM values/default
+            $expectedEnum = "ENUM('new','spam','read','responded','closed')";
+            $expectedDefault = 'new';
+            $checkStatus = "SHOW COLUMNS FROM contact_submissions LIKE 'status'";
+            $result = $this->mysqli->query($checkStatus);
+            if ($result && $result->num_rows == 0) {
+                // Column doesn't exist, add it with the exact enum and default
+                $alterStatus = "ALTER TABLE contact_submissions ADD COLUMN status {$expectedEnum} DEFAULT '{$expectedDefault}'";
+                if ($this->mysqli->query($alterStatus)) {
+                    error_log("Added 'status' column to contact_submissions with expected ENUM/default");
+                }
+            } else {
+                // Column exists - verify ENUM values and default, modify if necessary
+                $col = $result->fetch_assoc();
+                $type = isset($col['Type']) ? $col['Type'] : '';
+                $default = isset($col['Default']) ? $col['Default'] : null;
+                $needsModify = false;
+                // Check presence of all expected tokens (simple check)
+                $requiredTokens = ["'new'", "'spam'", "'read'", "'responded'", "'closed'"];
+                foreach ($requiredTokens as $token) {
+                    if (strpos($type, $token) === false) {
+                        $needsModify = true;
+                        break;
                     }
+                }
+                if ($default !== $expectedDefault) {
+                    $needsModify = true;
+                }
+                if ($needsModify) {
+                    $modifyQuery = "ALTER TABLE contact_submissions MODIFY COLUMN status {$expectedEnum} DEFAULT '{$expectedDefault}'";
+                    if ($this->mysqli->query($modifyQuery)) {
+                        error_log("Modified 'status' column on contact_submissions to expected ENUM/default");
+                    } else {
+                        error_log("Failed to modify 'status' column on contact_submissions: " . $this->mysqli->error);
+                    }
+                }
+            }
+            // Add geo_data JSON column if missing
+            $checkGeo = "SHOW COLUMNS FROM contact_submissions LIKE 'geo_data'";
+            $geoResult = $this->mysqli->query($checkGeo);
+            if ($geoResult && $geoResult->num_rows == 0) {
+                $alterGeo = "ALTER TABLE contact_submissions ADD COLUMN geo_data JSON";
+                if ($this->mysqli->query($alterGeo)) {
+                    error_log("Added column 'geo_data' to contact_submissions table");
+                }
+            }
+            // Ensure common indexes exist (idx_status, idx_created_at, idx_email)
+            $indexesToEnsure = [
+                'idx_status' => "ALTER TABLE contact_submissions ADD INDEX idx_status (status)",
+                'idx_created_at' => "ALTER TABLE contact_submissions ADD INDEX idx_created_at (created_at)",
+                'idx_email' => "ALTER TABLE contact_submissions ADD INDEX idx_email (email)"
+            ];
+            foreach ($indexesToEnsure as $indexName => $indexQuery) {
+                $checkIndex = "SHOW INDEX FROM contact_submissions WHERE Key_name = '{$indexName}'";
+                $idxResult = $this->mysqli->query($checkIndex);
+                if ($idxResult && $idxResult->num_rows == 0) {
+                    $this->mysqli->query($indexQuery);
                 }
             }
         } catch (Exception $e) {
