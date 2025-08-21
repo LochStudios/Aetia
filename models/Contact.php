@@ -89,6 +89,49 @@ class Contact {
                     'timestamp' => date('Y-m-d H:i:s')
                 ]);
             }
+            // Server-side spam checks
+            $isSpam = false;
+            $spamReasons = [];
+            // Simple heuristics: suspicious phrases often used by promotional/spam messages
+            $suspiciousPhrases = [
+                'prices start from', 'our prices', 'just $', 'just £', 'just €', 'cost of sending', 'cost of', 'we offer', 'we offer you',
+                'try our service', 'try our service for free', 'free trial', 'samples', 'see samples', 'portfolio', 'click here', 'visit',
+                'video to explain', 'engaging video', 'commercial messages', 'deliverability', 'automatically generated', 'contact us', 'telegram',
+                'wa.me', 't.me', 'whatsapp', 'we only use chat', 'send out', '50,000', 'one million', '1 million', '50k'
+            ];
+            $lowerMsg = strtolower($message);
+            foreach ($suspiciousPhrases as $phrase) {
+                if (strpos($lowerMsg, $phrase) !== false) {
+                    $isSpam = true;
+                    $spamReasons[] = 'suspicious_phrase:' . $phrase;
+                }
+            }
+            // Count URLs and link-like patterns (http(s), www, t.me, wa.me). Multiple links increase spam likelihood
+            $urlPattern = '/https?:\/\/|www\.|t\.me\/|wa\.me\/|telegram\.me\//i';
+            preg_match_all($urlPattern, $message, $urlMatches);
+            $urlCount = count($urlMatches[0]);
+            if ($urlCount > 0) {
+                $isSpam = true; // any external link is suspicious for contact form
+                $spamReasons[] = 'contains_url_count:' . $urlCount;
+            }
+            if ($urlCount >= 2) {
+                $spamReasons[] = 'multiple_links';
+            }
+            // Detect phone numbers or long digit sequences that look like contact numbers
+            if (preg_match('/\+?\d[\d\s\-()]{6,}\d/', $message)) {
+                $isSpam = true;
+                $spamReasons[] = 'contains_phone_number';
+            }
+            // Detect currency or large-quantity offers ($59, one million, 50,000 etc.)
+            if (preg_match('/\$\s?\d+|\b(one million|1 million|\d{1,3}(,|\s)?\d{3}|50k|50,000|\bmillion\b)\b/i', $message)) {
+                $isSpam = true;
+                $spamReasons[] = 'contains_currency_or_large_offer';
+            }
+            // Very short generic messages (<=40 chars) that are promotional
+            if (strlen(trim($message)) <= 40 && preg_match('/\b(pricing|video|samples|portfolio|services|offer|free)\b/i', $message)) {
+                $isSpam = true;
+                $spamReasons[] = 'short_promotional';
+            }
             // Prevent spam - check for recent submissions from same IP
             if ($ipAddress) {
                 $stmt = $this->mysqli->prepare("
@@ -107,30 +150,44 @@ class Contact {
                 }
             }
             // Insert the contact submission
+            // Append spam metadata to geo_data JSON
+            $geoArray = json_decode($geoData, true) ?: [];
+            $geoArray['spam'] = $isSpam ? true : false;
+            if (!empty($spamReasons)) {
+                $geoArray['spam_reasons'] = $spamReasons;
+            }
+            $geoArray['spam_checked_at'] = date('Y-m-d H:i:s');
+            $geoData = json_encode($geoArray);
+            $status = $isSpam ? 'spam' : 'new';
+            $priority = $isSpam ? 'low' : 'normal';
             $stmt = $this->mysqli->prepare("
-                INSERT INTO contact_submissions (name, email, subject, message, ip_address, user_agent, geo_data) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO contact_submissions (name, email, subject, message, ip_address, user_agent, geo_data, status, priority) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->bind_param("sssssss", $name, $email, $subject, $message, $ipAddress, $userAgent, $geoData);
+            $stmt->bind_param("sssssssss", $name, $email, $subject, $message, $ipAddress, $userAgent, $geoData, $status, $priority);
             $result = $stmt->execute();
             $contactId = $this->mysqli->insert_id;
             $stmt->close();
             if ($result) {
                 // Send email notification to admins
                 try {
-                    $emailService = new EmailService();
-                    $contactData = [
-                        'name' => $name,
-                        'email' => $email,
-                        'subject' => $subject,
-                        'message' => $message
-                    ];
-                    $emailService->sendContactFormNotification($contactData);
+                    // If message is not flagged as spam, notify admins
+                    if (!$isSpam) {
+                        $emailService = new EmailService();
+                        $contactData = [
+                            'name' => $name,
+                            'email' => $email,
+                            'subject' => $subject,
+                            'message' => $message
+                        ];
+                        $emailService->sendContactFormNotification($contactData);
+                    } else {
+                        error_log('Contact submission flagged as spam: reasons=' . implode(',', $spamReasons));
+                    }
                 } catch (Exception $e) {
                     // Log email error but don't fail the contact submission
                     error_log('Failed to send contact form email notification: ' . $e->getMessage());
                 }
-                
                 return [
                     'success' => true, 
                     'message' => 'Thank you for your message. We will get back to you soon!',
