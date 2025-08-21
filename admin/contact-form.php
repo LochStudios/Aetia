@@ -384,9 +384,9 @@ ob_start();
                 <div class="content">
                     <div class="columns is-gapless mb-3">
                         <div class="column is-half">
-                            <p><strong>Submitted:</strong> <?= convertToUserTimezone($currentContact['created_at']) ?></p>
+                            <p class="mb-2"><strong>Submitted:</strong> <?= convertToUserTimezone($currentContact['created_at']) ?></p>
                             <?php if ($currentContact['ip_address']): ?>
-                            <p><strong>IP Address:</strong> <?= htmlspecialchars($currentContact['ip_address']) ?></p>
+                            <p class="mb-2"><strong>IP Address:</strong> <?= htmlspecialchars($currentContact['ip_address']) ?></p>
                             <?php endif; ?>
                             <?php if ($currentContact['geo_data']): ?>
                                 <?php 
@@ -395,16 +395,16 @@ ob_start();
                                 $flag = $contactModel->getCountryFlag($currentContact['geo_data']);
                                 ?>
                                 <?php if ($location): ?>
-                                <p><strong>Location:</strong> 
+                                <p class="mb-2"><strong>Location:</strong> 
                                     <?php if ($flag): ?><?= $flag ?> <?php endif; ?>
                                     <?= htmlspecialchars($location) ?>
                                 </p>
                                 <?php endif; ?>
                                 <?php if (!empty($geoData['timezone'])): ?>
-                                <p><strong>Timezone:</strong> <?= htmlspecialchars($geoData['timezone']) ?></p>
+                                <p class="mb-2"><strong>Timezone:</strong> <?= htmlspecialchars($geoData['timezone']) ?></p>
                                 <?php endif; ?>
                                 <?php if (!empty($geoData['latitude']) && !empty($geoData['longitude'])): ?>
-                                <p><strong>Coordinates:</strong> 
+                                <p class="mb-2"><strong>Coordinates:</strong> 
                                     <a href="https://maps.google.com/?q=<?= urlencode($geoData['latitude'] . ',' . $geoData['longitude']) ?>" 
                                        target="_blank" class="has-text-info">
                                         <?= number_format($geoData['latitude'], 4) ?>, <?= number_format($geoData['longitude'], 4) ?>
