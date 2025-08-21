@@ -190,12 +190,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!is_array($turnstileResult)) {
                     $error = 'Security verification failed. Please try again.';
                 } elseif (empty($turnstileResult['success'])) {
-                    // Log any error codes returned by Turnstile to aid debugging
-                    if (!empty($turnstileResult['"error-codes"']) || !empty($turnstileResult['error-codes'])) {
-                        $codes = !empty($turnstileResult['error-codes']) ? $turnstileResult['error-codes'] : $turnstileResult['"error-codes"'];
+                    // Normalize error codes from different possible keys
+                    $codes = [];
+                    if (!empty($turnstileResult['error-codes']) && is_array($turnstileResult['error-codes'])) {
+                        $codes = $turnstileResult['error-codes'];
+                    } elseif (!empty($turnstileResult['error_codes']) && is_array($turnstileResult['error_codes'])) {
+                        $codes = $turnstileResult['error_codes'];
+                    } elseif (!empty($turnstileResult['"error-codes"']) && is_array($turnstileResult['"error-codes"'])) {
+                        $codes = $turnstileResult['"error-codes"'];
+                    }
+                    // Log for diagnostics
+                    if (!empty($codes)) {
                         error_log('Turnstile siteverify error-codes: ' . json_encode($codes));
                     }
-                    $error = 'Security verification failed. Please try again.';
+                    // Map common error codes to user-friendly messages
+                    $userMessage = 'Security verification failed. Please try again.';
+                    if (in_array('missing-input-response', $codes, true)) {
+                        $userMessage = 'Please complete the security check.';
+                    } elseif (in_array('invalid-input-response', $codes, true)) {
+                        $userMessage = 'Security token invalid or expired. Please try again.';
+                    } elseif (in_array('timeout-or-duplicate', $codes, true)) {
+                        $userMessage = 'Security token already used. Please try again.';
+                    } elseif (in_array('missing-input-secret', $codes, true) || in_array('invalid-input-secret', $codes, true)) {
+                        // Configuration issue - log full details for admin
+                        error_log('Turnstile secret configuration error: ' . json_encode($codes));
+                        $userMessage = 'Security verification configuration error. Contact the site administrator.';
+                    } elseif (in_array('internal-error', $codes, true)) {
+                        $userMessage = 'Security verification service error. Please try again.';
+                    }
+                    $error = $userMessage;
                 } else {
                     // Enforce token expiry (5 minutes) and single-use per session
                     $now = time();
