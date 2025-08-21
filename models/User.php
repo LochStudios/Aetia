@@ -892,6 +892,92 @@ class User {
             return ['success' => false, 'message' => 'An error occurred. Please try again.'];
         }
     }
+
+    /**
+     * Generate 6-digit email verification code for a user and email it.
+     * Expires in 1 hour.
+     */
+    public function generateEmailVerificationCode($userId) {
+        try {
+            $this->ensureConnection();
+            // Get user's email and name
+            $stmt = $this->mysqli->prepare("SELECT email, first_name, last_name, username FROM users WHERE id = ? AND is_active = 1");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows === 0) {
+                $stmt->close();
+                return ['success' => false, 'message' => 'User not found or inactive.'];
+            }
+            $user = $result->fetch_assoc();
+            $stmt->close();
+            $email = $user['email'];
+            $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: $user['username'];
+            // Generate 6-digit code
+            $code = sprintf('%06d', random_int(0, 999999));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            // Store or update code
+            $stmt = $this->mysqli->prepare("INSERT INTO email_verification_tokens (user_id, code, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE code = VALUES(code), expires_at = VALUES(expires_at), created_at = NOW()");
+            $stmt->bind_param("iss", $userId, $code, $expiresAt);
+            $res = $stmt->execute();
+            $stmt->close();
+            if (!$res) {
+                return ['success' => false, 'message' => 'Failed to store verification code.'];
+            }
+            // Prepare verification URL (prefill email as query param)
+            $verifyUrl = sprintf('%s/verify-email.php?email=%s', rtrim($this->getSiteBaseUrl(), '/'), rawurlencode($email));
+            // Send email
+            $emailService = new EmailService();
+            $sent = $emailService->sendEmailVerificationCode($email, $name, $code, $verifyUrl);
+            if ($sent) {
+                return ['success' => true, 'message' => 'Verification code sent', 'expires_at' => $expiresAt];
+            } else {
+                return ['success' => false, 'message' => 'Failed to send verification email'];
+            }
+        } catch (Exception $e) {
+            error_log('Generate email verification code error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred'];
+        }
+    }
+
+    /**
+     * Validate email verification code for a user (by email + code).
+     */
+    public function validateEmailVerificationCode($email, $code) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("SELECT evt.code, evt.expires_at, u.id as user_id FROM email_verification_tokens evt JOIN users u ON evt.user_id = u.id WHERE u.email = ? AND evt.code = ? AND evt.expires_at > NOW() LIMIT 1");
+            $stmt->bind_param("ss", $email, $code);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows === 1) {
+                $row = $result->fetch_assoc();
+                $stmt->close();
+                // Mark user as verified
+                $this->verifyUser($row['user_id'], 'Email Verification Code');
+                // Delete verification token after successful validation
+                $del = $this->mysqli->prepare("DELETE FROM email_verification_tokens WHERE user_id = ?");
+                $del->bind_param("i", $row['user_id']);
+                $del->execute();
+                $del->close();
+                return ['success' => true, 'user_id' => $row['user_id']];
+            } else {
+                $stmt->close();
+                return ['success' => false, 'message' => 'Invalid or expired verification code.'];
+            }
+        } catch (Exception $e) {
+            error_log('Validate email verification code error: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred. Please try again.'];
+        }
+    }
+
+    // Helper to determine site base URL for links (simple fallback)
+    private function getSiteBaseUrl() {
+        // Try to determine from server vars, fallback to config constant or example
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $protocol . '://' . $host;
+    }
     
     // Validate password reset token
     public function validatePasswordResetToken($token) {

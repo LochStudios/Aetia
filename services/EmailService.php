@@ -532,6 +532,35 @@ class EmailService {
         
         return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'password_reset');
     }
+
+    /** Send email verification code (6-digit) */
+    public function sendEmailVerificationCode($userEmail, $userName, $code, $verifyUrl) {
+        $subject = "Verify your email address - Aetia Talent Agency";
+        $content = "
+        <h2>Email Verification Required</h2>
+        <p>Hello {$userName},</p>
+        <p>An administrator requested email verification for your account. Enter the 6-digit code below on the verification page to confirm your email address.</p>
+        <div class='highlight-box' style='text-align: center;'>
+            <h3 style='color: #209cee; margin: 0;'>Your verification code</h3>
+            <p style='font-size: 28px; letter-spacing: 4px; margin: 12px 0;'><strong>{$code}</strong></p>
+        </div>
+        <p>Or click the button below to open the verification page (your email will be pre-filled):</p>
+        <p style='text-align: center; margin: 30px 0;'>
+            <a href='{$verifyUrl}' class='button-primary'>Verify my email</a>
+        </p>
+        <div class='highlight-box'>
+            <p><strong>Security Notice:</strong></p>
+            <ul>
+                <li>The code will expire in 1 hour for security reasons.</li>
+                <li>If you did not expect this email, please contact support.</li>
+            </ul>
+        </div>
+        <br>
+        <p>Best regards,<br>The Aetia Team</p>
+        ";
+        $body = $this->wrapInDarkTemplate($subject, $content);
+        return $this->sendEmail($userEmail, $subject, $body, '', [], null, 'email_verification');
+    }
     
     /** Send new message notification email to user */
     public function sendNewMessageNotification($userEmail, $userName, $messageSubject, $messagePriority = 'normal') {

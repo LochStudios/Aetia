@@ -146,6 +146,20 @@ class Database {
             
             $this->mysqli->query($createPasswordResetTable);
 
+            // Create email_verification_tokens table for admin-triggered verification codes
+            $createEmailVerificationTable = "
+            CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                code VARCHAR(10) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_user_verification (user_id)
+            )";
+            
+            $this->mysqli->query($createEmailVerificationTable);
+
             // Create messages table
             $createMessagesTable = "
             CREATE TABLE IF NOT EXISTS messages (

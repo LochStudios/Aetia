@@ -64,10 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             break;
         case 'verify':
-            if ($userModel->verifyUser($userId, $adminName)) {
-                $message = 'User verified successfully!';
+            // Generate and send a 6-digit email verification code to the user instead of immediate verify
+            $gen = $userModel->generateEmailVerificationCode($userId);
+            if ($gen['success']) {
+                $message = 'Verification code sent to user email. They must enter the code within 1 hour to verify their email.';
             } else {
-                $message = 'Error verifying user.';
+                $message = 'Error sending verification code: ' . ($gen['message'] ?? 'Unknown error');
             }
             break;
         case 'deactivate':
