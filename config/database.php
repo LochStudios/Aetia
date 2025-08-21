@@ -254,6 +254,22 @@ class Database {
             
             $this->mysqli->query($createContactTable);
 
+            // Create turnstile_verifications table to store siteverify results and prevent replay
+            $createTurnstileTable = "
+            CREATE TABLE IF NOT EXISTS turnstile_verifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                token_hash CHAR(64) NOT NULL,
+                idempotency_key VARCHAR(64) DEFAULT NULL,
+                remoteip VARCHAR(45) DEFAULT NULL,
+                success BOOLEAN DEFAULT FALSE,
+                response_json LONGTEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_token_hash (token_hash),
+                INDEX idx_idempotency (idempotency_key),
+                INDEX idx_created_at (created_at)
+            )";
+            $this->mysqli->query($createTurnstileTable);
+
             // Create email_logs table
             $createEmailLogsTable = "
             CREATE TABLE IF NOT EXISTS email_logs (

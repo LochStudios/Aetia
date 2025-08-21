@@ -36,6 +36,30 @@ function verifyTurnstileResponse($token, $secret, $remoteIp = null) {
     if (empty($secret) || empty($token)) {
         return null;
     }
+    // Cluster-wide single-use enforcement: check DB for used token hash if available
+    try {
+        // Try to load Database class and check turnstile_verifications table
+        if (class_exists('Database')) {
+            $db = new Database();
+            $mysqli = $db->getConnection();
+            $tokenHash = hash('sha256', $token);
+            $checkStmt = $mysqli->prepare("SELECT id, success, created_at FROM turnstile_verifications WHERE token_hash = ? LIMIT 1");
+            if ($checkStmt) {
+                $checkStmt->bind_param('s', $tokenHash);
+                $checkStmt->execute();
+                $res = $checkStmt->get_result();
+                if ($res && $row = $res->fetch_assoc()) {
+                    // Token already verified before - treat as replay
+                    error_log('Turnstile token already verified (replay): ' . $tokenHash);
+                    return ['success' => false, 'error' => 'replayed_token'];
+                }
+                $checkStmt->close();
+            }
+        }
+    } catch (Exception $e) {
+        // If DB access fails, just continue with siteverify; we keep server tolerant
+        error_log('Turnstile DB check failed: ' . $e->getMessage());
+    }
     $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
     $postData = http_build_query([
         'secret' => $secret,
@@ -73,6 +97,28 @@ function verifyTurnstileResponse($token, $secret, $remoteIp = null) {
     $decoded = json_decode($response, true);
     if (!is_array($decoded)) {
         return ['success' => false, 'error' => 'invalid_response'];
+    }
+
+    // Persist verification result if DB available
+    try {
+        if (class_exists('Database')) {
+            $db = new Database();
+            $mysqli = $db->getConnection();
+            $tokenHash = hash('sha256', $token);
+            $responseJson = $mysqli->real_escape_string(json_encode($decoded));
+            $successInt = !empty($decoded['success']) ? 1 : 0;
+            $idempKey = null;
+            // Insert record (uniq on token_hash prevents duplicates)
+            $insertSql = "INSERT INTO turnstile_verifications (token_hash, idempotency_key, remoteip, success, response_json) VALUES ('{$tokenHash}', ?, ?, {$successInt}, '{$responseJson}')";
+            $stmt = $mysqli->prepare($insertSql);
+            if ($stmt) {
+                $stmt->bind_param('ss', $idempKey, $remoteIp);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Turnstile DB insert failed: ' . $e->getMessage());
     }
     return $decoded;
 }
