@@ -32,9 +32,16 @@ if (isset($cfg) && is_array($cfg)) {
 }
 
 /** Verify Cloudflare Turnstile response token server-side. */
-function verifyTurnstileResponse($token, $secret, $remoteIp = null, $idempotencyKey = null) {
+function verifyTurnstileResponse($token, $secret, $remoteIp = null, $idempotencyKey = null, $expectedAction = null, $expectedHostname = null) {
+    // Basic input validation
     if (empty($secret) || empty($token)) {
-        return null;
+        return ['success' => false, 'error' => 'missing-input'];
+    }
+    if (!is_string($token) || $token === '') {
+        return ['success' => false, 'error' => 'invalid-input-response'];
+    }
+    if (strlen($token) > 2048) {
+        return ['success' => false, 'error' => 'token_too_long'];
     }
     // Cluster-wide single-use enforcement: check DB for used token hash if available
     try {
@@ -103,6 +110,18 @@ function verifyTurnstileResponse($token, $secret, $remoteIp = null, $idempotency
     $decoded = json_decode($response, true);
     if (!is_array($decoded)) {
         return ['success' => false, 'error' => 'invalid_response'];
+    }
+
+    // Additional validation: expected action and hostname
+    if (!empty($expectedAction) && !empty($decoded['action']) && $decoded['action'] !== $expectedAction) {
+        error_log('Turnstile action mismatch: expected=' . $expectedAction . ' received=' . ($decoded['action'] ?? ''));
+        $decoded['success'] = false;
+        $decoded['error-codes'] = array_merge($decoded['error-codes'] ?? [], ['action-mismatch']);
+    }
+    if (!empty($expectedHostname) && !empty($decoded['hostname']) && stripos($decoded['hostname'], $expectedHostname) === false && stripos($expectedHostname, $decoded['hostname']) === false) {
+        error_log('Turnstile hostname mismatch: expected=' . $expectedHostname . ' received=' . ($decoded['hostname'] ?? ''));
+        $decoded['success'] = false;
+        $decoded['error-codes'] = array_merge($decoded['error-codes'] ?? [], ['hostname-mismatch']);
     }
 
     // Persist verification result if DB available
@@ -186,7 +205,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($turnstileToken)) {
                 $error = 'Please complete the security check.';
             } else {
-                $turnstileResult = verifyTurnstileResponse($turnstileToken, $turnstile_secret_key, $ipAddress, $turnstileIdempotency);
+                $currentHost = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
+                $turnstileResult = verifyTurnstileResponse($turnstileToken, $turnstile_secret_key, $ipAddress, $turnstileIdempotency, 'contact', $currentHost);
                 if (!is_array($turnstileResult)) {
                     $error = 'Security verification failed. Please try again.';
                 } elseif (empty($turnstileResult['success'])) {
