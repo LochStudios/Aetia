@@ -9,6 +9,12 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
 }
 
 require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/services/turnstile.php';
+$turnstileConfig = loadTurnstileConfig();
+$turnstile_site_key = $turnstileConfig['site_key'] ?? null;
+$turnstile_explicit = !empty($turnstileConfig['explicit']);
+$turnstile_execution = $turnstileConfig['execution'] ?? 'render';
+$turnstile_enabled_for = $turnstileConfig['enable_on'] ?? [];
 
 $error_message = '';
 $success_message = '';
@@ -24,6 +30,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = 'Please enter a valid email address.';
     } else {
+        // If Turnstile is configured for this page, verify the response first.
+        if (empty($errors) && !empty($turnstile_site_key) && in_array('forgot', $turnstile_enabled_for)) {
+            $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
+            $idempotency = $_POST['turnstile_idempotency_key'] ?? '';
+            // derive remote IP (honour common proxy headers)
+            $remoteIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
+            if (strpos($remoteIp, ',') !== false) $remoteIp = trim(explode(',', $remoteIp)[0]);
+            $verify = verifyTurnstileResponse($turnstile_response, $turnstileConfig['secret_key'] ?? '', $remoteIp, $idempotency, 'forgot', $_SERVER['SERVER_NAME']);
+            if (!$verify['success']) {
+                $errors[] = 'There was a problem verifying the anti-spam challenge: ' . ($verify['message'] ?? 'verification failed');
+            }
+        }
         // Check if the email belongs to a valid client account
         $emailCheck = $userModel->checkEmailExists($email);
         // Always show the same success message for security (prevent email enumeration)
@@ -78,30 +96,29 @@ ob_start();
                     <span class="icon has-text-primary"><i class="fas fa-key"></i></span>
                     Reset Password
                 </h2>
-                
                 <div class="notification is-info is-light mb-4">
                     <div class="content">
                         <p>Enter your email address and we'll send you instructions to reset your password.</p>
                         <p><strong>Note:</strong> Password reset is only available for manual accounts (not social logins).</p>
                     </div>
                 </div>
-                
                 <?php if ($error_message): ?>
                 <div class="notification is-danger is-light mb-4">
                     <button class="delete"></button>
                     <?= htmlspecialchars($error_message) ?>
                 </div>
                 <?php endif; ?>
-                
                 <?php if ($success_message): ?>
                 <div class="notification is-success is-light mb-4">
                     <button class="delete"></button>
                     <?= $success_message ?>
                 </div>
                 <?php endif; ?>
-                
                 <?php if (!$success_message): ?>
                 <form method="POST" action="forgot-password.php">
+                    <?php if (!empty($turnstile_site_key) && in_array('forgot', $turnstile_enabled_for)): ?>
+                    <input type="hidden" name="turnstile_idempotency_key" id="turnstile-idempotency-key-forgot" value="">
+                    <?php endif; ?>
                     <div class="field">
                         <label class="label">Email Address</label>
                         <div class="control has-icons-left">
@@ -111,7 +128,6 @@ ob_start();
                             </span>
                         </div>
                     </div>
-                    
                     <div class="field">
                         <div class="control">
                             <button class="button is-primary is-fullwidth" type="submit">
@@ -121,10 +137,19 @@ ob_start();
                         </div>
                     </div>
                 </form>
+                <?php if (!empty($turnstile_site_key) && in_array('forgot', $turnstile_enabled_for)): ?>
+                    <?php if ($turnstile_explicit): ?>
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+                    <?php else: ?>
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    <?php endif; ?>
+                    <script>
+                    function generateUUIDv4() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){var r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+                    document.addEventListener('DOMContentLoaded', function(){ try { var f=document.getElementById('turnstile-idempotency-key-forgot'); if(f && !f.value) f.value=generateUUIDv4(); } catch(e){console.error(e)} });
+                    </script>
                 <?php endif; ?>
-                
+                <?php endif; ?>
                 <hr>
-                
                 <div class="has-text-centered">
                     <p class="is-size-7">
                         Remember your password? 

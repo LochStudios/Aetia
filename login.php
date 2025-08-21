@@ -6,6 +6,13 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/GoogleOAuth.php';
+require_once __DIR__ . '/services/turnstile.php';
+
+$turnstileConfig = loadTurnstileConfig();
+$turnstile_site_key = $turnstileConfig['site_key'] ?? null;
+$turnstile_explicit = !empty($turnstileConfig['explicit']);
+$turnstile_execution = $turnstileConfig['execution'] ?? 'render';
+$turnstile_enabled_for = $turnstileConfig['enable_on'] ?? [];
 
 // Redirect if already logged in
 if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) {
@@ -330,6 +337,19 @@ ob_start();
                             </button>
                         </div>
                     </div>
+                    <?php if (!empty($turnstile_site_key) && in_array($isSignupMode ? 'signup' : 'login', $turnstile_enabled_for)): ?>
+                    <div class="field mt-2">
+                        <div class="control">
+                            <?php if ($turnstile_explicit): ?>
+                                <div id="turnstile-login-container" class="cf-turnstile"></div>
+                                <input type="hidden" name="cf-turnstile-response" id="cf-turnstile-response-login" value="">
+                            <?php else: ?>
+                                <div class="cf-turnstile" data-sitekey="<?= htmlspecialchars($turnstile_site_key) ?>" data-action="login"></div>
+                            <?php endif; ?>
+                            <input type="hidden" name="turnstile_idempotency_key" id="turnstile-idempotency-key-login" value="">
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </form>
                 
                 <div class="has-text-centered mt-4">
@@ -351,3 +371,33 @@ ob_start();
 $content = ob_get_clean();
 include 'layout.php';
 ?>
+<?php if (!empty($turnstile_site_key) && in_array($isSignupMode ? 'signup' : 'login', $turnstile_enabled_for)): ?>
+    <?php if ($turnstile_explicit): ?>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+    <?php else: ?>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php endif; ?>
+    <script>
+    // UUID v4 generator
+    function generateUUIDv4() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){var r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+    document.addEventListener('DOMContentLoaded', function(){
+        try {
+            var idField = document.getElementById('turnstile-idempotency-key-login');
+            if (idField && !idField.value) idField.value = generateUUIDv4();
+            if (typeof turnstile !== 'undefined' && <?= $turnstile_explicit ? 'true' : 'false' ?>) {
+                var container = document.getElementById('turnstile-login-container');
+                if (container) {
+                    window._turnstileLoginWidget = turnstile.render(container, {
+                        sitekey: '<?= htmlspecialchars($turnstile_site_key) ?>',
+                        action: 'login',
+                        execution: '<?= htmlspecialchars($turnstile_execution) ?>',
+                        callback: function(token){
+                            var h = document.getElementById('cf-turnstile-response-login'); if (h) h.value = token;
+                        }
+                    });
+                }
+            }
+        } catch(e){console.error(e)}
+    });
+    </script>
+<?php endif; ?>
