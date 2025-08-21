@@ -32,7 +32,7 @@ if (isset($cfg) && is_array($cfg)) {
 }
 
 /** Verify Cloudflare Turnstile response token server-side. */
-function verifyTurnstileResponse($token, $secret, $remoteIp = null) {
+function verifyTurnstileResponse($token, $secret, $remoteIp = null, $idempotencyKey = null) {
     if (empty($secret) || empty($token)) {
         return null;
     }
@@ -61,11 +61,17 @@ function verifyTurnstileResponse($token, $secret, $remoteIp = null) {
         error_log('Turnstile DB check failed: ' . $e->getMessage());
     }
     $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-    $postData = http_build_query([
+    $payload = [
         'secret' => $secret,
-        'response' => $token,
-        'remoteip' => $remoteIp
-    ]);
+        'response' => $token
+    ];
+    if (!empty($remoteIp)) {
+        $payload['remoteip'] = $remoteIp;
+    }
+    if (!empty($idempotencyKey)) {
+        $payload['idempotency_key'] = $idempotencyKey;
+    }
+    $postData = http_build_query($payload);
     // Prefer cURL for POST
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
@@ -101,22 +107,36 @@ function verifyTurnstileResponse($token, $secret, $remoteIp = null) {
 
     // Persist verification result if DB available
     try {
-        if (class_exists('Database')) {
-            $db = new Database();
-            $mysqli = $db->getConnection();
-            $tokenHash = hash('sha256', $token);
-            $responseJson = $mysqli->real_escape_string(json_encode($decoded));
-            $successInt = !empty($decoded['success']) ? 1 : 0;
-            $idempKey = null;
-            // Insert record (uniq on token_hash prevents duplicates)
-            $insertSql = "INSERT INTO turnstile_verifications (token_hash, idempotency_key, remoteip, success, response_json) VALUES ('{$tokenHash}', ?, ?, {$successInt}, '{$responseJson}')";
-            $stmt = $mysqli->prepare($insertSql);
-            if ($stmt) {
-                $stmt->bind_param('ss', $idempKey, $remoteIp);
-                $stmt->execute();
-                $stmt->close();
+            if (class_exists('Database')) {
+                $db = new Database();
+                $mysqli = $db->getConnection();
+                $tokenHash = hash('sha256', $token);
+                $responseJson = $mysqli->real_escape_string(json_encode($decoded));
+                $successInt = !empty($decoded['success']) ? 1 : 0;
+                $idempKey = $idempotencyKey;
+                $action = !empty($decoded['action']) ? $decoded['action'] : null;
+                $cdata = !empty($decoded['cdata']) ? $decoded['cdata'] : null;
+                $ephemeral = null;
+                if (!empty($decoded['metadata']) && is_array($decoded['metadata']) && !empty($decoded['metadata']['ephemeral_id'])) {
+                    $ephemeral = $decoded['metadata']['ephemeral_id'];
+                }
+                $hostname = !empty($decoded['hostname']) ? $decoded['hostname'] : null;
+                $challengeTs = !empty($decoded['challenge_ts']) ? date('Y-m-d H:i:s', strtotime($decoded['challenge_ts'])) : null;
+                $errorCodesJson = null;
+                if (!empty($decoded['error-codes']) || !empty($decoded['error_codes']) || !empty($decoded['error-codes'])) {
+                    $ec = !empty($decoded['error-codes']) ? $decoded['error-codes'] : ($decoded['error_codes'] ?? null);
+                    $errorCodesJson = $mysqli->real_escape_string(json_encode($ec));
+                }
+
+                // Insert record (uniq on token_hash prevents duplicates)
+                $insertSql = "INSERT INTO turnstile_verifications (token_hash, idempotency_key, remoteip, success, response_json, action, cdata, ephemeral_id, hostname, challenge_ts, error_codes) VALUES ('{$tokenHash}', ?, ?, {$successInt}, '{$responseJson}', ?, ?, ?, ?, ?, ?)";
+                $stmt = $mysqli->prepare($insertSql);
+                if ($stmt) {
+                    $stmt->bind_param('ssssssssss', $idempKey, $remoteIp, $action, $cdata, $ephemeral, $hostname, $challengeTs, $errorCodesJson);
+                    $stmt->execute();
+                    $stmt->close();
+                }
             }
-        }
     } catch (Exception $e) {
         error_log('Turnstile DB insert failed: ' . $e->getMessage());
     }
@@ -133,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate form token to prevent CSRF and duplicate submissions
     $formName = 'contact_form';
     $formToken = $_POST['form_token'] ?? '';
-    
     if (empty($formToken)) {
         $error = 'Invalid form submission. Please refresh the page and try again.';
     } elseif (!FormTokenManager::validateToken($formName, $formToken)) {
@@ -146,17 +165,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
         $subject = trim($_POST['subject'] ?? '');
         $messageText = trim($_POST['message'] ?? '');
-        // Get client info for spam prevention
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+        // Get client info for spam prevention (respect Cloudflare and proxy headers)
+        $ipAddress = null;
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $ipAddress = $_SERVER['HTTP_CF_CONNECTING_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // X-Forwarded-For may contain a comma-separated list; take the first
+            $xff = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ipAddress = trim($xff[0]);
+        } else {
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+        }
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
-        // Cloudflare Turnstile response (if widget present)
-        $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
+    // Cloudflare Turnstile response (if widget present)
+    $turnstileToken = $_POST['cf-turnstile-response'] ?? '';
+    // Optional idempotency key for siteverify retries (client may provide)
+    $turnstileIdempotency = $_POST['turnstile_idempotency_key'] ?? null;
         // If Turnstile secret is configured, require verification success
         if (!empty($turnstile_site_key) && !empty($turnstile_secret_key)) {
             if (empty($turnstileToken)) {
                 $error = 'Please complete the security check.';
             } else {
-                $turnstileResult = verifyTurnstileResponse($turnstileToken, $turnstile_secret_key, $ipAddress);
+                $turnstileResult = verifyTurnstileResponse($turnstileToken, $turnstile_secret_key, $ipAddress, $turnstileIdempotency);
                 if (!is_array($turnstileResult)) {
                     $error = 'Security verification failed. Please try again.';
                 } elseif (empty($turnstileResult['success'])) {

@@ -263,6 +263,12 @@ class Database {
                 remoteip VARCHAR(45) DEFAULT NULL,
                 success BOOLEAN DEFAULT FALSE,
                 response_json LONGTEXT,
+                action VARCHAR(100) DEFAULT NULL,
+                cdata VARCHAR(255) DEFAULT NULL,
+                ephemeral_id VARCHAR(255) DEFAULT NULL,
+                hostname VARCHAR(255) DEFAULT NULL,
+                challenge_ts TIMESTAMP NULL,
+                error_codes JSON DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uniq_token_hash (token_hash),
                 INDEX idx_idempotency (idempotency_key),
@@ -827,6 +833,28 @@ class Database {
                 $idxResult = $this->mysqli->query($checkIndex);
                 if ($idxResult && $idxResult->num_rows == 0) {
                     $this->mysqli->query($indexQuery);
+                }
+            }
+
+            // Ensure turnstile_verifications extra columns exist for older DBs
+            $checkTurnstileTable = "SHOW TABLES LIKE 'turnstile_verifications'";
+            $ttRes = $this->mysqli->query($checkTurnstileTable);
+            if ($ttRes && $ttRes->num_rows > 0) {
+                $turnstileColumns = [
+                    'action' => "VARCHAR(100) DEFAULT NULL",
+                    'cdata' => "VARCHAR(255) DEFAULT NULL",
+                    'ephemeral_id' => "VARCHAR(255) DEFAULT NULL",
+                    'hostname' => "VARCHAR(255) DEFAULT NULL",
+                    'challenge_ts' => "TIMESTAMP NULL",
+                    'error_codes' => "JSON DEFAULT NULL"
+                ];
+                foreach ($turnstileColumns as $col => $def) {
+                    $checkCol = "SHOW COLUMNS FROM turnstile_verifications LIKE '{$col}'";
+                    $colRes = $this->mysqli->query($checkCol);
+                    if ($colRes && $colRes->num_rows == 0) {
+                        $alter = "ALTER TABLE turnstile_verifications ADD COLUMN {$col} {$def}";
+                        $this->mysqli->query($alter);
+                    }
                 }
             }
         } catch (Exception $e) {
