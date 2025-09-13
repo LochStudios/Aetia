@@ -303,11 +303,14 @@ ob_start();
             // Show navigation for nearby months
             for ($nav_month = 1; $nav_month <= 12; $nav_month++) {
                 $isCurrentMonth = ($nav_month == $selectedMonth && $selectedYear == $selectedYear);
-                $buttonClass = $isCurrentMonth ? 'is-primary' : 'is-outlined';
+                $buttonClass = $isCurrentMonth ? 'is-primary' : 'is-outlined is-link';
+                $textClass = $isCurrentMonth ? 'has-text-white' : 'has-text-link';
                 ?>
                 <a href="?month=<?= $nav_month ?>&year=<?= $selectedYear ?>" 
                    class="button <?= $buttonClass ?> is-small">
-                    <?= date('M', mktime(0, 0, 0, $nav_month, 1)) ?>
+                    <span class="<?= $textClass ?>">
+                        <?= date('M', mktime(0, 0, 0, $nav_month, 1)) ?>
+                    </span>
                 </a>
             <?php } ?>
         </div>
