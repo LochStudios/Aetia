@@ -1232,7 +1232,7 @@ class Message {
                     INSERT INTO billing_reports (report_period_start, report_period_end, report_data, total_clients, total_messages, total_manual_reviews, total_sms, total_amount, generated_by)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $insertStmt->bind_param("sssiiiiddi", $startDate, $endDate, $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalSms, $totalAmount, $generatedBy);
+                $insertStmt->bind_param("sssiiiidi", $startDate, $endDate, $reportDataJson, $totalClients, $totalMessages, $totalManualReviews, $totalSms, $totalAmount, $generatedBy);
                 $result = $insertStmt->execute();
                 $reportId = $this->mysqli->insert_id;
                 $insertStmt->close();
