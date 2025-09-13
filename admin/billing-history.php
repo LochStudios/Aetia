@@ -239,13 +239,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
                 break;
                 
-            case 'repair_invoice_types':
-                $result = $billingService->repairInvalidInvoiceTypes();
+            case 'delete_document':
+                $documentId = intval($_POST['document_id']);
+                $billId = !empty($_POST['bill_id']) ? intval($_POST['bill_id']) : null;
                 
-                if ($result['success']) {
-                    $message = $result['message'];
+                // If document is linked to a bill, unlink it first
+                if ($billId) {
+                    $billingService->unlinkDocumentFromBill($billId, $documentId);
+                }
+                
+                $result = $documentService->deleteUserDocument($documentId, $_SESSION['user_id']);
+                
+                if ($result) {
+                    $message = 'Document deleted successfully.';
                 } else {
-                    $error = $result['message'];
+                    $error = 'Failed to delete document.';
                 }
                 break;
         }
@@ -685,6 +693,10 @@ ob_start();
                                                     <span class="has-text-white is-size-7">
                                                         <?= htmlspecialchars($invoice['original_filename'] ?? 'No filename') ?>
                                                     </span>
+                                                    <button class="button is-small is-danger is-light ml-2" 
+                                                            onclick="showDeleteDocumentModal(<?= $invoice['document_id'] ?>, '<?= htmlspecialchars($invoice['original_filename'] ?? 'Unknown') ?>', <?= $bill['id'] ?>)">
+                                                        <span class="icon is-small"><i class="fas fa-times"></i></span>
+                                                    </button>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -705,6 +717,10 @@ ob_start();
                                         <button class="button is-success is-small" 
                                                 onclick="showUpdateStatusModal(<?= $bill['id'] ?>)">
                                             <span class="icon"><i class="fas fa-edit"></i></span>
+                                        </button>
+                                        <button class="button is-danger is-small" 
+                                                onclick="showDeleteBillModal(<?= $bill['id'] ?>, '<?= date('M Y', strtotime($bill['billing_period_start'])) ?>')">
+                                            <span class="icon"><i class="fas fa-trash"></i></span>
                                         </button>
                                     </div>
                                 </td>
@@ -832,6 +848,14 @@ ob_start();
                                                 <i class="fas fa-download"></i>
                                             </span>
                                         </a>
+                                    </div>
+                                    <div class="control">
+                                        <button class="button is-danger is-small" 
+                                                onclick="showDeleteDocumentModal(<?= $invoice['id'] ?>, '<?= htmlspecialchars($invoice['original_filename']) ?>')">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-trash"></i>
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -1192,129 +1216,82 @@ ob_start();
     </div>
 </div>
 
-<!-- Bill Details Modal -->
-<div class="modal" id="billDetailsModal">
-    <div class="modal-background" onclick="closeModal('billDetailsModal')"></div>
+<!-- Delete Bill Modal -->
+<div class="modal" id="deleteBillModal">
+    <div class="modal-background" onclick="closeModal('deleteBillModal')"></div>
     <div class="modal-card">
         <header class="modal-card-head">
             <p class="modal-card-title">
-                <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                Bill Details
+                <span class="icon"><i class="fas fa-trash"></i></span>
+                Delete Bill
             </p>
-            <button class="delete" aria-label="close" onclick="closeModal('billDetailsModal')"></button>
+            <button class="delete" aria-label="close" onclick="closeModal('deleteBillModal')"></button>
         </header>
-        <section class="modal-card-body">
-            <div class="content">
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Billing Period:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billPeriod" class="has-text-weight-semibold"></span>
-                            </div>
-                        </div>
-                    </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="delete_bill">
+            <input type="hidden" name="bill_id" id="delete_bill_id">
+            <section class="modal-card-body">
+                <div class="content">
+                    <p class="has-text-danger">
+                        <strong>Warning:</strong> You are about to delete the bill for <strong id="deleteBillPeriod"></strong>.
+                    </p>
+                    <p>This action will:</p>
+                    <ul>
+                        <li>Delete the bill record</li>
+                        <li>Remove all invoice document links</li>
+                        <li><strong>The actual invoice files will remain in the user's documents</strong></li>
+                    </ul>
+                    <p class="has-text-danger"><strong>This action cannot be undone.</strong></p>
                 </div>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-danger" type="submit">
+                    <span class="icon"><i class="fas fa-trash"></i></span>
+                    <span>Delete Bill</span>
+                </button>
+                <button class="button" type="button" onclick="closeModal('deleteBillModal')">Cancel</button>
+            </footer>
+        </form>
+    </div>
+</div>
 
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Total Amount:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billAmount" class="has-text-weight-semibold has-text-success"></span>
-                            </div>
-                        </div>
-                    </div>
+<!-- Delete Document Modal -->
+<div class="modal" id="deleteDocumentModal">
+    <div class="modal-background" onclick="closeModal('deleteDocumentModal')"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">
+                <span class="icon"><i class="fas fa-trash"></i></span>
+                Delete Document
+            </p>
+            <button class="delete" aria-label="close" onclick="closeModal('deleteDocumentModal')"></button>
+        </header>
+        <form method="POST">
+            <input type="hidden" name="action" value="delete_document">
+            <input type="hidden" name="document_id" id="delete_document_id">
+            <input type="hidden" name="bill_id" id="delete_document_bill_id" value="">
+            <section class="modal-card-body">
+                <div class="content">
+                    <p class="has-text-danger">
+                        <strong>Warning:</strong> You are about to permanently delete the document <strong id="deleteDocumentName"></strong>.
+                    </p>
+                    <p>This action will:</p>
+                    <ul>
+                        <li>Delete the document file from storage</li>
+                        <li>Remove the document record from the database</li>
+                        <li id="unlinkWarning" style="display: none;">Remove the link from the associated bill</li>
+                    </ul>
+                    <p class="has-text-danger"><strong>This action cannot be undone.</strong></p>
                 </div>
-
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Status:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billStatus" class="tag"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Messages:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billMessages"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">Manual Reviews:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billReviews"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field is-horizontal">
-                    <div class="field-label is-normal">
-                        <label class="label">SMS Count:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billSms"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field is-horizontal" id="creditField" style="display: none;">
-                    <div class="field-label is-normal">
-                        <label class="label">Account Credit:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <span id="billCredit" class="has-text-warning has-text-weight-semibold"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field is-horizontal" id="notesField" style="display: none;">
-                    <div class="field-label is-normal">
-                        <label class="label">Notes:</label>
-                    </div>
-                    <div class="field-body">
-                        <div class="field">
-                            <div class="control">
-                                <div class="content">
-                                    <p id="billNotes"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <footer class="modal-card-foot">
-            <button class="button" type="button" onclick="closeModal('billDetailsModal')">Close</button>
-        </footer>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-danger" type="submit">
+                    <span class="icon"><i class="fas fa-trash"></i></span>
+                    <span>Delete Document</span>
+                </button>
+                <button class="button" type="button" onclick="closeModal('deleteDocumentModal')">Cancel</button>
+            </footer>
+        </form>
     </div>
 </div>
 
@@ -1483,15 +1460,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Show link document modal
-function showLinkDocumentModal(documentId, documentName) {
-    document.getElementById('linkDocumentId').value = documentId;
-    document.getElementById('linkDocumentName').textContent = documentName;
+function showDeleteBillModal(billId, billPeriod) {
+    if (confirm(`Are you sure you want to delete the bill for ${billPeriod}?\n\nThis will:\n• Delete the bill record\n• Remove all invoice document links\n• Keep the actual invoice files in the user's documents\n\nThis action cannot be undone.`)) {
+        document.getElementById('delete_bill_id').value = billId;
+        document.getElementById('deleteBillPeriod').textContent = billPeriod;
+        document.getElementById('deleteBillModal').classList.add('is-active');
+    }
+}
+
+function showDeleteDocumentModal(documentId, documentName, billId = null) {
+    let message = `Are you sure you want to permanently delete "${documentName}"?\n\nThis will:\n• Delete the document file from storage\n• Remove the document record from the database`;
     
-    // Auto-populate invoice number with document name (remove .pdf extension if present)
-    const invoiceNumber = documentName.replace(/\.pdf$/i, '');
-    document.getElementById('linkInvoiceNumber').value = invoiceNumber;
+    if (billId) {
+        message += '\n• Remove the link from the associated bill';
+    }
     
-    document.getElementById('linkDocumentModal').classList.add('is-active');
+    message += '\n\nThis action cannot be undone.';
+    
+    if (confirm(message)) {
+        document.getElementById('delete_document_id').value = documentId;
+        document.getElementById('deleteDocumentName').textContent = documentName;
+        
+        const unlinkWarning = document.getElementById('unlinkWarning');
+        const billIdField = document.getElementById('delete_document_bill_id');
+        
+        if (billId) {
+            billIdField.value = billId;
+            unlinkWarning.style.display = 'list-item';
+        } else {
+            billIdField.value = '';
+            unlinkWarning.style.display = 'none';
+        }
+        
+        document.getElementById('deleteDocumentModal').classList.add('is-active');
+    }
 }
 
 // Auto-populate invoice number from selected file

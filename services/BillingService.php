@@ -864,31 +864,26 @@ class BillingService {
     }
     
     /**
-     * Repair invalid invoice types in the database
+     * Unlink a document from a bill
      */
-    public function repairInvalidInvoiceTypes() {
+    public function unlinkDocumentFromBill($billId, $documentId) {
         try {
             $this->ensureConnection();
             
             $stmt = $this->mysqli->prepare("
-                UPDATE user_invoice_documents 
-                SET invoice_type = 'generated' 
-                WHERE invoice_type NOT IN ('generated', 'payment_receipt', 'credit_note') 
-                   OR invoice_type IS NULL 
-                   OR invoice_type = ''
+                DELETE FROM user_invoice_documents 
+                WHERE user_bill_id = ? AND document_id = ?
             ");
-            $stmt->execute();
+            $stmt->bind_param("ii", $billId, $documentId);
+            $result = $stmt->execute();
             $affectedRows = $stmt->affected_rows;
             $stmt->close();
             
-            return [
-                'success' => true, 
-                'message' => "Repaired $affectedRows invalid invoice type records"
-            ];
+            return $affectedRows > 0;
             
         } catch (Exception $e) {
-            error_log("Repair invoice types error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Failed to repair invoice types'];
+            error_log("Unlink document from bill error: " . $e->getMessage());
+            return false;
         }
     }
 }
