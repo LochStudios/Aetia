@@ -669,7 +669,7 @@ ob_start();
                                     $totalFee = isset($client['adjusted_total_fee']) ? $client['adjusted_total_fee'] : $client['total_fee'];
                                     $colorClass = isset($client['billing_status']) ? 
                                         ($client['billing_status'] == 'fully_invoiced' ? 'has-text-white' : 
-                                         ($client['billing_status'] == 'partially_invoiced' ? 'has-text-warning' : 'has-text-success')) : 'has-text-success';
+                                         ($client['billing_status'] == 'partially_invoiced' ? 'has-text-warning' : 'has-text-info')) : 'has-text-success';
                                     ?>
                                     <span class="has-text-weight-bold <?= $colorClass ?> is-size-6">
                                         $<?= number_format($totalFee, 2) ?>
@@ -677,9 +677,14 @@ ob_start();
                                     <?php if (isset($client['billing_status'])): ?>
                                         <br><small class="tag is-small is-<?= 
                                             $client['billing_status'] == 'fully_invoiced' ? 'success' : 
-                                            ($client['billing_status'] == 'partially_invoiced' ? 'warning' : 'light') 
+                                            ($client['billing_status'] == 'partially_invoiced' ? 'warning' : 'info') 
                                         ?>">
-                                            <?= ucfirst(str_replace('_', ' ', $client['billing_status'])) ?>
+                                            <span class="has-text-weight-semibold <?= 
+                                                $client['billing_status'] == 'fully_invoiced' ? 'has-text-white' : 
+                                                ($client['billing_status'] == 'partially_invoiced' ? 'has-text-dark' : 'has-text-white') 
+                                            ?>">
+                                                <?= ucfirst(str_replace('_', ' ', $client['billing_status'])) ?>
+                                            </span>
                                         </small>
                                     <?php endif; ?>
                                     <?php if (isset($client['adjusted_total_fee']) && $client['adjusted_total_fee'] != $client['total_fee']): ?>

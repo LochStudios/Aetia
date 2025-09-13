@@ -1254,7 +1254,6 @@ class Message {
     public function getSavedBillingReport($startDate, $endDate) {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 SELECT br.*, u.username as generated_by_username,
                        COALESCE(NULLIF(u.social_username, ''), u.username) as generated_by_display_name
@@ -1267,12 +1266,10 @@ class Message {
             $result = $stmt->get_result();
             $report = $result->fetch_assoc();
             $stmt->close();
-            
             if ($report) {
                 // Decode JSON data
                 $report['report_data'] = json_decode($report['report_data'], true);
             }
-            
             return $report;
         } catch (Exception $e) {
             error_log("Get saved billing report error: " . $e->getMessage());
