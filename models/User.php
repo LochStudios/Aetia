@@ -1470,6 +1470,37 @@ class User {
     }
     
     /**
+     * Get all users with complete information for admin management
+     */
+    public function getAllUsersForAdmin() {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                SELECT id, username, email, first_name, last_name, account_type, social_username, 
+                       profile_image, created_at, contact_attempted, contact_date, contact_notes,
+                       approval_status, approval_date, approved_by, rejection_reason,
+                       verified_date, verified_by, is_verified, is_active,
+                       deactivation_reason, deactivated_by, deactivation_date,
+                       suspension_reason, suspended_by, suspended_date, is_suspended, is_admin,
+                       public_email
+                FROM users 
+                ORDER BY username ASC
+            ");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $users = [];
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
+            $stmt->close();
+            return $users;
+        } catch (Exception $e) {
+            error_log("Get all users for admin error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Get all active users for newsletter functionality
      */
     public function getAllActiveUsers() {
