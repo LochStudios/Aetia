@@ -192,6 +192,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
                 
+            case 'create_external_message':
+                $recipientEmail = trim($_POST['recipient_email']);
+                $subject = trim($_POST['subject']);
+                $messageText = trim($_POST['message']);
+                // External email requests are high priority
+                
+                if (!empty($recipientEmail) && !empty($subject) && !empty($messageText)) {
+                    // Validate email format
+                    if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                        $error = 'Please enter a valid email address';
+                    } else {
+                        // Find the first admin user to send the message to
+                        $adminUser = $userModel->getFirstAdmin();
+                        if ($adminUser) {
+                            // Create message with recipient email included in the message body
+                            $fullMessage = "Recipient Email: " . $recipientEmail . "\n\n" . $messageText;
+                            $fullSubject = "External Email Request: " . $subject;
+                            
+                            // External email requests are high priority
+                            $result = $messageModel->createMessage($adminUser['id'], $fullSubject, $fullMessage, $userId, 'high', 'External');
+                            if ($result['success']) {
+                                // Mark the new message as read by the sender (user who created it)
+                                $messageModel->updateMessageStatus($result['message_id'], 'read');
+                                
+                                $message = 'External email request submitted successfully! Our team will review and compose the email for your approval.';
+                                // Redirect to view the new message
+                                header('Location: messages.php?id=' . $result['message_id']);
+                                exit;
+                            } else {
+                                $error = $result['message'] ?? 'Failed to submit external email request';
+                            }
+                        } else {
+                            $error = 'No admin users available to process requests';
+                        }
+                    }
+                } else {
+                    $error = 'Recipient email, subject and message are required';
+                }
+                break;
+                
             case 'archive_message':
                 $messageId = intval($_POST['message_id']);
                 $archiveReason = isset($_POST['archive_reason']) ? trim($_POST['archive_reason']) : null;
@@ -400,6 +440,14 @@ ob_start();
                     <button class="button is-primary is-fullwidth" onclick="showNewMessageModal()">
                         <span class="icon"><i class="fas fa-plus"></i></span>
                         <span>New Talent Team Message</span>
+                    </button>
+                </div>
+                
+                <!-- New External Message Button -->
+                <div class="field mb-4">
+                    <button class="button is-info is-fullwidth" onclick="showNewExternalMessageModal()">
+                        <span class="icon"><i class="fas fa-envelope"></i></span>
+                        <span>New External Message</span>
                     </button>
                 </div>
                 
@@ -856,6 +904,10 @@ const formTokens = {
         token: '<?= FormTokenManager::generateToken('create_team_message') ?>',
         name: 'create_team_message'
     },
+    createExternalMessage: {
+        token: '<?= FormTokenManager::generateToken('create_external_message') ?>',
+        name: 'create_external_message'
+    },
     archiveMessage: {
         token: '<?= $messageId ? FormTokenManager::generateToken('archive_message_' . $messageId) : '' ?>',
         name: '<?= $messageId ? 'archive_message_' . $messageId : '' ?>'
@@ -1246,6 +1298,130 @@ async function showNewMessageModal() {
         tokenNameInput.type = 'hidden';
         tokenNameInput.name = 'form_name';
         tokenNameInput.value = formTokens.createTeamMessage.name;
+        form.appendChild(tokenNameInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+async function showNewExternalMessageModal() {
+    const { value: formValues } = await Swal.fire({
+        title: 'Request External Email',
+        html: `
+            <div class="notification is-info is-light mb-4">
+                <span class="icon"><i class="fas fa-info-circle"></i></span>
+                Our team will review your request, compose a professional email, and send it to you for approval before it gets sent out from your email account.
+            </div>
+            <div class="field">
+                <label class="label has-text-left has-text-dark">Recipient Email Address</label>
+                <div class="control">
+                    <input id="swal-recipient-email" class="input swal-light-input" type="email" placeholder="Enter recipient's email address">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label has-text-left has-text-dark">Subject</label>
+                <div class="control">
+                    <input id="swal-subject" class="input swal-light-input" type="text" placeholder="Enter email subject">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label has-text-left has-text-dark">Your Message</label>
+                <div class="control">
+                    <textarea id="swal-message" class="textarea swal-light-input" rows="5" placeholder="Describe what you'd like to communicate"></textarea>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Submit Request',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#209cee',
+        preConfirm: () => {
+            const recipientEmail = document.getElementById('swal-recipient-email').value;
+            const subject = document.getElementById('swal-subject').value;
+            const message = document.getElementById('swal-message').value;
+            
+            if (!recipientEmail || !subject || !message) {
+                Swal.showValidationMessage('Please fill in all fields');
+                return false;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(recipientEmail.trim())) {
+                Swal.showValidationMessage('Please enter a valid email address');
+                return false;
+            }
+            
+            if (subject.trim().length < 3) {
+                Swal.showValidationMessage('Subject must be at least 3 characters long');
+                return false;
+            }
+            
+            if (message.trim().length < 10) {
+                Swal.showValidationMessage('Message must be at least 10 characters long');
+                return false;
+            }
+            
+            return {
+                recipient_email: recipientEmail.trim(),
+                subject: subject.trim(),
+                message: message.trim()
+            };
+        }
+    });
+
+    if (formValues) {
+        // Show loading
+        Swal.fire({
+            title: 'Submitting...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Submit the form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'create_external_message';
+        form.appendChild(actionInput);
+        
+        const recipientEmailInput = document.createElement('input');
+        recipientEmailInput.type = 'hidden';
+        recipientEmailInput.name = 'recipient_email';
+        recipientEmailInput.value = formValues.recipient_email;
+        form.appendChild(recipientEmailInput);
+        
+        const subjectInput = document.createElement('input');
+        subjectInput.type = 'hidden';
+        subjectInput.name = 'subject';
+        subjectInput.value = formValues.subject;
+        form.appendChild(subjectInput);
+        
+        const messageInput = document.createElement('input');
+        messageInput.type = 'hidden';
+        messageInput.name = 'message';
+        messageInput.value = formValues.message;
+        form.appendChild(messageInput);
+        
+        // Add form token
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'form_token';
+        tokenInput.value = formTokens.createExternalMessage.token;
+        form.appendChild(tokenInput);
+        
+        const tokenNameInput = document.createElement('input');
+        tokenNameInput.type = 'hidden';
+        tokenNameInput.name = 'form_name';
+        tokenNameInput.value = formTokens.createExternalMessage.name;
         form.appendChild(tokenNameInput);
         
         document.body.appendChild(form);
