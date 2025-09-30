@@ -21,6 +21,13 @@ if (!$user) {
     exit;
 }
 
+// Check if user is suspended
+if ($user['is_suspended']) {
+    $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
+    header('Location: login.php');
+    exit;
+}
+
 // Get user contracts
 $contracts = $contractService->getUserContracts($_SESSION['user_id']);
 

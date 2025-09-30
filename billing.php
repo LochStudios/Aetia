@@ -28,6 +28,13 @@ if (!$currentUser) {
     exit;
 }
 
+// Check if user is suspended
+if ($currentUser['is_suspended']) {
+    $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($currentUser['suspension_reason'] ?? 'No reason provided');
+    header('Location: login.php');
+    exit;
+}
+
 // Get user display name
 $userDisplayName = !empty($currentUser['first_name']) ? 
     trim($currentUser['first_name'] . ' ' . ($currentUser['last_name'] ?? '')) : 

@@ -105,6 +105,10 @@ class Database {
                 phone_verified BOOLEAN DEFAULT FALSE,
                 phone_verification_code VARCHAR(10) DEFAULT NULL,
                 phone_verification_expires DATETIME DEFAULT NULL,
+                is_suspended BOOLEAN DEFAULT FALSE,
+                suspension_reason TEXT,
+                suspended_by VARCHAR(100),
+                suspended_date TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
@@ -596,7 +600,11 @@ class Database {
                 'phone_number' => 'VARCHAR(20) DEFAULT NULL',
                 'phone_verified' => 'BOOLEAN DEFAULT FALSE',
                 'phone_verification_code' => 'VARCHAR(10) DEFAULT NULL',
-                'phone_verification_expires' => 'DATETIME DEFAULT NULL'
+                'phone_verification_expires' => 'DATETIME DEFAULT NULL',
+                'is_suspended' => 'BOOLEAN DEFAULT FALSE',
+                'suspension_reason' => 'TEXT',
+                'suspended_by' => 'VARCHAR(100)',
+                'suspended_date' => 'TIMESTAMP NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {

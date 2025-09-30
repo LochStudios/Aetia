@@ -152,7 +152,7 @@ class User {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, password_hash, first_name, last_name, profile_image, approval_status, is_admin, is_active 
+                SELECT id, username, email, password_hash, first_name, last_name, profile_image, approval_status, is_admin, is_active, is_suspended, suspension_reason 
                 FROM users 
                 WHERE (username = ? OR email = ?) AND account_type = 'manual' AND is_active = 1
             ");
@@ -163,6 +163,12 @@ class User {
             $stmt->close();
             if ($user && password_verify($password, $user['password_hash'])) {
                 unset($user['password_hash']); // Remove password hash from returned data
+                
+                // Check if user is suspended
+                if ($user['is_suspended']) {
+                    return ['success' => false, 'message' => 'Your account has been suspended. Reason: ' . ($user['suspension_reason'] ?: 'No reason provided.') . ' Please contact suspensions@aetia.com.au for more information.'];
+                }
+                
                 // Check approval status
                 if ($user['approval_status'] === 'pending') {
                     return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
@@ -197,6 +203,11 @@ class User {
             $existingUser = $result->fetch_assoc();
             $stmt->close();
             if ($existingUser) {
+                // Check if user is suspended
+                if ($existingUser['is_suspended']) {
+                    return ['success' => false, 'message' => 'Your account has been suspended. Reason: ' . ($existingUser['suspension_reason'] ?: 'No reason provided.') . ' Please contact suspensions@aetia.com.au for more information.'];
+                }
+                
                 // Check approval status for existing user
                 if ($existingUser['approval_status'] === 'pending') {
                     return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
@@ -609,6 +620,44 @@ class User {
             return $result;
         } catch (Exception $e) {
             error_log("Deactivate user error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Suspend user (temporary restriction)
+    public function suspendUser($userId, $reason, $suspendedBy) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_suspended = 1, suspension_reason = ?, suspended_by = ?, suspended_date = CURRENT_TIMESTAMP
+                WHERE id = ? AND is_active = 1
+            ");
+            $stmt->bind_param("ssi", $reason, $suspendedBy, $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Suspend user error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // Unsuspend user
+    public function unsuspendUser($userId) {
+        try {
+            $this->ensureConnection();
+            $stmt = $this->mysqli->prepare("
+                UPDATE users 
+                SET is_suspended = 0, suspension_reason = NULL, suspended_by = NULL, suspended_date = NULL
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            error_log("Unsuspend user error: " . $e->getMessage());
             return false;
         }
     }
@@ -1471,526 +1520,61 @@ class User {
     }
 
     /**
-     * Get all users for admin management with comprehensive status information
+     * Get user by social account
      */
-    public function getAllUsersForAdmin() {
+    public function getUserBySocialAccount($platform, $socialId) {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
-                SELECT id, username, email, public_email, first_name, last_name, profile_image, 
-                       account_type, social_id, social_username, social_data, approval_status, 
-                       approval_date, approved_by, rejection_reason, contact_attempted, contact_date, 
-                       contact_notes, is_admin, is_verified, is_active, created_at, updated_at, 
-                       verified_date, verified_by, deactivation_reason, deactivated_by, 
-                       deactivation_date, signup_email_sent
-                FROM users 
-                ORDER BY 
-                    CASE 
-                        WHEN approval_status = 'pending' THEN 1
-                        WHEN is_verified = 0 THEN 2
-                        WHEN is_active = 0 THEN 3
-                        ELSE 4
-                    END,
-                    created_at DESC
+                SELECT u.* FROM users u 
+                JOIN social_connections sc ON u.id = sc.user_id 
+                WHERE sc.platform = ? AND sc.social_id = ?
             ");
-            
+            $stmt->bind_param("ss", $platform, $socialId);
             $stmt->execute();
             $result = $stmt->get_result();
-            $users = [];
-            
-            while ($row = $result->fetch_assoc()) {
-                $users[] = $row;
-            }
-            
+            $user = $result->fetch_assoc();
             $stmt->close();
-            return $users;
-            
+            return $user;
         } catch (Exception $e) {
-            error_log("Get all users for admin error: " . $e->getMessage());
-            return [];
+            error_log("Get user by social account error: " . $e->getMessage());
+            return null;
         }
     }
-    
-    // SMS-related methods
-    
+
     /**
-     * Update user SMS preferences
-     * 
-     * @param int $userId User ID
-     * @param bool $enabled Whether SMS is enabled
-     * @param string|null $phoneNumber Phone number in international format
-     * @return array Result with success status and message
+     * Get user by email
      */
-    public function updateSmsPreferences($userId, $enabled, $phoneNumber = null) {
+    public function getUserByEmail($email) {
         try {
             $this->ensureConnection();
-            
-            // Validate phone number if SMS is being enabled
-            if ($enabled && !empty($phoneNumber)) {
-                if (!$this->validatePhoneNumber($phoneNumber)) {
-                    return [
-                        'success' => false,
-                        'message' => 'Invalid phone number or unsupported country. Currently we only support USA (+1) and Australia (+61) phone numbers. Support for more countries coming soon!'
-                    ];
-                }
-            }
-            
-            // If disabling SMS, clear phone number and verification status
-            if (!$enabled) {
-                $stmt = $this->mysqli->prepare("
-                    UPDATE users 
-                    SET sms_enabled = FALSE, 
-                        phone_number = NULL, 
-                        phone_verified = FALSE,
-                        phone_verification_code = NULL,
-                        phone_verification_expires = NULL
-                    WHERE id = ?
-                ");
-                $stmt->bind_param("i", $userId);
-                $stmt->execute();
-                $stmt->close();
-                
-                return [
-                    'success' => true,
-                    'message' => 'SMS notifications disabled successfully.'
-                ];
-            }
-            
-            // If enabling SMS with a new phone number, reset verification status
-            $phoneVerified = false;
-            $verificationCode = null;
-            $verificationExpires = null;
-            
-            // Get current phone number to check if it's changing
-            $stmt = $this->mysqli->prepare("SELECT phone_number, phone_verified FROM users WHERE id = ?");
-            $stmt->bind_param("i", $userId);
+            $stmt = $this->mysqli->prepare("SELECT * FROM users WHERE email = ?");
+            $stmt->bind_param("s", $email);
             $stmt->execute();
             $result = $stmt->get_result();
-            $currentData = $result->fetch_assoc();
+            $user = $result->fetch_assoc();
             $stmt->close();
-            
-            // If phone number is the same and already verified, keep verification status
-            if ($currentData && $currentData['phone_number'] === $phoneNumber && $currentData['phone_verified']) {
-                $phoneVerified = true;
-            }
-            
-            $stmt = $this->mysqli->prepare("
-                UPDATE users 
-                SET sms_enabled = ?, 
-                    phone_number = ?, 
-                    phone_verified = ?,
-                    phone_verification_code = ?,
-                    phone_verification_expires = ?
-                WHERE id = ?
-            ");
-            $stmt->bind_param("issisi", $enabled, $phoneNumber, $phoneVerified, $verificationCode, $verificationExpires, $userId);
-            $stmt->execute();
-            $stmt->close();
-            
-            if ($phoneVerified) {
-                return [
-                    'success' => true,
-                    'message' => 'SMS preferences updated successfully.'
-                ];
-            } else {
-                return [
-                    'success' => true,
-                    'message' => 'SMS preferences updated. Phone verification required.',
-                    'verification_required' => true
-                ];
-            }
-            
+            return $user;
         } catch (Exception $e) {
-            error_log("Update SMS preferences error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'An error occurred while updating SMS preferences.'
-            ];
+            error_log("Get user by email error: " . $e->getMessage());
+            return null;
         }
     }
-    
+
     /**
-     * Get user SMS preferences
-     * 
-     * @param int $userId User ID
-     * @return array SMS preferences data
+     * Update user's last login timestamp
      */
-    public function getUserSmsPreferences($userId) {
+    public function updateLastLogin($userId) {
         try {
             $this->ensureConnection();
-            
-            $stmt = $this->mysqli->prepare("
-                SELECT sms_enabled, phone_number, phone_verified 
-                FROM users 
-                WHERE id = ?
-            ");
+            $stmt = $this->mysqli->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $data = $result->fetch_assoc();
+            $result = $stmt->execute();
             $stmt->close();
-            
-            if ($data) {
-                return [
-                    'success' => true,
-                    'sms_enabled' => (bool)$data['sms_enabled'],
-                    'phone_number' => $data['phone_number'],
-                    'phone_verified' => (bool)$data['phone_verified']
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'User not found.'
-                ];
-            }
-            
+            return $result;
         } catch (Exception $e) {
-            error_log("Get SMS preferences error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'An error occurred while retrieving SMS preferences.'
-            ];
-        }
-    }
-    
-    /**
-     * Send SMS verification code to user's phone
-     * 
-     * @param int $userId User ID
-     * @return array Result with success status and message
-     */
-    public function sendSmsVerificationCode($userId) {
-        try {
-            $this->ensureConnection();
-            
-            // Get user's phone number
-            $stmt = $this->mysqli->prepare("SELECT phone_number FROM users WHERE id = ?");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $userData = $result->fetch_assoc();
-            $stmt->close();
-            
-            if (!$userData || empty($userData['phone_number'])) {
-                return [
-                    'success' => false,
-                    'message' => 'No phone number found for this user.'
-                ];
-            }
-            
-            // Generate verification code
-            $verificationCode = sprintf('%06d', random_int(100000, 999999));
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
-            
-            // Update user record with verification code
-            $stmt = $this->mysqli->prepare("
-                UPDATE users 
-                SET phone_verification_code = ?, 
-                    phone_verification_expires = ? 
-                WHERE id = ?
-            ");
-            $stmt->bind_param("ssi", $verificationCode, $expiresAt, $userId);
-            $stmt->execute();
-            $stmt->close();
-            
-            // Send SMS using SMS service
-            require_once __DIR__ . '/../services/SmsService.php';
-            $smsService = new SmsService();
-            
-            $message = "Your Aetia verification code is: {$verificationCode}. This code expires in 10 minutes.";
-            $smsResult = $smsService->sendSms($userData['phone_number'], $message, $userId, 'verification');
-            
-            if ($smsResult['success']) {
-                // Log verification attempt
-                $this->logSmsVerificationAttempt($userId, $userData['phone_number'], $verificationCode, $expiresAt);
-                
-                return [
-                    'success' => true,
-                    'message' => 'Verification code sent to your phone number.'
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'Failed to send verification code: ' . $smsResult['message']
-                ];
-            }
-            
-        } catch (Exception $e) {
-            error_log("Send SMS verification error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'An error occurred while sending verification code.'
-            ];
-        }
-    }
-    
-    /**
-     * Verify SMS verification code
-     * 
-     * @param int $userId User ID
-     * @param string $code Verification code
-     * @return array Result with success status and message
-     */
-    public function verifySmsCode($userId, $code) {
-        try {
-            $this->ensureConnection();
-            
-            // Get user's verification data
-            $stmt = $this->mysqli->prepare("
-                SELECT phone_verification_code, phone_verification_expires 
-                FROM users 
-                WHERE id = ?
-            ");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $userData = $result->fetch_assoc();
-            $stmt->close();
-            
-            if (!$userData) {
-                return [
-                    'success' => false,
-                    'message' => 'User not found.'
-                ];
-            }
-            
-            if (empty($userData['phone_verification_code'])) {
-                return [
-                    'success' => false,
-                    'message' => 'No verification code found. Please request a new code.'
-                ];
-            }
-            
-            if (strtotime($userData['phone_verification_expires']) < time()) {
-                return [
-                    'success' => false,
-                    'message' => 'Verification code has expired. Please request a new code.'
-                ];
-            }
-            
-            if ($userData['phone_verification_code'] !== $code) {
-                return [
-                    'success' => false,
-                    'message' => 'Invalid verification code.'
-                ];
-            }
-            
-            // Code is valid, mark phone as verified
-            $stmt = $this->mysqli->prepare("
-                UPDATE users 
-                SET phone_verified = TRUE,
-                    phone_verification_code = NULL,
-                    phone_verification_expires = NULL
-                WHERE id = ?
-            ");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $stmt->close();
-            
-            // Update verification attempt record
-            $this->markSmsVerificationSuccess($userId);
-            
-            return [
-                'success' => true,
-                'message' => 'Phone number verified successfully!'
-            ];
-            
-        } catch (Exception $e) {
-            error_log("Verify SMS code error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'An error occurred while verifying the code.'
-            ];
-        }
-    }
-    
-    /**
-     * Validate phone number format - only supports USA (+1) and Australia (+61)
-     */
-    private function validatePhoneNumber($phoneNumber) {
-        // Remove all non-numeric characters except + at the beginning
-        $cleaned = preg_replace('/[^\d+]/', '', $phoneNumber);
-        
-        // Must start with + and have 10-15 digits
-        if (!preg_match('/^\+\d{10,15}$/', $cleaned)) {
+            error_log("Update last login error: " . $e->getMessage());
             return false;
-        }
-        
-        // Check if it's a supported country code
-        // USA: +1 followed by 10 digits (total 12 characters)
-        // Australia: +61 followed by 8-9 digits (total 11-12 characters)
-        if (preg_match('/^\+1\d{10}$/', $cleaned)) {
-            return true; // USA number
-        } elseif (preg_match('/^\+61\d{8,9}$/', $cleaned)) {
-            return true; // Australia number
-        }
-        
-        return false; // Unsupported country code
-    }
-    
-    /**
-     * Log SMS verification attempt
-     */
-    private function logSmsVerificationAttempt($userId, $phoneNumber, $code, $expiresAt) {
-        try {
-            $this->ensureConnection();
-            
-            // Check if there's an existing unverified attempt for this user
-            $stmt = $this->mysqli->prepare("
-                SELECT id FROM sms_verification_attempts 
-                WHERE user_id = ? AND verified = FALSE
-            ");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $existing = $result->fetch_assoc();
-            $stmt->close();
-            
-            if ($existing) {
-                // Update existing attempt
-                $stmt = $this->mysqli->prepare("
-                    UPDATE sms_verification_attempts 
-                    SET phone_number = ?, 
-                        verification_code = ?, 
-                        attempts = attempts + 1,
-                        last_attempt = NOW(),
-                        expires_at = ?
-                    WHERE id = ?
-                ");
-                $stmt->bind_param("sssi", $phoneNumber, $code, $expiresAt, $existing['id']);
-            } else {
-                // Create new attempt
-                $stmt = $this->mysqli->prepare("
-                    INSERT INTO sms_verification_attempts 
-                    (user_id, phone_number, verification_code, expires_at) 
-                    VALUES (?, ?, ?, ?)
-                ");
-                $stmt->bind_param("isss", $userId, $phoneNumber, $code, $expiresAt);
-            }
-            
-            $stmt->execute();
-            $stmt->close();
-            
-        } catch (Exception $e) {
-            error_log("Log SMS verification attempt error: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Mark SMS verification as successful
-     */
-    private function markSmsVerificationSuccess($userId) {
-        try {
-            $this->ensureConnection();
-            
-            $stmt = $this->mysqli->prepare("
-                UPDATE sms_verification_attempts 
-                SET verified = TRUE 
-                WHERE user_id = ? AND verified = FALSE
-            ");
-            $stmt->bind_param("i", $userId);
-            $stmt->execute();
-            $stmt->close();
-            
-        } catch (Exception $e) {
-            error_log("Mark SMS verification success error: " . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Fix primary social connection issues for a specific user or all users
-     * Returns array with success status and details of fixes applied
-     */
-    public function fixPrimarySocialConnections($userId = null) {
-        try {
-            $this->ensureConnection();
-            $fixes = [];
-            // Get users with multiple primary connections
-            $query = $userId ? 
-                "SELECT user_id, COUNT(*) as primary_count, GROUP_CONCAT(platform ORDER BY created_at ASC) as platforms FROM social_connections WHERE is_primary = 1 AND user_id = ? GROUP BY user_id HAVING COUNT(*) > 1" :
-                "SELECT user_id, COUNT(*) as primary_count, GROUP_CONCAT(platform ORDER BY created_at ASC) as platforms FROM social_connections WHERE is_primary = 1 GROUP BY user_id HAVING COUNT(*) > 1";
-            if ($userId) {
-                $stmt = $this->mysqli->prepare($query);
-                $stmt->bind_param("i", $userId);
-                $stmt->execute();
-                $result = $stmt->get_result();
-            } else {
-                $result = $this->mysqli->query($query);
-            }
-            if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $this->mysqli->begin_transaction();
-                    try {
-                        // Set all connections to non-primary for this user
-                        $updateStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 0 WHERE user_id = ?");
-                        $updateStmt->bind_param("i", $row['user_id']);
-                        $updateStmt->execute();
-                        $updateStmt->close();
-                        // Set the oldest connection as primary
-                        $primaryStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 1 WHERE user_id = ? ORDER BY created_at ASC LIMIT 1");
-                        $primaryStmt->bind_param("i", $row['user_id']);
-                        $primaryStmt->execute();
-                        $affected = $this->mysqli->affected_rows;
-                        $primaryStmt->close();
-                        if ($affected > 0) {
-                            $this->mysqli->commit();
-                            $fixes[] = "Fixed user {$row['user_id']}: had {$row['primary_count']} primary connections [{$row['platforms']}], set oldest as primary";
-                        } else {
-                            $this->mysqli->rollback();
-                            $fixes[] = "Failed to fix user {$row['user_id']}";
-                        }
-                    } catch (Exception $e) {
-                        $this->mysqli->rollback();
-                        $fixes[] = "Error fixing user {$row['user_id']}: " . $e->getMessage();
-                    }
-                }
-            }
-            if ($userId) {
-                $stmt->close();
-            }
-            // Also check for social users with no primary connections
-            $noPrimaryQuery = $userId ?
-                "SELECT DISTINCT sc.user_id FROM social_connections sc JOIN users u ON sc.user_id = u.id WHERE sc.user_id = ? AND sc.user_id NOT IN (SELECT user_id FROM social_connections WHERE is_primary = 1) AND u.account_type != 'manual'" :
-                "SELECT DISTINCT sc.user_id FROM social_connections sc JOIN users u ON sc.user_id = u.id WHERE sc.user_id NOT IN (SELECT user_id FROM social_connections WHERE is_primary = 1) AND u.account_type != 'manual'";
-            if ($userId) {
-                $stmt2 = $this->mysqli->prepare($noPrimaryQuery);
-                $stmt2->bind_param("i", $userId);
-                $stmt2->execute();
-                $result2 = $stmt2->get_result();
-            } else {
-                $result2 = $this->mysqli->query($noPrimaryQuery);
-            }
-            if ($result2 && $result2->num_rows > 0) {
-                while ($row = $result2->fetch_assoc()) {
-                    $primaryStmt = $this->mysqli->prepare("UPDATE social_connections SET is_primary = 1 WHERE user_id = ? ORDER BY created_at ASC LIMIT 1");
-                    $primaryStmt->bind_param("i", $row['user_id']);
-                    $success = $primaryStmt->execute();
-                    $affected = $this->mysqli->affected_rows;
-                    $primaryStmt->close();
-                    if ($success && $affected > 0) {
-                        $fixes[] = "Fixed user {$row['user_id']}: had no primary connection, set oldest as primary";
-                    } else {
-                        $fixes[] = "Failed to fix user {$row['user_id']} (no primary connection)";
-                    }
-                }
-            }
-            if ($userId && isset($stmt2)) {
-                $stmt2->close();
-            }
-            return [
-                'success' => true,
-                'fixes' => $fixes,
-                'count' => count($fixes)
-            ];
-        } catch (Exception $e) {
-            error_log("Fix primary social connections error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'fixes' => [],
-                'count' => 0
-            ];
         }
     }
 }

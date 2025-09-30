@@ -23,6 +23,15 @@ require_once __DIR__ . '/includes/SecurityManager.php';
 $securityManager = new SecurityManager();
 $securityManager->initializeSecureSession();
 
+// Check if user is suspended
+$userModel = new User();
+$user = $userModel->getUserById($_SESSION['user_id']);
+if ($user && $user['is_suspended']) {
+    $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
+    header('Location: login.php');
+    exit;
+}
+
 $userModel = new User();
 $messageModel = new Message();
 $error_message = '';
@@ -361,6 +370,18 @@ ob_start();
             <p><strong><i class="fas fa-shield-alt"></i> Admin Security Notice</strong></p>
             <p>You are logged in with the auto-generated admin account. For security purposes, please change your password immediately.</p>
             <p>Consider creating a personalized admin account and disabling this default account after setup is complete.</p>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php if ($user['is_suspended'] == 1): ?>
+    <div class="notification is-danger is-dark has-text-white mb-4">
+        <div class="content">
+            <p><strong><i class="fas fa-ban"></i> Account Suspended</strong></p>
+            <p>Your account has been suspended and you cannot access most features.</p>
+            <?php if (!empty($user['suspension_reason'])): ?>
+            <p><strong>Reason:</strong> <?= htmlspecialchars($user['suspension_reason']) ?></p>
+            <?php endif; ?>
+            <p>Please contact our support team if you believe this suspension was made in error.</p>
         </div>
     </div>
     <?php endif; ?>
@@ -933,6 +954,14 @@ ob_start();
                                     <span class="icon"><i class="fas fa-<?= $verificationIcon ?>"></i></span>
                                     <span><?= $verificationText ?></span>
                                 </span>
+                                <?php
+                                // Suspension status tag
+                                if ($user['is_suspended'] == 1): ?>
+                                <span class="tag is-warning">
+                                    <span class="icon"><i class="fas fa-ban"></i></span>
+                                    <span>Suspended</span>
+                                </span>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

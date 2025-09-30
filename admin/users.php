@@ -80,6 +80,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'Error deactivating user.';
             }
             break;
+        case 'suspend':
+            $suspensionReason = trim($_POST['suspension_reason'] ?? 'No reason provided');
+            if ($userModel->suspendUser($userId, $suspensionReason, $adminName)) {
+                $message = 'User suspended successfully!';
+            } else {
+                $message = 'Error suspending user.';
+            }
+            break;
+        case 'unsuspend':
+            if ($userModel->unsuspendUser($userId, $adminName)) {
+                $message = 'User unsuspended successfully!';
+            } else {
+                $message = 'Error unsuspending user.';
+            }
+            break;
         case 'make_admin':
             if ($userModel->makeUserAdmin($userId, $adminName)) {
                 $message = 'User granted admin privileges successfully!';
@@ -182,6 +197,12 @@ ob_start();
                     <span>Inactive Users</span>
                 </a>
             </li>
+            <li class="<?= $filter === 'suspended' ? 'is-active' : '' ?>">
+                <a href="?filter=suspended">
+                    <span class="icon is-small"><i class="fas fa-ban"></i></span>
+                    <span>Suspended Users</span>
+                </a>
+            </li>
             <li class="<?= $filter === 'admins' ? 'is-active' : '' ?>">
                 <a href="?filter=admins">
                     <span class="icon is-small"><i class="fas fa-crown"></i></span>
@@ -215,6 +236,11 @@ ob_start();
                 break;
             case 'inactive':
                 if ($user['is_active'] == 0) {
+                    $filteredUsers[] = $user;
+                }
+                break;
+            case 'suspended':
+                if ($user['is_suspended'] == 1) {
                     $filteredUsers[] = $user;
                 }
                 break;
@@ -282,6 +308,14 @@ ob_start();
         </div>
         <div class="column is-2">
             <div class="box has-text-centered">
+                <p class="title is-4 has-text-warning">
+                    <?= count(array_filter($allUsers, fn($u) => $u['is_suspended'] == 1)) ?>
+                </p>
+                <p class="subtitle is-6">Suspended</p>
+            </div>
+        </div>
+        <div class="column is-2">
+            <div class="box has-text-centered">
                 <p class="title is-4 has-text-info">
                     <?= count(array_filter($allUsers, fn($u) => $u['is_admin'] == 1)) ?>
                 </p>
@@ -297,6 +331,10 @@ ob_start();
     <?php elseif ($filter === 'unverified'): ?>
     <div class="notification is-warning is-light">
         <p><strong>Important:</strong> These users have accounts but have not completed email verification or identity verification. Review each user carefully and verify legitimate accounts or deactivate suspicious ones.</p>
+    </div>
+    <?php elseif ($filter === 'suspended'): ?>
+    <div class="notification is-warning is-light">
+        <p><strong>Important:</strong> These users are currently suspended and cannot access their accounts. Review suspension reasons and consider unsuspending users who have resolved the issues that led to their suspension.</p>
     </div>
     <?php endif; ?>
     
@@ -389,6 +427,14 @@ ob_start();
                         </span>
                         <?php endif; ?>
                         
+                        <!-- Suspended Status -->
+                        <?php if ($user['is_suspended'] == 1): ?>
+                        <span class="tag is-warning">
+                            <span class="icon"><i class="fas fa-ban"></i></span>
+                            <span>Suspended</span>
+                        </span>
+                        <?php endif; ?>
+                        
                         <!-- Contact Attempted -->
                         <?php if ($user['contact_attempted']): ?>
                         <span class="tag is-warning">
@@ -427,6 +473,11 @@ ob_start();
                         <p><strong>Deactivation Reason:</strong> <?= htmlspecialchars($user['deactivation_reason']) ?></p>
                         <p><strong>Deactivated:</strong> <?= formatDateForUser($user['deactivation_date']) ?>
                         <?php if (isset($user['deactivated_by']) && $user['deactivated_by']): ?> by <?= htmlspecialchars($user['deactivated_by']) ?><?php endif; ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($user['suspension_reason']) && $user['suspension_reason']): ?>
+                        <p><strong>Suspension Reason:</strong> <?= htmlspecialchars($user['suspension_reason']) ?></p>
+                        <p><strong>Suspended:</strong> <?= formatDateForUser($user['suspended_date']) ?>
+                        <?php if (isset($user['suspended_by']) && $user['suspended_by']): ?> by <?= htmlspecialchars($user['suspended_by']) ?><?php endif; ?></p>
                         <?php endif; ?>
                         <?php $socialConnections = $userModel->getUserSocialConnections($user['id']); ?>
                         <?php if (!empty($socialConnections)): ?>
@@ -555,6 +606,28 @@ ob_start();
                         <button class="button is-danger is-small deactivate-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
                             <span class="icon"><i class="fas fa-user-slash"></i></span>
                             <span>Deactivate</span>
+                        </button>
+                    </form>
+                <?php endif; ?>
+                <?php if ($user['is_active'] == 1 && $user['is_suspended'] == 0): ?>
+                    <!-- Suspend User -->
+                    <form method="POST" style="display:inline;" id="suspend-form-<?= $user['id'] ?>">
+                        <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                        <input type="hidden" name="action" value="suspend">
+                        <input type="hidden" name="suspension_reason" id="suspension-reason-<?= $user['id'] ?>">
+                        <button class="button is-warning is-small suspend-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                            <span class="icon"><i class="fas fa-ban"></i></span>
+                            <span>Suspend</span>
+                        </button>
+                    </form>
+                <?php elseif ($user['is_suspended'] == 1): ?>
+                    <!-- Unsuspend User -->
+                    <form method="POST" style="display:inline;" id="unsuspend-form-<?= $user['id'] ?>">
+                        <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                        <input type="hidden" name="action" value="unsuspend">
+                        <button class="button is-success is-small unsuspend-btn" type="button" data-user-id="<?= $user['id'] ?>" data-username="<?= htmlspecialchars($user['username']) ?>">
+                            <span class="icon"><i class="fas fa-check"></i></span>
+                            <span>Unsuspend</span>
                         </button>
                     </form>
                 <?php endif; ?>
@@ -864,6 +937,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.isConfirmed) {
                     document.getElementById(`deactivation-reason-${userId}`).value = result.value;
                     document.getElementById(`deactivate-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    // Handle Suspend User buttons
+    document.querySelectorAll('.suspend-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username || 'Unknown User';
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
+            Swal.fire({
+                title: 'Suspend User?',
+                html: `Are you sure you want to suspend <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for suspension:`,
+                icon: 'warning',
+                input: 'textarea',
+                inputPlaceholder: 'Enter suspension reason...',
+                inputValidator: (value) => {
+                    if (!value || value.trim() === '') {
+                        return 'You must provide a suspension reason!';
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#ffdd57',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-ban"></i> Yes, Suspend',
+                cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-warning',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`suspension-reason-${userId}`).value = result.value;
+                    document.getElementById(`suspend-form-${userId}`).submit();
+                }
+            });
+        });
+    });
+    // Handle Unsuspend User buttons
+    document.querySelectorAll('.unsuspend-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const username = this.dataset.username;
+            // Create a temporary element to decode HTML entities
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = username || 'Unknown User';
+            const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
+            Swal.fire({
+                title: 'Unsuspend User?',
+                html: `Are you sure you want to unsuspend <strong style="color: #333;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#48c78e',
+                cancelButtonColor: '#dbdbdb',
+                confirmButtonText: '<i class="fas fa-check"></i> Yes, Unsuspend',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                customClass: {
+                    confirmButton: 'button is-success',
+                    cancelButton: 'button is-light'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(`unsuspend-form-${userId}`).submit();
                 }
             });
         });
