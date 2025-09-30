@@ -52,9 +52,7 @@ if (!isset($content)) $content = '';
           <a class="navbar-item" href="../index.php">Home</a>
           <a class="navbar-item" href="../about.php">About</a>
           <a class="navbar-item" href="../services.php">Services</a>
-          <?php if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true): ?>
           <a class="navbar-item" href="../pricing.php">Pricing</a>
-          <?php endif; ?>
           <a class="navbar-item" href="../contact.php">Contact</a>
           <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
           <hr class="navbar-divider">
