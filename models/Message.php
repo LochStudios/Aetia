@@ -110,19 +110,35 @@ class Message {
     public function getUserMessages($userId, $limit = 20, $offset = 0, $tagFilter = null, $priorityFilter = null) {
         try {
             $this->ensureConnection();
-            
-            $baseQuery = "
-                SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
-                       u.username as created_by_username,
-                       COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
-                       (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
-                       (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
-                FROM messages m
-                LEFT JOIN users u ON m.created_by = u.id
-                WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'closed' AND m.status != 'archived'";
-            
-            $params = [$userId, $userId];
-            $types = "ii";
+            // Check if user is admin - admins should only see messages sent TO them on the user interface
+            $isAdmin = $this->getUserModel()->isUserAdmin($userId);
+            if ($isAdmin) {
+                // For admins on the user interface, only show messages sent TO them
+                $baseQuery = "
+                    SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                           u.username as created_by_username,
+                           COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
+                           (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                           (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
+                    FROM messages m
+                    LEFT JOIN users u ON m.created_by = u.id
+                    WHERE m.user_id = ? AND m.status != 'closed' AND m.status != 'archived'";
+                $params = [$userId];
+                $types = "i";
+            } else {
+                // For regular users, show messages they received or created
+                $baseQuery = "
+                    SELECT m.id, m.subject, m.message, m.priority, m.status, m.tags, m.created_at, m.updated_at,
+                           u.username as created_by_username,
+                           COALESCE(NULLIF(u.social_username, ''), u.username) as created_by_display_name,
+                           (SELECT COUNT(*) FROM message_comments mc WHERE mc.message_id = m.id) as comment_count,
+                           (SELECT COUNT(*) FROM message_attachments ma WHERE ma.message_id = m.id) as attachment_count
+                    FROM messages m
+                    LEFT JOIN users u ON m.created_by = u.id
+                    WHERE (m.user_id = ? OR m.created_by = ?) AND m.status != 'closed' AND m.status != 'archived'";
+                $params = [$userId, $userId];
+                $types = "ii";
+            }
             
             if ($tagFilter) {
                 $baseQuery .= " AND m.tags LIKE ?";
@@ -541,14 +557,28 @@ class Message {
         try {
             $this->ensureConnection();
             
-            $stmt = $this->mysqli->prepare("
-                SELECT status, COUNT(*) as count
-                FROM messages 
-                WHERE user_id = ? OR created_by = ?
-                GROUP BY status
-            ");
+            // Check if user is admin - admins should only count messages sent TO them on the user interface
+            $isAdmin = $this->getUserModel()->isUserAdmin($userId);
+            if ($isAdmin) {
+                // For admins on the user interface, only count messages sent TO them
+                $stmt = $this->mysqli->prepare("
+                    SELECT status, COUNT(*) as count
+                    FROM messages 
+                    WHERE user_id = ?
+                    GROUP BY status
+                ");
+                $stmt->bind_param("i", $userId);
+            } else {
+                // For regular users, count messages they received or created
+                $stmt = $this->mysqli->prepare("
+                    SELECT status, COUNT(*) as count
+                    FROM messages 
+                    WHERE user_id = ? OR created_by = ?
+                    GROUP BY status
+                ");
+                $stmt->bind_param("ii", $userId, $userId);
+            }
             
-            $stmt->bind_param("ii", $userId, $userId);
             $stmt->execute();
             $result = $stmt->get_result();
             
