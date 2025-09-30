@@ -47,8 +47,8 @@ if (isset($_SESSION['error_message'])) {
             <h1 class="title is-1 has-text-light">Aetia Talent Agency</h1>
             <h2 class="subtitle is-3 has-text-info" style="font-weight:700;">Talent, Unfiltered. Opportunity, Unlocked.</h2>
             <p class="mb-5 has-text-grey-light" style="font-size:1.25rem;max-width:700px;margin-left:auto;margin-right:auto;">
-                Founded by creators, for creators. At Aetia Talent Agency, we break the awkwardness—empowering you to be boldly original, not just another face in the crowd.<br>
-                We’re a new kind of agency: creative, collaborative, and real. Honestly? We don’t have all the answers—but we’re figuring it out together, with you. If you want to grow, experiment, and make something different, you’re in the right place.
+                Founded by creators, for creators. At Aetia Talent Agency, we specialize in professional communications management, ensuring seamless message assessment and routing to empower your creative journey.<br>
+                We’re a dedicated agency: creative, collaborative, and committed to excellence. Our expert team handles all incoming communications with precision, routing relevant opportunities to our secure dashboard for your review and response. If you want to grow, connect, and make something impactful, you’re in the right place.
             </p>
             <a class="button is-info is-medium mr-2" href="about.php">
                 <span class="icon"><i class="fas fa-info-circle"></i></span>
