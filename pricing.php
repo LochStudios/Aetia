@@ -1,5 +1,6 @@
 <?php
 // pricing.php - Pricing page for Aetia Talent Agency
+session_start();
 
 $pageTitle = 'Pricing | Aetia Talent Agency';
 ob_start();
