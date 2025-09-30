@@ -167,14 +167,14 @@ ob_start();
                 <?php if ($isSignupMode): ?>
                 <div class="notification is-info is-light mb-4">
                     <div class="content">
-                        <p><strong>Notice:</strong> All new accounts require approval from Aetia Talent Agency.</p>
-                        <p>After creating your account, our team will contact you to discuss:</p>
+                        <p><strong>Notice:</strong> You can sign up and access your dashboard immediately after creating your account.</p>
+                        <p>However, services will not be activated until our team contacts you to discuss:</p>
                         <ul>
                             <li>Platform terms and conditions</li>
                             <li>Commission structure and revenue sharing</li>
                             <li>Business partnership agreements</li>
+                            <li>Pricing structure (depending on your use case)</li>
                         </ul>
-                        <p>You will be able to access your account once approved.</p>
                     </div>
                 </div>
                 <?php endif; ?>
