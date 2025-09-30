@@ -1608,5 +1608,218 @@ class User {
             return false;
         }
     }
+
+    /**
+     * Get user's SMS preferences
+     * @param int $userId The user ID
+     * @return array SMS preferences with success status
+     */
+    public function getUserSmsPreferences($userId) {
+        try {
+            $this->ensureConnection();
+            
+            $stmt = $this->mysqli->prepare("
+                SELECT sms_enabled, phone_number, phone_verified 
+                FROM users 
+                WHERE id = ? AND is_active = 1
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                $stmt->close();
+                
+                return [
+                    'success' => true,
+                    'sms_enabled' => (bool)$user['sms_enabled'],
+                    'phone_number' => $user['phone_number'] ?: '',
+                    'phone_verified' => (bool)$user['phone_verified']
+                ];
+            } else {
+                $stmt->close();
+                return [
+                    'success' => false,
+                    'message' => 'User not found or inactive.'
+                ];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Get user SMS preferences error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'An error occurred while retrieving SMS preferences.'
+            ];
+        }
+    }
+
+    /**
+     * Update user's SMS preferences
+     * @param int $userId The user ID
+     * @param bool $smsEnabled Whether SMS notifications are enabled
+     * @param string $phoneNumber The phone number for SMS notifications
+     * @return array Success/failure result
+     */
+    public function updateSmsPreferences($userId, $smsEnabled, $phoneNumber) {
+        try {
+            $this->ensureConnection();
+
+            // Validate phone number if SMS is enabled
+            if ($smsEnabled && empty($phoneNumber)) {
+                return ['success' => false, 'message' => 'Phone number is required when enabling SMS notifications.'];
+            }
+
+            // If SMS is being disabled, clear phone verification
+            $phoneVerified = $smsEnabled ? 0 : 0; // Reset verification when disabled
+
+            $stmt = $this->mysqli->prepare("
+                UPDATE users
+                SET sms_enabled = ?, phone_number = ?, phone_verified = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND is_active = 1
+            ");
+            $stmt->bind_param("issii", $smsEnabled, $phoneNumber, $phoneVerified, $userId);
+            $result = $stmt->execute();
+            $affectedRows = $this->mysqli->affected_rows;
+            $stmt->close();
+
+            if ($result && $affectedRows > 0) {
+                return ['success' => true, 'message' => 'SMS preferences updated successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update SMS preferences or user not found.'];
+            }
+
+        } catch (Exception $e) {
+            error_log("Update SMS preferences error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while updating SMS preferences.'];
+        }
+    }
+
+    /**
+     * Send SMS verification code to user's phone number
+     * @param int $userId The user ID
+     * @return array Success/failure result
+     */
+    public function sendSmsVerificationCode($userId) {
+        try {
+            $this->ensureConnection();
+
+            // Get user's phone number
+            $stmt = $this->mysqli->prepare("SELECT phone_number FROM users WHERE id = ? AND is_active = 1");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$user || empty($user['phone_number'])) {
+                return ['success' => false, 'message' => 'No phone number found for this user.'];
+            }
+
+            // Generate 6-digit verification code
+            $verificationCode = sprintf('%06d', random_int(0, 999999));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes')); // 10 minutes expiry
+
+            // Store verification attempt
+            $stmt = $this->mysqli->prepare("
+                INSERT INTO sms_verification_attempts (user_id, phone_number, verification_code, expires_at)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                verification_code = VALUES(verification_code),
+                expires_at = VALUES(expires_at),
+                last_attempt = NOW(),
+                attempts = attempts + 1
+            ");
+            $stmt->bind_param("isss", $userId, $user['phone_number'], $verificationCode, $expiresAt);
+            $result = $stmt->execute();
+            $stmt->close();
+
+            if (!$result) {
+                return ['success' => false, 'message' => 'Failed to store verification code.'];
+            }
+
+            // Send SMS using SmsService
+            require_once __DIR__ . '/../services/SmsService.php';
+            $smsService = new SmsService();
+            $message = "Your Aetia verification code is: {$verificationCode}. This code expires in 10 minutes.";
+
+            $smsResult = $smsService->sendSms($user['phone_number'], $message, $userId, 'verification');
+
+            if ($smsResult['success']) {
+                return ['success' => true, 'message' => 'Verification code sent to your phone!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to send verification code: ' . $smsResult['message']];
+            }
+
+        } catch (Exception $e) {
+            error_log("Send SMS verification code error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while sending the verification code.'];
+        }
+    }
+
+    /**
+     * Verify SMS code entered by user
+     * @param int $userId The user ID
+     * @param string $verificationCode The code entered by the user
+     * @return array Success/failure result
+     */
+    public function verifySmsCode($userId, $verificationCode) {
+        try {
+            $this->ensureConnection();
+
+            // Get the latest verification attempt for this user
+            $stmt = $this->mysqli->prepare("
+                SELECT verification_code, expires_at, attempts
+                FROM sms_verification_attempts
+                WHERE user_id = ? AND verified = 0 AND expires_at > NOW()
+                ORDER BY last_attempt DESC
+                LIMIT 1
+            ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $attempt = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$attempt) {
+                return ['success' => false, 'message' => 'No valid verification code found. Please request a new code.'];
+            }
+
+            // Check if code matches
+            if ($attempt['verification_code'] !== $verificationCode) {
+                return ['success' => false, 'message' => 'Invalid verification code. Please try again.'];
+            }
+
+            // Mark as verified in sms_verification_attempts
+            $stmt = $this->mysqli->prepare("
+                UPDATE sms_verification_attempts
+                SET verified = 1
+                WHERE user_id = ? AND verification_code = ? AND verified = 0
+            ");
+            $stmt->bind_param("is", $userId, $verificationCode);
+            $stmt->execute();
+            $stmt->close();
+
+            // Update user's phone_verified status
+            $stmt = $this->mysqli->prepare("
+                UPDATE users
+                SET phone_verified = 1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->bind_param("i", $userId);
+            $result = $stmt->execute();
+            $stmt->close();
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Phone number verified successfully!'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update verification status.'];
+            }
+
+        } catch (Exception $e) {
+            error_log("Verify SMS code error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred while verifying the code.'];
+        }
+    }
 }
 ?>
