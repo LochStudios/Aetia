@@ -171,9 +171,8 @@ ob_start();
                         <p>However, services will not be activated until our team contacts you to discuss:</p>
                         <ul>
                             <li>Platform terms and conditions</li>
-                            <li>Commission structure and revenue sharing</li>
+                            <li>Commission structure, revenue sharing, and pricing (tailored to your use case)</li>
                             <li>Business partnership agreements</li>
-                            <li>Pricing structure (depending on your use case)</li>
                         </ul>
                     </div>
                 </div>
