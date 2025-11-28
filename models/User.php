@@ -717,7 +717,8 @@ class User {
     // Get user admin status along with other details
     public function getUserWithAdminStatus($userId) {
         $this->ensureConnection();
-        $stmt = $this->mysqli->prepare("SELECT id, username, email, first_name, last_name, is_admin, approval_status, account_type, profile_image FROM users WHERE id = ? AND is_active = 1");
+        // Include status fields such as suspension info when returning a subset of user fields
+        $stmt = $this->mysqli->prepare("SELECT id, username, email, first_name, last_name, is_admin, approval_status, account_type, profile_image, is_suspended, suspension_reason FROM users WHERE id = ? AND is_active = 1");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();

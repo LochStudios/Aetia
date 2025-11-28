@@ -22,7 +22,7 @@ if (!$user) {
 }
 
 // Check if user is suspended
-if ($user['is_suspended']) {
+if (!empty($user['is_suspended'])) {
     $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
     header('Location: login.php');
     exit;
