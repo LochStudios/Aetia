@@ -18,8 +18,8 @@ require_once __DIR__ . '/models/User.php';
 $userModel = new User();
 $user = $userModel->getUserById($_SESSION['user_id']);
 if ($user && $user['is_suspended']) {
-    $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
-    header('Location: login.php');
+    $_SESSION['error_message'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
+    header('Location: index.php');
     exit;
 }
 

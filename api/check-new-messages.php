@@ -15,9 +15,18 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../includes/timezone.php';
 require_once __DIR__ . '/../includes/FileUploader.php';
+require_once __DIR__ . '/../models/User.php';
 
 $messageModel = new Message();
 $userId = $_SESSION['user_id'];
+
+// Block suspended users from accessing message APIs
+$userModel = new User();
+$currentUser = $userModel->getUserById($userId);
+if ($currentUser && !empty($currentUser['is_suspended'])) {
+    echo json_encode(['error' => 'Access denied: account suspended']);
+    exit;
+}
 
 // Get parameters
 $messageId = isset($_GET['message_id']) ? intval($_GET['message_id']) : 0;

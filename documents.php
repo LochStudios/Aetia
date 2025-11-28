@@ -14,11 +14,6 @@ require_once __DIR__ . '/models/User.php';
 // Check if user is suspended
 $userModel = new User();
 $user = $userModel->getUserById($_SESSION['user_id']);
-if ($user && $user['is_suspended']) {
-    $_SESSION['login_error'] = 'Your account has been suspended. Reason: ' . htmlspecialchars($user['suspension_reason'] ?? 'No reason provided');
-    header('Location: login.php');
-    exit;
-}
 
 $pageTitle = 'My Documents | Aetia';
 ob_start();

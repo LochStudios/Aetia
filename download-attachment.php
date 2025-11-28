@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
 
 require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/includes/FileUploader.php';
+require_once __DIR__ . '/models/User.php';
 
 // Get attachment ID from URL
 $attachmentId = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -21,6 +22,14 @@ if ($attachmentId <= 0) {
 
 $messageModel = new Message();
 $userId = $_SESSION['user_id'];
+
+// Block suspended users from downloading message attachments
+$userModel = new User();
+$currentUser = $userModel->getUserById($userId);
+if ($currentUser && !empty($currentUser['is_suspended'])) {
+    http_response_code(403);
+    exit('Access denied: account suspended');
+}
 
 // Get attachment details with permission check
 $attachment = $messageModel->getAttachment($attachmentId, $userId);

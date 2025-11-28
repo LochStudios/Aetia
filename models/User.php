@@ -163,12 +163,6 @@ class User {
             $stmt->close();
             if ($user && password_verify($password, $user['password_hash'])) {
                 unset($user['password_hash']); // Remove password hash from returned data
-                
-                // Check if user is suspended
-                if ($user['is_suspended']) {
-                    return ['success' => false, 'message' => 'Your account has been suspended. Reason: ' . ($user['suspension_reason'] ?: 'No reason provided.') . ' Please contact suspensions@aetia.com.au for more information.'];
-                }
-                
                 // Check approval status
                 if ($user['approval_status'] === 'pending') {
                     return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
@@ -203,11 +197,6 @@ class User {
             $existingUser = $result->fetch_assoc();
             $stmt->close();
             if ($existingUser) {
-                // Check if user is suspended
-                if ($existingUser['is_suspended']) {
-                    return ['success' => false, 'message' => 'Your account has been suspended. Reason: ' . ($existingUser['suspension_reason'] ?: 'No reason provided.') . ' Please contact suspensions@aetia.com.au for more information.'];
-                }
-                
                 // Check approval status for existing user
                 if ($existingUser['approval_status'] === 'pending') {
                     return ['success' => false, 'message' => 'Your account is pending approval. Aetia Talent Agency will contact you with critical platform information and business terms.'];
