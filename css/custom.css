@@ -1206,17 +1206,19 @@ button[disabled], input[disabled] {
 .legal-toc {
     position: sticky;
     top: 96px;
-    max-height: calc(100vh - 140px);
-    overflow-y: auto;
+    /* show full TOC without an internal scrollbar; page will scroll instead */
+    max-height: none;
+    overflow: visible;
     border-radius: 8px;
     background: transparent;
     box-shadow: none;
     border: 1px solid rgba(255,255,255,0.03);
-    padding-top: 0;
+    padding-top: 0.25rem;
+    padding-bottom: 0.75rem;
 }
 
 .legal-toc .panel-heading { background: transparent; color: #fff; font-weight:700; border-bottom: 1px solid rgba(255,255,255,0.03); }
-.legal-toc .panel-block { color: #cfefff; font-size: 0.95rem; }
+.legal-toc .panel-block { color: #cfefff; font-size: 0.90rem; padding: .35rem .65rem; line-height: 1.15; }
 .legal-toc .panel-block:hover { background: rgba(32,156,238,0.06); color: #fff; }
 @media (max-width: 1023px) {
     .legal-content { padding: 1.25rem; max-width: 100%; }

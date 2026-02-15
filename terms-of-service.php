@@ -43,7 +43,7 @@ ob_start();
                     <h2>15. Termination &amp; Suspension</h2>
                     <p>We may suspend or terminate accounts for breaches, nonpayment, lawful requests, or other business reasons. Termination does not relieve you of obligations accrued prior to termination. Upon termination we may delete or retain data consistent with our retention policies and legal obligations.</p>
                     <h2>16. Governing Law &amp; Dispute Resolution</h2>
-                    <p>These Terms are governed by the laws of the jurisdiction in which Aetia operates, without regard to conflict of law principles. Disputes may be resolved through negotiation, and if unresolved, in the courts or by binding arbitration as specified in a se
+                    <p>These Terms are governed by the laws of the jurisdiction in which Aetia operates, without regard to conflict of law principles. Disputes may be resolved through negotiation, and if unresolved, in the courts or by binding arbitration as specified in a separate agreement. If arbitration applies, you and Aetia will each retain the right to seek injunctive relief in a court.</p>
                     <h2>17. Export &amp; Compliance</h2>
                     <p>You will comply with applicable export laws and not use the Services in violation of those laws.</p>
                     <h2>18. Changes to These Terms</h2>
