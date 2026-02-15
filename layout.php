@@ -157,6 +157,11 @@ if (!isset($content)) $content = '';
         <p class="is-size-7 has-text-grey-light mb-0">
           Aetia Talent Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
         </p>
+        <p class="is-size-7 has-text-grey-light mt-2">
+          <a href="terms-of-service.php" class="has-text-grey-light">Terms of Service</a>
+          &nbsp;&middot;&nbsp;
+          <a href="privacy-policy.php" class="has-text-grey-light">Privacy Policy</a>
+        </p>
       </div>
     </footer>
     <script src="../js/navbar.js"></script>
