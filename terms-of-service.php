@@ -8,43 +8,45 @@ ob_start();
 <section class="section">
     <div class="container content">
         <h1 class="title">Terms of Service</h1>
-        <p><strong>Effective date:</strong> December 18, 2025</p>
-        <h2>1. Agreement</h2>
-        <p>These Terms of Service ("Terms") govern your access to and use of the services, websites, APIs, and software provided by Aetia Talent Agency ("Aetia", "we", "us", "our"). By accessing or using our services you agree to these Terms. If you do not agree, do not use our services.</p>
-        <h2>2. Services</h2>
-        <p>Aetia provides communications management and talent services including messaging intake and routing, secure document handling, contract management, profile services, and related tools (collectively, the "Services"). We may also offer APIs and integrations for partners and customers.</p>
-        <h2>3. Accounts</h2>
-        <p>To use certain features you must register for an account. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. You agree to provide accurate information and to keep it updated.</p>
-        <h2>4. Acceptable Use</h2>
-        <p>You will not use the Services to transmit unlawful, defamatory, abusive, obscene, or infringing content. You will not bypass security or attempt to access other users' data. We may suspend or terminate accounts that violate these rules.</p>
-        <h2>5. Messaging, File Uploads &amp; Content</h2>
-        <p>The Services allow submission and storage of messages, documents, images, and other uploads. You retain ownership of content you submit, but by submitting you grant Aetia a non-exclusive license to store, transmit, display, and otherwise process that content to provide the Services. Do not upload anything you do not have rights to share.</p>
-        <h2>6. Contracts &amp; Documents</h2>
-        <p>Where the Services facilitate contracts, proposals, or documents, Aetia is not a party to those agreements unless explicitly stated. We do not provide legal advice; users should obtain appropriate professional advice when needed.</p>
-        <h2>7. Payments &amp; Billing</h2>
-        <p>Certain features may require payment. You agree to pay all charges for paid services. We may use third-party payment processors to take payments (for example, Stripe or PayPal). Payment terms, refunds, and billing disputes are governed by the terms communicated at purchase.</p>
-        <h2>8. Third‑Party Services &amp; OAuth</h2>
-        <p>We may provide single‑sign‑on and integrations with third‑party providers (e.g., Google, Discord, Twitch). Your use of those services is subject to the third parties' terms and privacy policies. We are not responsible for their practices.</p>
-        <h2>9. API Use</h2>
-        <p>Access to any Aetia APIs is subject to API documentation and usage limits. You must keep API keys secure and are responsible for activity performed using your keys. We may revoke keys that are abused.</p>
-        <h2>10. Intellectual Property</h2>
-        <p>All Aetia trademarks, service names, logos, and software are our property. You may not use Aetia's intellectual property without our written permission.</p>
-        <h2>11. Privacy</h2>
-        <p>Our <a href="privacy-policy.php">Privacy Policy</a> explains how we collect and use information. By using the Services you consent to those practices.</p>
-        <h2>12. Disclaimers &amp; Warranties</h2>
-        <p>The Services are provided "as is" and we expressly disclaim all warranties to the fullest extent permitted by law. We do not guarantee that the Services will be uninterrupted or error‑free.</p>
+        <p><strong>Effective date:</strong> February 15, 2026</p>
+        <h2>1. Introduction &amp; Scope</h2>
+        <p>These Terms of Service ("Terms") govern your access to and use of the websites, applications, APIs, and other services provided by Aetia Talent Agency ("Aetia", "we", "us", "our"). By accessing or using our Services, you agree to these Terms. If you do not agree, do not use the Services.</p>
+        <h2>2. Definitions</h2>
+        <p><strong>"Client"</strong> means a person or entity that engages Aetia for talent-related services. <strong>"Talent"</strong> means individuals represented or supported by Aetia. <strong>"User"</strong> means anyone using the Services, including Clients and Talent.</p>
+        <h2>3. Services</h2>
+        <p>Aetia provides talent representation and management tools including messaging intake and routing, secure document handling, contract management, profile hosting, analytics, and integrations with third‑party platforms. Specific service terms, fees, and deliverables may be set out in separate agreements or order forms between Aetia and a Client or Talent.</p>
+        <h2>4. Eligibility</h2>
+        <p>You must be at least 18 years old and able to form a binding contract to use the Services, unless otherwise permitted by law or a parent/guardian account is used where legally required.</p>
+        <h2>5. Accounts &amp; Access</h2>
+        <p>Some features require an account. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. You agree to provide accurate information and to keep it updated. Notify us promptly of any unauthorized use.</p>
+        <h2>6. Payments &amp; Fees</h2>
+        <p>Paid services require payment of fees as described in your plan, invoice, or separate written agreement. We may use third‑party payment processors. All fees are non‑refundable except as expressly set out in a contract or required by law. You are responsible for applicable taxes. We may suspend access for unpaid accounts.</p>
+        <h2>7. Use Restrictions &amp; Acceptable Use</h2>
+        <p>You agree not to: (a) use the Services for unlawful or harmful purposes; (b) attempt to access other accounts or bypass security; (c) upload content that infringes others' rights; (d) interfere with the operation of the Services; or (e) use automated means to access or scrape the Services without permission. We may investigate and take action for violations.</p>
+        <h2>8. Content, Uploads &amp; Licenses</h2>
+        <p>Users retain ownership of content they submit. By submitting content you grant Aetia a limited, non‑exclusive, worldwide, royalty‑free license to store, reproduce, display, transmit, and process that content as necessary to provide the Services. You represent and warrant you have the rights to submit the content and that it does not violate these Terms.</p>
+        <h2>9. Confidentiality &amp; Sensitive Data</h2>
+        <p>Certain information shared through the Services may be confidential. You will not disclose confidential information except as permitted by contract, consent, or law. Do not upload sensitive personal data unless explicitly requested and protected under a separate agreement.</p>
+        <h2>10. Third‑Party Services &amp; Integrations</h2>
+        <p>We may integrate with third‑party services (e.g., OAuth providers, payment processors). Your use of those third parties is subject to their terms and privacy policies. We are not responsible for their practices or outages. You should review third‑party terms before connecting accounts.</p>
+        <h2>11. Intellectual Property</h2>
+        <p>All Aetia trademarks, service names, logos, and software are Aetia's property. You may not use our intellectual property without prior written permission. Users remain owners of their pre‑existing IP and grants to Aetia do not transfer ownership unless otherwise agreed in writing.</p>
+        <h2>12. Warranties &amp; Disclaimers</h2>
+        <p>The Services are provided "as is" and "as available" without warranties of any kind. To the fullest extent permitted by law, Aetia disclaims all warranties, whether express, implied, statutory or otherwise, including warranties of merchantability, fitness for a particular purpose, accuracy, and non‑infringement.</p>
         <h2>13. Limitation of Liability</h2>
-        <p>To the maximum extent permitted by law, Aetia will not be liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, or data arising from your use of the Services.</p>
+        <p>To the maximum extent permitted by law, in no event will Aetia be liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, business, data, or goodwill arising from or related to these Terms or your use of the Services. Our aggregate liability for direct damages will not exceed the fees paid by you to Aetia in the 12 months preceding the claim, or $100 if no fees were paid, unless otherwise agreed in writing.</p>
         <h2>14. Indemnification</h2>
-        <p>You agree to indemnify and hold Aetia harmless from claims, damages, losses, liabilities, costs, and expenses arising from your violation of these Terms or your use of the Services.</p>
-        <h2>15. Termination</h2>
-        <p>We may suspend or terminate your access for violations of these Terms or for any other reason with notice. Upon termination, your right to use the Services ends and we may delete data in accordance with our retention policies.</p>
-        <h2>16. Governing Law</h2>
-        <p>These Terms are governed by the laws of the jurisdiction in which Aetia operates, without regard to conflict of laws principles. Disputes may be resolved in courts located in that jurisdiction.</p>
-        <h2>17. Changes</h2>
-        <p>We may modify these Terms. When we do, we will post the revised Terms and update the "Effective date". Continued use of the Services after changes constitutes acceptance.</p>
-        <h2>18. Contact</h2>
-        <p>If you have questions about these Terms, please contact us via our <a href="contact.php">Contact</a> page.</p>
+        <p>You agree to indemnify and hold Aetia, its affiliates, and personnel harmless from claims arising out of your breach of these Terms, your violation of law, or your content uploaded to the Services.</p>
+        <h2>15. Termination &amp; Suspension</h2>
+        <p>We may suspend or terminate accounts for breaches, nonpayment, lawful requests, or other business reasons. Termination does not relieve you of obligations accrued prior to termination. Upon termination we may delete or retain data consistent with our retention policies and legal obligations.</p>
+        <h2>16. Governing Law &amp; Dispute Resolution</h2>
+        <p>These Terms are governed by the laws of the jurisdiction in which Aetia operates, without regard to conflict of law principles. Disputes may be resolved through negotiation, and if unresolved, in the courts or by binding arbitration as specified in a se
+        <h2>17. Export &amp; Compliance</h2>
+        <p>You will comply with applicable export laws and not use the Services in violation of those laws.</p>
+        <h2>18. Changes to These Terms</h2>
+        <p>We may modify these Terms from time to time. If changes are material, we will provide notice by posting an updated Effective Date and, where required, additional notice. Continued use after changes constitutes acceptance.</p>
+        <h2>19. Contact</h2>
+        <p>For questions about these Terms or to exercise rights, please contact us via our <a href="contact.php">Contact</a> page.</p>
     </div>
 </section>
 <?php
