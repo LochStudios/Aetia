@@ -66,7 +66,6 @@ try {
         // This is an S3 image - get signed URL
         $fileUploader = new FileUploader();
         $signedUrl = $fileUploader->getSignedUrl($attachment['file_path'], 60);
-        
         if ($signedUrl) {
             // Return JSON response with signed URL for AJAX requests
             if (isset($_GET['json']) && $_GET['json'] === '1') {
@@ -78,7 +77,6 @@ try {
                 ]);
                 exit;
             }
-            
             // Redirect to the signed URL for direct access
             header('Location: ' . $signedUrl);
             exit;
@@ -89,10 +87,8 @@ try {
             exit;
         }
     }
-
     // Handle local images (fallback for legacy images)
     $filePath = $attachment['file_path'];
-
     // Check if local file exists
     if (!file_exists($filePath)) {
         http_response_code(404);
@@ -100,28 +96,26 @@ try {
         echo json_encode(['error' => 'File not found']);
         exit;
     }
-
     // For JSON requests, return the local file URL
     if (isset($_GET['json']) && $_GET['json'] === '1') {
+        $scheme = $_SERVER['REQUEST_SCHEME'] ?? ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+        $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
-            'image_url' => $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/api/view-image.php?id=' . $attachmentId,
+            'image_url' => $scheme . '://' . $host . '/api/view-image.php?id=' . $attachmentId,
             'expires_in' => 3600
         ]);
         exit;
     }
-
     // Get file info
     $mimeType = $attachment['mime_type'];
     $fileSize = $attachment['file_size'];
-
     // Set appropriate headers for image display
     header('Content-Type: ' . $mimeType);
     header('Content-Length: ' . $fileSize);
     header('Cache-Control: private, max-age=3600');
     header('Pragma: cache');
-
     // Output image
     if ($handle = fopen($filePath, 'rb')) {
         while (!feof($handle)) {
@@ -138,7 +132,6 @@ try {
         echo json_encode(['error' => 'Error reading file']);
         exit;
     }
-
 } catch (Exception $e) {
     error_log("Image view API error: " . $e->getMessage());
     http_response_code(500);

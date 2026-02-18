@@ -20,7 +20,8 @@ $isPreview = isset($_GET['preview']) && $_GET['preview'] == '1';
 $forceDownload = isset($_GET['force']) && $_GET['force'] == '1';
 
 if ($documentId <= 0) {
-    error_log("Download error: Invalid document ID provided: " . $_GET['id'] ?? $_GET['document_id'] ?? 'none');
+    $requestedDocumentId = $_GET['id'] ?? $_GET['document_id'] ?? 'none';
+    error_log("Download error: Invalid document ID provided: " . $requestedDocumentId);
     http_response_code(400);
     exit('Invalid document ID');
 }
@@ -43,6 +44,8 @@ if (!$isAdmin && $document['user_id'] != $_SESSION['user_id']) {
     exit('Access denied');
 }
 
+$safeFilename = str_replace(["\r", "\n", '"'], ['', '', ''], basename($document['original_filename'] ?? 'download'));
+
 // For local files (development), serve the file directly
 if (file_exists($document['s3_url'])) {
     // Special handling for forced downloads to bypass browser plugins
@@ -64,7 +67,7 @@ if (file_exists($document['s3_url'])) {
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
-                        a.download = '<?php echo addslashes($document['original_filename']); ?>';
+                        a.download = '<?php echo addslashes($safeFilename); ?>';
                         document.body.appendChild(a);
                         a.click();
                         window.URL.revokeObjectURL(url);
@@ -74,7 +77,7 @@ if (file_exists($document['s3_url'])) {
                         }, 100);
                     });
             </script>
-            <p>Your download should start automatically. If it doesn't, <a href="<?php echo $_SERVER['REQUEST_URI']; ?>&direct=1" download="<?php echo htmlspecialchars($document['original_filename']); ?>">click here</a>.</p>
+            <p>Your download should start automatically. If it doesn't, <a href="<?php echo $_SERVER['REQUEST_URI']; ?>&direct=1" download="<?php echo htmlspecialchars($safeFilename); ?>">click here</a>.</p>
         </body>
         </html>
         <?php
@@ -87,16 +90,16 @@ if (file_exists($document['s3_url'])) {
         if ($isPreview) {
             // For preview (images), display inline
             header('Content-Type: ' . $document['mime_type']);
-            header('Content-Disposition: inline; filename="' . $document['original_filename'] . '"');
+            header('Content-Disposition: inline; filename="' . $safeFilename . '"');
         } else {
             // For PDF files, use proper MIME type to prevent corruption
             if ($document['mime_type'] === 'application/pdf') {
                 header('Content-Type: application/pdf');
-                header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+                header('Content-Disposition: attachment; filename="' . $safeFilename . '"');
             } else {
                 // For other files, force download with octet-stream to bypass browser plugins
                 header('Content-Type: application/octet-stream');
-                header('Content-Disposition: attachment; filename="' . $document['original_filename'] . '"');
+                header('Content-Disposition: attachment; filename="' . $safeFilename . '"');
             }
             header('Content-Transfer-Encoding: binary');
             header('Content-Description: File Transfer');
@@ -119,6 +122,11 @@ if (file_exists($document['s3_url'])) {
 } else {
     // For S3 files, redirect to signed URL
     $signedUrl = $documentService->getSignedUrl($document['s3_key']);
+    if (empty($signedUrl)) {
+        error_log("Download error: Failed to generate signed URL for document ID: $documentId");
+        http_response_code(500);
+        exit('Unable to prepare document download');
+    }
     
     // Log the download
     error_log("Document download: Document ID {$documentId} S3 access by user ID {$_SESSION['user_id']} (" . ($_SESSION['username'] ?? 'Unknown') . ")");

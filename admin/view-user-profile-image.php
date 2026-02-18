@@ -16,7 +16,7 @@ require_once __DIR__ . '/../services/ImageUploadService.php';
 // Check if user is admin
 $userModel = new User();
 $currentUser = $userModel->getUserById($_SESSION['user_id']);
-if (!$currentUser['is_admin']) {
+if (!$currentUser || empty($currentUser['is_admin'])) {
     http_response_code(403);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Admin access required']);
@@ -42,7 +42,6 @@ try {
         echo json_encode(['error' => 'User not found']);
         exit;
     }
-    
     // Only serve S3 images for manual accounts
     if ($targetUser['account_type'] !== 'manual') {
         http_response_code(400);
@@ -50,18 +49,15 @@ try {
         echo json_encode(['error' => 'This endpoint is only for manual account profile images']);
         exit;
     }
-    
     // Get the image
     $imageUploadService = new ImageUploadService();
     $presignedUrl = $imageUploadService->getUserProfileImageUrl($userId, $_SESSION['user_id'], true, 60); // 60 minute expiration for admin
-    
     if (!$presignedUrl) {
         http_response_code(404);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Profile image not found']);
         exit;
     }
-    
     // Return the presigned URL as JSON for AJAX requests
     if (isset($_GET['json']) && $_GET['json'] === '1') {
         // Also get additional image info for admin
@@ -76,11 +72,9 @@ try {
         ]);
         exit;
     }
-    
     // Redirect to the presigned URL for direct image access
     header('Location: ' . $presignedUrl);
     exit;
-    
 } catch (Exception $e) {
     error_log("Admin profile image view error: " . $e->getMessage());
     http_response_code(500);
