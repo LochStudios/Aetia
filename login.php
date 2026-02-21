@@ -6,6 +6,7 @@ require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/GoogleOAuth.php';
+require_once __DIR__ . '/services/YouTubeOAuth.php';
 require_once __DIR__ . '/services/turnstile.php';
 
 $turnstileConfig = loadTurnstileConfig();
@@ -145,6 +146,17 @@ try {
     $googleAvailable = false;
 }
 
+// Initialize YouTube OAuth
+$youtubeAuthUrl = null;
+$youtubeAvailable = true;
+try {
+    $youtubeOAuth = new YouTubeOAuth();
+    $youtubeAuthUrl = $youtubeOAuth->getAuthorizationUrl();
+} catch (Exception $e) {
+    error_log('YouTube OAuth initialization failed: ' . $e->getMessage());
+    $youtubeAvailable = false;
+}
+
 // Check for initial admin password
 $initialAdminPassword = '';
 $tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
@@ -217,6 +229,17 @@ ob_start();
                         <button class="button is-fullwidth mb-2" style="background-color: #f8f9fa; border: 1px solid #dadce0; color: #5f6368;" disabled>
                             <span class="icon"><i class="fab fa-google" style="color: #9aa0a6;"></i></span>
                             <span>Continue with Google (Currently Unavailable)</span>
+                        </button>
+                        <?php endif; ?>
+                        <?php if ($youtubeAvailable && $youtubeAuthUrl): ?>
+                        <a href="<?= htmlspecialchars($youtubeAuthUrl) ?>" class="button is-fullwidth mb-2" style="background-color: #ff0000; color: #ffffff; border: 1px solid #cc0000;">
+                            <span class="icon"><i class="fab fa-youtube"></i></span>
+                            <span>Continue with YouTube</span>
+                        </a>
+                        <?php else: ?>
+                        <button class="button is-fullwidth mb-2" style="background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7;" disabled>
+                            <span class="icon"><i class="fab fa-youtube"></i></span>
+                            <span>Continue with YouTube (Currently Unavailable)</span>
                         </button>
                         <?php endif; ?>
                     </div>

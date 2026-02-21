@@ -16,6 +16,7 @@ require_once __DIR__ . '/models/Message.php';
 require_once __DIR__ . '/services/TwitchOAuth.php';
 require_once __DIR__ . '/services/DiscordOAuth.php';
 require_once __DIR__ . '/services/GoogleOAuth.php';
+require_once __DIR__ . '/services/YouTubeOAuth.php';
 require_once __DIR__ . '/services/ImageUploadService.php';
 require_once __DIR__ . '/includes/SecurityManager.php';
 
@@ -599,7 +600,7 @@ ob_start();
                         <div class="level is-mobile">
                             <div class="level-left">
                                 <div class="level-item">
-                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : 'warning') ?>">
+                                    <span class="icon has-text-<?= $connection['platform'] === 'twitch' ? 'primary' : ($connection['platform'] === 'discord' ? 'info' : ($connection['platform'] === 'youtube' ? 'danger' : 'warning')) ?>">
                                         <i class="fab fa-<?= $connection['platform'] ?>"></i>
                                     </span>
                                 </div>
@@ -1154,10 +1155,12 @@ ob_start();
                         $hasTwitch = false;
                         $hasDiscord = false;
                         $hasGoogle = false;
+                        $hasYouTube = false;
                         foreach ($socialConnections as $conn) {
                             if ($conn['platform'] === 'twitch') $hasTwitch = true;
                             if ($conn['platform'] === 'discord') $hasDiscord = true;
                             if ($conn['platform'] === 'google') $hasGoogle = true;
+                            if ($conn['platform'] === 'youtube') $hasYouTube = true;
                         }
                         ?>
                         <?php if (!$hasTwitch): ?>
@@ -1211,6 +1214,24 @@ ob_start();
                                     <i class="fab fa-google" style="color: #4285f4;"></i>
                                 </span>
                                 <span>Link Google</span>
+                            </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <?php if (!$hasYouTube): ?>
+                            <?php
+                            try {
+                                $youtubeOAuth = new YouTubeOAuth();
+                                $youtubeLinkUrl = $youtubeOAuth->getLinkAuthorizationUrl();
+                            } catch (Exception $e) {
+                                $youtubeLinkUrl = null;
+                            }
+                            ?>
+                            <?php if ($youtubeLinkUrl): ?>
+                            <a href="<?= htmlspecialchars($youtubeLinkUrl) ?>" class="button" style="background-color: #ff0000; color: #ffffff; border: 1px solid #cc0000;">
+                                <span class="icon">
+                                    <i class="fab fa-youtube"></i>
+                                </span>
+                                <span>Link YouTube</span>
                             </a>
                             <?php endif; ?>
                         <?php endif; ?>

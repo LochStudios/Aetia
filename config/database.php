@@ -77,7 +77,7 @@ class Database {
                 last_name VARCHAR(50),
                 profile_image VARCHAR(255),
                 public_email VARCHAR(100) NULL,
-                account_type ENUM('manual', 'twitch', 'google', 'twitter', 'instagram') DEFAULT 'manual',
+                account_type ENUM('manual', 'twitch', 'google', 'youtube', 'discord', 'twitter', 'instagram') DEFAULT 'manual',
                 social_id VARCHAR(100),
                 social_username VARCHAR(100),
                 social_data JSON,
@@ -120,7 +120,7 @@ class Database {
             CREATE TABLE IF NOT EXISTS social_connections (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
-                platform ENUM('twitch', 'google', 'twitter', 'instagram', 'discord') NOT NULL,
+                platform ENUM('twitch', 'google', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL,
                 social_id VARCHAR(100) NOT NULL,
                 social_username VARCHAR(100),
                 access_token TEXT,
@@ -871,7 +871,7 @@ class Database {
         }
     }
     
-    // Update social_connections platform ENUM to include Discord
+    // Update social_connections platform ENUM to include YouTube/Discord
     private function updateSocialConnectionsPlatforms() {
         try {
             // Check if the social_connections table exists first
@@ -884,14 +884,13 @@ class Database {
                 if ($result && $result->num_rows > 0) {
                     $column = $result->fetch_assoc();
                     $type = $column['Type'];
-                    // Check if 'discord' is already in the ENUM
-                    if (strpos($type, "'discord'") === false) {
-                        // Add discord to the ENUM
-                        $alterQuery = "ALTER TABLE social_connections MODIFY COLUMN platform ENUM('twitch', 'google', 'twitter', 'instagram', 'discord') NOT NULL";
+                    // Check if 'youtube' and 'discord' are in the ENUM
+                    if (strpos($type, "'youtube'") === false || strpos($type, "'discord'") === false) {
+                        $alterQuery = "ALTER TABLE social_connections MODIFY COLUMN platform ENUM('twitch', 'google', 'youtube', 'twitter', 'instagram', 'discord') NOT NULL";
                         if ($this->mysqli->query($alterQuery)) {
-                            error_log("Successfully added 'discord' to social_connections platform ENUM");
+                            error_log("Successfully updated social_connections platform ENUM with YouTube/Discord");
                         } else {
-                            error_log("Failed to add 'discord' to platform ENUM: " . $this->mysqli->error);
+                            error_log("Failed to update platform ENUM: " . $this->mysqli->error);
                         }
                     }
                 }

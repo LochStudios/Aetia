@@ -352,7 +352,7 @@ class User {
     }
     
     // Generate unique username
-    private function generateUniqueUsername($baseUsername) {
+    public function generateUniqueUsername($baseUsername) {
         $username = preg_replace('/[^a-zA-Z0-9_]/', '', $baseUsername);
         $originalUsername = $username;
         $counter = 1;
@@ -362,6 +362,32 @@ class User {
         }
         return $username;
     }
+        public function createUser($username, $email, $password = null, $accountType = 'manual', $profileImage = null) {
+            try {
+                $this->ensureConnection();
+                if ($this->userExists($username, $email)) {
+                    return ['success' => false, 'message' => 'Username or email already exists'];
+                }
+                $passwordHash = null;
+                if (!empty($password)) {
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                }
+                $stmt = $this->mysqli->prepare("\n                INSERT INTO users (username, email, password_hash, account_type, profile_image) \n                VALUES (?, ?, ?, ?, ?)\n            ");
+                $stmt->bind_param("sssss", $username, $email, $passwordHash, $accountType, $profileImage);
+                $result = $stmt->execute();
+                if ($result) {
+                    $userId = $this->mysqli->insert_id;
+                    $stmt->close();
+                    return ['success' => true, 'user_id' => $userId];
+                }
+                $error = $this->mysqli->error;
+                $stmt->close();
+                return ['success' => false, 'message' => 'Failed to create account: ' . $error];
+            } catch (Exception $e) {
+                error_log("Create user error: " . $e->getMessage());
+                return ['success' => false, 'message' => 'Database error occurred'];
+            }
+        }
     
     // Check if username exists
     private function usernameExists($username) {
@@ -391,6 +417,8 @@ class User {
                 return null;
             case 'google':
                 return $socialData['picture'] ?? null;
+            case 'youtube':
+                return $socialData['channel_thumbnail'] ?? $socialData['profile_image'] ?? $socialData['picture'] ?? null;
             case 'twitter':
                 return $socialData['profile_image_url'] ?? null;
             case 'instagram':
@@ -1153,24 +1181,19 @@ class User {
     public function getAvailablePlatformsForLinking($userId) {
         try {
             $this->ensureConnection();
-            
-            $allPlatforms = ['twitch', 'discord', 'google', 'twitter', 'instagram'];
-            
+            $allPlatforms = ['twitch', 'discord', 'google', 'youtube', 'twitter', 'instagram'];
             $stmt = $this->mysqli->prepare("
                 SELECT platform FROM social_connections WHERE user_id = ?
             ");
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
-            
             $linkedPlatforms = [];
             while ($row = $result->fetch_assoc()) {
                 $linkedPlatforms[] = $row['platform'];
             }
             $stmt->close();
-            
             return array_diff($allPlatforms, $linkedPlatforms);
-            
         } catch (Exception $e) {
             error_log("Get available platforms error: " . $e->getMessage());
             return [];
@@ -1181,10 +1204,8 @@ class User {
     public function setPrimarySocialConnection($userId, $platform) {
         try {
             $this->ensureConnection();
-            
             // Start transaction
             $this->mysqli->begin_transaction();
-            
             // First, unset all primary flags for this user
             $stmt = $this->mysqli->prepare("
                 UPDATE social_connections 
@@ -1194,12 +1215,10 @@ class User {
             $stmt->bind_param("i", $userId);
             $result1 = $stmt->execute();
             $stmt->close();
-            
             if (!$result1) {
                 $this->mysqli->rollback();
                 return ['success' => false, 'message' => 'Failed to update primary status.'];
             }
-            
             // Set the specified platform as primary
             $stmt = $this->mysqli->prepare("
                 UPDATE social_connections 
@@ -1210,7 +1229,6 @@ class User {
             $result2 = $stmt->execute();
             $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
-            
             if ($result2 && $affectedRows > 0) {
                 $this->mysqli->commit();
                 // If platform is google, attempt auto-verification when set as primary
@@ -1247,7 +1265,6 @@ class User {
                 $this->mysqli->rollback();
                 return ['success' => false, 'message' => 'Failed to set primary account or account not found.'];
             }
-            
         } catch (Exception $e) {
             $this->mysqli->rollback();
             error_log("Set primary social connection error: " . $e->getMessage());
@@ -1259,7 +1276,6 @@ class User {
     public function updateUserProfile($userId, $profileData = []) {
         try {
             $this->ensureConnection();
-            
             // Handle legacy parameters (backward compatibility)
             if (is_string($profileData)) {
                 // Legacy call: updateUserProfile($userId, $firstName, $lastName)
@@ -1267,13 +1283,11 @@ class User {
                 $lastName = func_get_arg(2);
                 $profileData = ['first_name' => $firstName, 'last_name' => $lastName];
             }
-            
             // Build dynamic update query based on provided fields
             $validFields = ['first_name', 'last_name', 'abn_acn', 'address'];
             $updateFields = [];
             $values = [];
             $types = '';
-            
             foreach ($profileData as $field => $value) {
                 if (in_array($field, $validFields)) {
                     $value = trim($value);
@@ -1284,11 +1298,9 @@ class User {
                     }
                 }
             }
-            
             if (empty($updateFields)) {
                 return ['success' => false, 'message' => 'No valid fields provided for update.'];
             }
-            
             // Basic validation for name fields
             if (isset($profileData['first_name']) && strlen($profileData['first_name']) > 50) {
                 return ['success' => false, 'message' => 'First name must be 50 characters or less.'];
@@ -1296,25 +1308,20 @@ class User {
             if (isset($profileData['last_name']) && strlen($profileData['last_name']) > 50) {
                 return ['success' => false, 'message' => 'Last name must be 50 characters or less.'];
             }
-            
             $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
             $values[] = $userId;
             $types .= 'i';
-            
             $sql = "UPDATE users SET " . implode(', ', $updateFields) . " WHERE id = ?";
             $stmt = $this->mysqli->prepare($sql);
-            
             $stmt->bind_param($types, ...$values);
             $result = $stmt->execute();
             $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
-            
             if ($result && $affectedRows > 0) {
                 return ['success' => true, 'message' => 'Profile updated successfully!'];
             } else {
                 return ['success' => false, 'message' => 'No changes were made or user not found.'];
             }
-            
         } catch (Exception $e) {
             error_log("Update user profile error: " . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred while updating your profile.'];
@@ -1435,24 +1442,19 @@ class User {
     public function getAllUsers() {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type, approval_status
                 FROM users 
                 ORDER BY username ASC
             ");
-            
             $stmt->execute();
             $result = $stmt->get_result();
             $users = [];
-            
             while ($row = $result->fetch_assoc()) {
                 $users[] = $row;
             }
-            
             $stmt->close();
             return $users;
-            
         } catch (Exception $e) {
             error_log("Get all users error: " . $e->getMessage());
             return [];
@@ -1496,25 +1498,20 @@ class User {
     public function getAllActiveUsers() {
         try {
             $this->ensureConnection();
-            
             $stmt = $this->mysqli->prepare("
                 SELECT id, username, email, first_name, last_name, is_active, is_admin, account_type
                 FROM users 
                 WHERE is_active = 1 AND approval_status = 'approved'
                 ORDER BY username ASC
             ");
-            
             $stmt->execute();
             $result = $stmt->get_result();
             $users = [];
-            
             while ($row = $result->fetch_assoc()) {
                 $users[] = $row;
             }
-            
             $stmt->close();
             return $users;
-            
         } catch (Exception $e) {
             error_log("Get all active users error: " . $e->getMessage());
             return [];
@@ -1616,11 +1613,9 @@ class User {
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
-            
             if ($result->num_rows === 1) {
                 $user = $result->fetch_assoc();
                 $stmt->close();
-                
                 return [
                     'success' => true,
                     'sms_enabled' => (bool)$user['sms_enabled'],
