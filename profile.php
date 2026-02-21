@@ -1218,22 +1218,12 @@ ob_start();
                             <?php endif; ?>
                         <?php endif; ?>
                         <?php if (!$hasYouTube): ?>
-                            <?php
-                            try {
-                                $youtubeOAuth = new YouTubeOAuth();
-                                $youtubeLinkUrl = $youtubeOAuth->getLinkAuthorizationUrl();
-                            } catch (Exception $e) {
-                                $youtubeLinkUrl = null;
-                            }
-                            ?>
-                            <?php if ($youtubeLinkUrl): ?>
-                            <a href="<?= htmlspecialchars($youtubeLinkUrl) ?>" class="button" style="background-color: #ff0000; color: #ffffff; border: 1px solid #cc0000;">
+                            <button class="button" style="background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7;" disabled>
                                 <span class="icon">
                                     <i class="fab fa-youtube"></i>
                                 </span>
-                                <span>Link YouTube</span>
-                            </a>
-                            <?php endif; ?>
+                                <span>Link YouTube (Coming Soon)</span>
+                            </button>
                         <?php endif; ?>
                     </div>
                 </div>

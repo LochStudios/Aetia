@@ -231,17 +231,10 @@ ob_start();
                             <span>Continue with Google (Currently Unavailable)</span>
                         </button>
                         <?php endif; ?>
-                        <?php if ($youtubeAvailable && $youtubeAuthUrl): ?>
-                        <a href="<?= htmlspecialchars($youtubeAuthUrl) ?>" class="button is-fullwidth mb-2" style="background-color: #ff0000; color: #ffffff; border: 1px solid #cc0000;">
-                            <span class="icon"><i class="fab fa-youtube"></i></span>
-                            <span>Continue with YouTube</span>
-                        </a>
-                        <?php else: ?>
                         <button class="button is-fullwidth mb-2" style="background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7;" disabled>
                             <span class="icon"><i class="fab fa-youtube"></i></span>
-                            <span>Continue with YouTube (Currently Unavailable)</span>
+                            <span>Continue with YouTube (Coming Soon)</span>
                         </button>
-                        <?php endif; ?>
                     </div>
                 </div>
                 
