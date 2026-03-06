@@ -4,24 +4,28 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../services/EmailService.php';
 
-class User {
+class User
+{
     private $database;
     private $mysqli;
-    public function __construct() {
+    public function __construct()
+    {
         $this->database = new Database();
         $this->mysqli = $this->database->getConnection();
     }
-    
+
     // Ensure database connection is active
-    private function ensureConnection() {
+    private function ensureConnection()
+    {
         if (!$this->mysqli || $this->mysqli->ping() === false) {
             $this->database = new Database();
             $this->mysqli = $this->database->getConnection();
         }
     }
-    
+
     // Generate a secure reset code (24-32 characters, alphanumeric)
-    private function generateResetCode() {
+    private function generateResetCode()
+    {
         $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $lowercase = 'abcdefghijklmnopqrstuvwxyz';
         $numbers = '0123456789';
@@ -39,9 +43,10 @@ class User {
         // Shuffle the string to randomize the order
         return str_shuffle($resetCode);
     }
-    
+
     // Send signup notification email if not already sent
-    private function sendSignupNotificationIfNeeded($userId, $email, $name) {
+    private function sendSignupNotificationIfNeeded($userId, $email, $name)
+    {
         try {
             $this->ensureConnection();
             // Check if signup email has already been sent
@@ -51,7 +56,9 @@ class User {
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
-            if (!$user || $user['signup_email_sent']) {return;} // Email already sent or user not found
+            if (!$user || $user['signup_email_sent']) {
+                return;
+            } // Email already sent or user not found
             // Send the signup notification email
             try {
                 $emailService = new EmailService();
@@ -70,9 +77,10 @@ class User {
             error_log('Error checking/sending signup notification: ' . $e->getMessage());
         }
     }
-    
+
     // Public method to check and send signup notification for existing users
-    public function checkAndSendSignupNotification($userId) {
+    public function checkAndSendSignupNotification($userId)
+    {
         try {
             $this->ensureConnection();
             // Get user details
@@ -116,13 +124,16 @@ class User {
             error_log('Error in checkAndSendSignupNotification: ' . $e->getMessage());
         }
     }
-    
+
     // Create a new manual user account
-    public function createManualUser($username, $email, $password, $firstName = '', $lastName = '') {
+    public function createManualUser($username, $email, $password, $firstName = '', $lastName = '')
+    {
         try {
             $this->ensureConnection();
             // Check if username or email already exists
-            if ($this->userExists($username, $email)) {return ['success' => false, 'message' => 'Username or email already exists'];}
+            if ($this->userExists($username, $email)) {
+                return ['success' => false, 'message' => 'Username or email already exists'];
+            }
             // Hash the password
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $this->mysqli->prepare("
@@ -146,9 +157,10 @@ class User {
             return ['success' => false, 'message' => 'Database error occurred'];
         }
     }
-    
+
     // Authenticate manual user
-    public function authenticateManualUser($username, $password) {
+    public function authenticateManualUser($username, $password)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -180,9 +192,10 @@ class User {
             return ['success' => false, 'message' => 'Authentication failed'];
         }
     }
-    
+
     // Create or update social user
-    public function createOrUpdateSocialUser($platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
+    public function createOrUpdateSocialUser($platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null)
+    {
         try {
             $this->ensureConnection();
             // Check if user exists with this social account
@@ -239,8 +252,8 @@ class User {
                     $user = $result->fetch_assoc();
                     $stmt->close();
                     // Send signup notification email
-                    $userName = isset($socialData['display_name']) ? $socialData['display_name'] : 
-                                (isset($socialData['name']) ? $socialData['name'] : $socialUsername);
+                    $userName = isset($socialData['display_name']) ? $socialData['display_name'] :
+                        (isset($socialData['name']) ? $socialData['name'] : $socialUsername);
                     $this->sendSignupNotificationIfNeeded($userId, $email, $userName);
                     // Auto-verify when created via Google and Google provided an email
                     if ($platform === 'google' && !empty($socialData['email'])) {
@@ -265,9 +278,10 @@ class User {
             return ['success' => false, 'message' => 'Social authentication failed: ' . $e->getMessage()];
         }
     }
-    
+
     // Add social connection to existing user
-    private function addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, $isPrimary = false) {
+    private function addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, $isPrimary = false)
+    {
         try {
             $this->ensureConnection();
             // Start transaction to ensure data consistency
@@ -312,9 +326,10 @@ class User {
             return false;
         }
     }
-    
+
     // Update existing social connection
-    private function updateSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt) {
+    private function updateSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -338,9 +353,10 @@ class User {
             return false;
         }
     }
-    
+
     // Check if user exists
-    private function userExists($username, $email) {
+    private function userExists($username, $email)
+    {
         $this->ensureConnection();
         $stmt = $this->mysqli->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
         $stmt->bind_param("ss", $username, $email);
@@ -350,9 +366,10 @@ class User {
         $stmt->close();
         return $exists;
     }
-    
+
     // Generate unique username
-    public function generateUniqueUsername($baseUsername) {
+    public function generateUniqueUsername($baseUsername)
+    {
         $username = preg_replace('/[^a-zA-Z0-9_]/', '', $baseUsername);
         $originalUsername = $username;
         $counter = 1;
@@ -362,35 +379,37 @@ class User {
         }
         return $username;
     }
-        public function createUser($username, $email, $password = null, $accountType = 'manual', $profileImage = null) {
-            try {
-                $this->ensureConnection();
-                if ($this->userExists($username, $email)) {
-                    return ['success' => false, 'message' => 'Username or email already exists'];
-                }
-                $passwordHash = null;
-                if (!empty($password)) {
-                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                }
-                $stmt = $this->mysqli->prepare("\n                INSERT INTO users (username, email, password_hash, account_type, profile_image) \n                VALUES (?, ?, ?, ?, ?)\n            ");
-                $stmt->bind_param("sssss", $username, $email, $passwordHash, $accountType, $profileImage);
-                $result = $stmt->execute();
-                if ($result) {
-                    $userId = $this->mysqli->insert_id;
-                    $stmt->close();
-                    return ['success' => true, 'user_id' => $userId];
-                }
-                $error = $this->mysqli->error;
-                $stmt->close();
-                return ['success' => false, 'message' => 'Failed to create account: ' . $error];
-            } catch (Exception $e) {
-                error_log("Create user error: " . $e->getMessage());
-                return ['success' => false, 'message' => 'Database error occurred'];
+    public function createUser($username, $email, $password = null, $accountType = 'manual', $profileImage = null)
+    {
+        try {
+            $this->ensureConnection();
+            if ($this->userExists($username, $email)) {
+                return ['success' => false, 'message' => 'Username or email already exists'];
             }
+            $passwordHash = null;
+            if (!empty($password)) {
+                $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            }
+            $stmt = $this->mysqli->prepare("\n                INSERT INTO users (username, email, password_hash, account_type, profile_image) \n                VALUES (?, ?, ?, ?, ?)\n            ");
+            $stmt->bind_param("sssss", $username, $email, $passwordHash, $accountType, $profileImage);
+            $result = $stmt->execute();
+            if ($result) {
+                $userId = $this->mysqli->insert_id;
+                $stmt->close();
+                return ['success' => true, 'user_id' => $userId];
+            }
+            $error = $this->mysqli->error;
+            $stmt->close();
+            return ['success' => false, 'message' => 'Failed to create account: ' . $error];
+        } catch (Exception $e) {
+            error_log("Create user error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
         }
-    
+    }
+
     // Check if username exists
-    private function usernameExists($username) {
+    private function usernameExists($username)
+    {
         $stmt = $this->mysqli->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -399,9 +418,10 @@ class User {
         $stmt->close();
         return $exists;
     }
-    
+
     // Extract profile image from social data
-    private function extractProfileImage($platform, $socialData) {
+    private function extractProfileImage($platform, $socialData)
+    {
         switch ($platform) {
             case 'twitch':
                 return $socialData['profile_image_url'] ?? null;
@@ -427,9 +447,10 @@ class User {
                 return null;
         }
     }
-    
+
     // Get user's social connections
-    public function getUserSocialConnections($userId) {
+    public function getUserSocialConnections($userId)
+    {
         $stmt = $this->mysqli->prepare("SELECT * FROM social_connections WHERE user_id = ? ORDER BY is_primary DESC, created_at ASC");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
@@ -441,9 +462,10 @@ class User {
         $stmt->close();
         return $connections;
     }
-    
+
     // Link a social account to an existing user
-    public function linkSocialAccount($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null) {
+    public function linkSocialAccount($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken = null, $refreshToken = null, $expiresAt = null)
+    {
         try {
             $this->ensureConnection();
             error_log("LinkSocialAccount - User ID: $userId, Platform: '$platform', Social ID: '$socialId', Username: '$socialUsername'");
@@ -472,7 +494,9 @@ class User {
             $result = $stmt->get_result();
             $existingPlatform = $result->fetch_assoc();
             $stmt->close();
-            if ($existingPlatform) {return ['success' => false, 'message' => 'You already have a ' . ucfirst($platform) . ' account linked.'];}
+            if ($existingPlatform) {
+                return ['success' => false, 'message' => 'You already have a ' . ucfirst($platform) . ' account linked.'];
+            }
             // Add the social connection
             $connectionResult = $this->addSocialConnection($userId, $platform, $socialId, $socialUsername, $socialData, $accessToken, $refreshToken, $expiresAt, false);
             if ($connectionResult) {
@@ -498,9 +522,10 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while linking the account.'];
         }
     }
-    
+
     // Set password for social users (allows manual login)
-    public function setPasswordForSocialUser($userId, $newPassword) {
+    public function setPasswordForSocialUser($userId, $newPassword)
+    {
         try {
             $this->ensureConnection();
             // Get user details
@@ -530,9 +555,10 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while setting password.'];
         }
     }
-    
+
     // Change password for any user (with current password verification)
-    public function changeUserPassword($userId, $currentPassword, $newPassword) {
+    public function changeUserPassword($userId, $currentPassword, $newPassword)
+    {
         try {
             $this->ensureConnection();
             // Get user details
@@ -542,10 +568,16 @@ class User {
             $result = $stmt->get_result();
             $user = $result->fetch_assoc();
             $stmt->close();
-            if (!$user) {return ['success' => false, 'message' => 'User not found.'];}
-            if (empty($user['password_hash'])) {return ['success' => false, 'message' => 'No password is currently set for this account.'];}
+            if (!$user) {
+                return ['success' => false, 'message' => 'User not found.'];
+            }
+            if (empty($user['password_hash'])) {
+                return ['success' => false, 'message' => 'No password is currently set for this account.'];
+            }
             // Verify current password
-            if (!password_verify($currentPassword, $user['password_hash'])) {return ['success' => false, 'message' => 'Current password is incorrect.'];}
+            if (!password_verify($currentPassword, $user['password_hash'])) {
+                return ['success' => false, 'message' => 'Current password is incorrect.'];
+            }
             // Hash the new password
             $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
             // Update the user's password
@@ -563,9 +595,10 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while changing password.'];
         }
     }
-    
+
     // Get all pending users for admin review
-    public function getPendingUsers() {
+    public function getPendingUsers()
+    {
         $stmt = $this->mysqli->prepare("
             SELECT id, username, email, first_name, last_name, account_type, social_username, 
                    profile_image, created_at, contact_attempted, contact_date 
@@ -582,9 +615,10 @@ class User {
         $stmt->close();
         return $pendingUsers;
     }
-    
+
     // Get unverified users
-    public function getUnverifiedUsers() {
+    public function getUnverifiedUsers()
+    {
         $this->ensureConnection();
         $stmt = $this->mysqli->prepare("
             SELECT id, username, email, first_name, last_name, account_type, social_username, 
@@ -602,9 +636,10 @@ class User {
         $stmt->close();
         return $unverifiedUsers;
     }
-    
+
     // Verify a user
-    public function verifyUser($userId, $verifiedBy) {
+    public function verifyUser($userId, $verifiedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -621,9 +656,10 @@ class User {
             return false;
         }
     }
-    
+
     // Deactivate user (soft delete)
-    public function deactivateUser($userId, $reason, $deactivatedBy) {
+    public function deactivateUser($userId, $reason, $deactivatedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -640,9 +676,10 @@ class User {
             return false;
         }
     }
-    
+
     // Suspend user (temporary restriction)
-    public function suspendUser($userId, $reason, $suspendedBy) {
+    public function suspendUser($userId, $reason, $suspendedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -659,9 +696,10 @@ class User {
             return false;
         }
     }
-    
+
     // Unsuspend user
-    public function unsuspendUser($userId) {
+    public function unsuspendUser($userId)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -678,9 +716,10 @@ class User {
             return false;
         }
     }
-    
+
     // Approve a user
-    public function approveUser($userId, $approvedBy) {
+    public function approveUser($userId, $approvedBy)
+    {
         $stmt = $this->mysqli->prepare("
             UPDATE users 
             SET approval_status = 'approved', approval_date = CURRENT_TIMESTAMP, approved_by = ?
@@ -691,9 +730,10 @@ class User {
         $stmt->close();
         return $result;
     }
-    
+
     // Reject a user
-    public function rejectUser($userId, $rejectionReason, $approvedBy) {
+    public function rejectUser($userId, $rejectionReason, $approvedBy)
+    {
         $stmt = $this->mysqli->prepare("
             UPDATE users 
             SET approval_status = 'rejected', approval_date = CURRENT_TIMESTAMP, 
@@ -705,9 +745,10 @@ class User {
         $stmt->close();
         return $result;
     }
-    
+
     // Mark contact attempt
-    public function markContactAttempt($userId, $contactNotes = '') {
+    public function markContactAttempt($userId, $contactNotes = '')
+    {
         $stmt = $this->mysqli->prepare("
             UPDATE users 
             SET contact_attempted = TRUE, contact_date = CURRENT_TIMESTAMP, contact_notes = ?
@@ -718,9 +759,10 @@ class User {
         $stmt->close();
         return $result;
     }
-    
+
     // Check if user is admin
-    public function isUserAdmin($userId) {
+    public function isUserAdmin($userId)
+    {
         $this->ensureConnection();
         $stmt = $this->mysqli->prepare("SELECT is_admin FROM users WHERE id = ? AND is_active = 1");
         $stmt->bind_param("i", $userId);
@@ -730,9 +772,10 @@ class User {
         $stmt->close();
         return $user && $user['is_admin'] == 1;
     }
-    
+
     // Get user admin status along with other details
-    public function getUserWithAdminStatus($userId) {
+    public function getUserWithAdminStatus($userId)
+    {
         $this->ensureConnection();
         // Include status fields such as suspension info when returning a subset of user fields
         $stmt = $this->mysqli->prepare("SELECT id, username, email, first_name, last_name, is_admin, approval_status, account_type, profile_image, is_suspended, suspension_reason FROM users WHERE id = ? AND is_active = 1");
@@ -743,9 +786,10 @@ class User {
         $stmt->close();
         return $user;
     }
-    
+
     // Mark user as admin (also approves them if pending)
-    public function markUserAsAdmin($userId, $approvedBy) {
+    public function markUserAsAdmin($userId, $approvedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -767,7 +811,8 @@ class User {
     }
 
     // Make user admin (without changing approval status)
-    public function makeUserAdmin($userId, $grantedBy) {
+    public function makeUserAdmin($userId, $grantedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -787,7 +832,8 @@ class User {
     }
 
     // Remove admin privileges from user
-    public function removeUserAdmin($userId, $removedBy) {
+    public function removeUserAdmin($userId, $removedBy)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -805,9 +851,10 @@ class User {
             return false;
         }
     }
-    
+
     // Get first admin user for receiving team messages
-    public function getFirstAdmin() {
+    public function getFirstAdmin()
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -827,9 +874,10 @@ class User {
             return null;
         }
     }
-    
+
     // Change user password
-    public function changePassword($userId, $newPassword) {
+    public function changePassword($userId, $newPassword)
+    {
         try {
             $this->ensureConnection();
             $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
@@ -847,9 +895,10 @@ class User {
             return false;
         }
     }
-    
+
     // Check if email exists and can be used for password reset
-    public function checkEmailExists($email) {
+    public function checkEmailExists($email)
+    {
         try {
             $this->ensureConnection();
             // Check if user exists with this email
@@ -910,9 +959,10 @@ class User {
             ];
         }
     }
-    
+
     // Generate password reset token
-    public function generatePasswordResetToken($email) {
+    public function generatePasswordResetToken($email)
+    {
         try {
             $this->ensureConnection();
             // Check if user exists and is active
@@ -946,7 +996,7 @@ class User {
             $stmt->close();
             if ($result) {
                 return [
-                    'success' => true, 
+                    'success' => true,
                     'token' => $resetCode,
                     'username' => $user['username'],
                     'user_id' => $user['id']
@@ -964,7 +1014,8 @@ class User {
      * Generate 6-digit email verification code for a user and email it.
      * Expires in 1 hour.
      */
-    public function generateEmailVerificationCode($userId) {
+    public function generateEmailVerificationCode($userId)
+    {
         try {
             $this->ensureConnection();
             // Get user's email and name
@@ -1010,7 +1061,8 @@ class User {
     /**
      * Validate email verification code for a user (by email + code).
      */
-    public function validateEmailVerificationCode($email, $code) {
+    public function validateEmailVerificationCode($email, $code)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("SELECT evt.code, evt.expires_at, u.id as user_id FROM email_verification_tokens evt JOIN users u ON evt.user_id = u.id WHERE u.email = ? AND evt.code = ? AND evt.expires_at > NOW() LIMIT 1");
@@ -1039,15 +1091,17 @@ class User {
     }
 
     // Helper to determine site base URL for links (simple fallback)
-    private function getSiteBaseUrl() {
+    private function getSiteBaseUrl()
+    {
         // Try to determine from server vars, fallback to config constant or example
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $protocol . '://' . $host;
     }
-    
+
     // Validate password reset token
-    public function validatePasswordResetToken($token) {
+    public function validatePasswordResetToken($token)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1072,14 +1126,17 @@ class User {
             return ['success' => false, 'message' => 'An error occurred. Please try again.'];
         }
     }
-    
+
     // Reset password using token
-    public function resetPasswordWithToken($token, $newPassword) {
+    public function resetPasswordWithToken($token, $newPassword)
+    {
         try {
             $this->ensureConnection();
             // Validate token first
             $tokenValidation = $this->validatePasswordResetToken($token);
-            if (!$tokenValidation['success']) {return $tokenValidation;}
+            if (!$tokenValidation['success']) {
+                return $tokenValidation;
+            }
             $userId = $tokenValidation['user']['id'];
             // Change password
             $passwordChangeResult = $this->changePassword($userId, $newPassword);
@@ -1098,9 +1155,10 @@ class User {
             return ['success' => false, 'message' => 'An error occurred. Please try again.'];
         }
     }
-    
+
     // Mark admin setup as complete
-    public function markAdminSetupComplete($userId) {
+    public function markAdminSetupComplete($userId)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1118,9 +1176,10 @@ class User {
             return false;
         }
     }
-    
+
     // Unlink a social account from a user
-    public function unlinkSocialAccount($userId, $platform) {
+    public function unlinkSocialAccount($userId, $platform)
+    {
         try {
             $this->ensureConnection();
             error_log("User model unlinkSocialAccount - User ID: $userId, Platform: '$platform'");
@@ -1150,7 +1209,7 @@ class User {
                     return ['success' => false, 'message' => 'Cannot unlink your only social account. Please link another account or set a password first.'];
                 }
             }
-            
+
             // Remove the social connection
             $stmt = $this->mysqli->prepare("
                 DELETE FROM social_connections 
@@ -1160,9 +1219,9 @@ class User {
             $result = $stmt->execute();
             $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
-            
+
             error_log("Unlink query executed - Affected rows: $affectedRows");
-            
+
             if ($result && $affectedRows > 0) {
                 error_log("Successfully unlinked $platform account for user $userId");
                 return ['success' => true, 'message' => ucfirst($platform) . ' account unlinked successfully!'];
@@ -1170,15 +1229,16 @@ class User {
                 error_log("Failed to unlink $platform account for user $userId - no rows affected");
                 return ['success' => false, 'message' => 'Failed to unlink ' . ucfirst($platform) . ' account. Account may not exist.'];
             }
-            
+
         } catch (Exception $e) {
             error_log("Unlink social account error: " . $e->getMessage());
             return ['success' => false, 'message' => 'An error occurred while unlinking the account.'];
         }
     }
-    
+
     // Get available platforms for linking (platforms not yet linked by user)
-    public function getAvailablePlatformsForLinking($userId) {
+    public function getAvailablePlatformsForLinking($userId)
+    {
         try {
             $this->ensureConnection();
             $allPlatforms = ['twitch', 'discord', 'google', 'youtube', 'twitter', 'instagram'];
@@ -1199,9 +1259,10 @@ class User {
             return [];
         }
     }
-    
+
     // Set a social connection as primary
-    public function setPrimarySocialConnection($userId, $platform) {
+    public function setPrimarySocialConnection($userId, $platform)
+    {
         try {
             $this->ensureConnection();
             // Start transaction
@@ -1271,9 +1332,10 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while setting primary account.'];
         }
     }
-    
+
     // Update user profile information (supports multiple fields)
-    public function updateUserProfile($userId, $profileData = []) {
+    public function updateUserProfile($userId, $profileData = [])
+    {
         try {
             $this->ensureConnection();
             // Handle legacy parameters (backward compatibility)
@@ -1327,14 +1389,15 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while updating your profile.'];
         }
     }
-    
+
     /**
      * Update user's profile image reference
      * @param int $userId The user ID
      * @param string $imageUrl The reference/flag for the uploaded image (not the actual URL)
      * @return array Success/failure result
      */
-    public function updateProfileImage($userId, $imageUrl) {
+    public function updateProfileImage($userId, $imageUrl)
+    {
         try {
             $this->ensureConnection();
             // Validate input
@@ -1361,7 +1424,7 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while updating your profile image.'];
         }
     }
-    
+
     /**
      * Update user's public email address
      * @param int $userId The user ID
@@ -1369,7 +1432,8 @@ class User {
      * @param string $adminName The name of the admin making the change
      * @return bool Success status
      */
-    public function updatePublicEmail($userId, $publicEmail, $adminName = 'Admin') {
+    public function updatePublicEmail($userId, $publicEmail, $adminName = 'Admin')
+    {
         try {
             $this->ensureConnection();
             // Validate input
@@ -1405,16 +1469,17 @@ class User {
             return false;
         }
     }
-    
+
     /**
      * Remove user's profile image
      * @param int $userId The user ID
      * @return array Success/failure result
      */
-    public function removeProfileImage($userId) {
+    public function removeProfileImage($userId)
+    {
         try {
             $this->ensureConnection();
-            
+
             // Update the user's profile image to NULL
             $stmt = $this->mysqli->prepare("
                 UPDATE users 
@@ -1435,11 +1500,12 @@ class User {
             return ['success' => false, 'message' => 'An error occurred while removing your profile image.'];
         }
     }
-    
+
     /**
      * Get all users for admin email functionality
      */
-    public function getAllUsers() {
+    public function getAllUsers()
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1460,11 +1526,12 @@ class User {
             return [];
         }
     }
-    
+
     /**
      * Get all users with complete information for admin management
      */
-    public function getAllUsersForAdmin() {
+    public function getAllUsersForAdmin()
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1491,11 +1558,12 @@ class User {
             return [];
         }
     }
-    
+
     /**
      * Get all active users for newsletter functionality
      */
-    public function getAllActiveUsers() {
+    public function getAllActiveUsers()
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1517,11 +1585,12 @@ class User {
             return [];
         }
     }
-    
+
     /**
      * Get user by ID for email functionality
      */
-    public function getUserById($userId) {
+    public function getUserById($userId)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("SELECT * FROM users  WHERE id = ?");
@@ -1540,7 +1609,8 @@ class User {
     /**
      * Get user by social account
      */
-    public function getUserBySocialAccount($platform, $socialId) {
+    public function getUserBySocialAccount($platform, $socialId)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
@@ -1563,7 +1633,8 @@ class User {
     /**
      * Get user by email
      */
-    public function getUserByEmail($email) {
+    public function getUserByEmail($email)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("SELECT * FROM users WHERE email = ?");
@@ -1582,7 +1653,8 @@ class User {
     /**
      * Update user's last login timestamp
      */
-    public function updateLastLogin($userId) {
+    public function updateLastLogin($userId)
+    {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?");
@@ -1601,10 +1673,11 @@ class User {
      * @param int $userId The user ID
      * @return array SMS preferences with success status
      */
-    public function getUserSmsPreferences($userId) {
+    public function getUserSmsPreferences($userId)
+    {
         try {
             $this->ensureConnection();
-            
+
             $stmt = $this->mysqli->prepare("
                 SELECT sms_enabled, phone_number, phone_verified 
                 FROM users 
@@ -1618,9 +1691,9 @@ class User {
                 $stmt->close();
                 return [
                     'success' => true,
-                    'sms_enabled' => (bool)$user['sms_enabled'],
+                    'sms_enabled' => (bool) $user['sms_enabled'],
                     'phone_number' => $user['phone_number'] ?: '',
-                    'phone_verified' => (bool)$user['phone_verified']
+                    'phone_verified' => (bool) $user['phone_verified']
                 ];
             } else {
                 $stmt->close();
@@ -1629,7 +1702,7 @@ class User {
                     'message' => 'User not found or inactive.'
                 ];
             }
-            
+
         } catch (Exception $e) {
             error_log("Get user SMS preferences error: " . $e->getMessage());
             return [
@@ -1646,7 +1719,8 @@ class User {
      * @param string $phoneNumber The phone number for SMS notifications
      * @return array Success/failure result
      */
-    public function updateSmsPreferences($userId, $smsEnabled, $phoneNumber) {
+    public function updateSmsPreferences($userId, $smsEnabled, $phoneNumber)
+    {
         try {
             $this->ensureConnection();
 
@@ -1663,7 +1737,7 @@ class User {
                 SET sms_enabled = ?, phone_number = ?, phone_verified = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND is_active = 1
             ");
-            $stmt->bind_param("issii", $smsEnabled, $phoneNumber, $phoneVerified, $userId);
+            $stmt->bind_param("isii", $smsEnabled, $phoneNumber, $phoneVerified, $userId);
             $result = $stmt->execute();
             $affectedRows = $this->mysqli->affected_rows;
             $stmt->close();
@@ -1685,7 +1759,8 @@ class User {
      * @param int $userId The user ID
      * @return array Success/failure result
      */
-    public function sendSmsVerificationCode($userId) {
+    public function sendSmsVerificationCode($userId)
+    {
         try {
             $this->ensureConnection();
 
@@ -1748,7 +1823,8 @@ class User {
      * @param string $verificationCode The code entered by the user
      * @return array Success/failure result
      */
-    public function verifySmsCode($userId, $verificationCode) {
+    public function verifySmsCode($userId, $verificationCode)
+    {
         try {
             $this->ensureConnection();
 
