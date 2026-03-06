@@ -690,8 +690,10 @@ ob_start();
                         <div class="content">
                             <p><strong>SMS Notifications:</strong> Get important updates via text message.</p>
                             <p class="is-size-7">
-                                <i class="fas fa-dollar-sign"></i> <strong>$0.30 per message</strong> •
-                                <i class="fas fa-phone"></i> Messages from: <strong>+1 (202) 559-4813</strong>
+                                <i class="fas fa-dollar-sign"></i> <strong>$0.30 per message</strong><br>
+                                <i class="fas fa-phone"></i> Messages from: <strong>+1 (202) 559-4813</strong> (USA)
+                                &nbsp;&bull;&nbsp; <i class="fas fa-id-badge"></i> Sender ID:
+                                <strong>LochStudios</strong> (Australia &amp; New Zealand)
                             </p>
                         </div>
                     </div>
@@ -1338,13 +1340,13 @@ ob_start();
 
     function updatePhonePlaceholder() {
         const countrySelect = document.getElementById('country_code_select');
-        const phoneInput    = document.getElementById('phone_number_local_input');
-        const hintEl        = document.getElementById('phone-example-hint');
+        const phoneInput = document.getElementById('phone_number_local_input');
+        const hintEl = document.getElementById('phone-example-hint');
         if (!countrySelect || !phoneInput) return;
         const examples = {
-            '+61': { placeholder: 'e.g., 411234567',  hint: 'Australia: 411234567 (without leading 0)' },
-            '+64': { placeholder: 'e.g., 211234567',  hint: 'New Zealand: 211234567 (without leading 0)' },
-            '+1':  { placeholder: 'e.g., 5551234567', hint: 'USA: 5551234567 (10-digit number)' },
+            '+61': { placeholder: 'e.g., 411234567', hint: 'Australia: 411234567 (without leading 0)' },
+            '+64': { placeholder: 'e.g., 211234567', hint: 'New Zealand: 211234567 (without leading 0)' },
+            '+1': { placeholder: 'e.g., 5551234567', hint: 'USA: 5551234567 (10-digit number)' },
         };
         const chosen = examples[countrySelect.value] || { placeholder: 'Phone number', hint: '' };
         phoneInput.placeholder = chosen.placeholder;
