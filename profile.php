@@ -689,12 +689,27 @@ ob_start();
                     <div class="notification is-info is-dark has-text-white mb-4">
                         <div class="content">
                             <p><strong>SMS Notifications:</strong> Get important updates via text message.</p>
-                            <p class="is-size-7">
-                                <i class="fas fa-dollar-sign"></i> <strong>$0.30 per message</strong><br>
-                                <i class="fas fa-phone"></i> Messages from: <strong>+1 (202) 559-4813</strong> (USA)
-                                &nbsp;&bull;&nbsp; <i class="fas fa-id-badge"></i> Sender ID:
-                                <strong>LochStudios</strong> (Australia &amp; New Zealand)
-                            </p>
+                            <table class="is-size-7" style="border-collapse: collapse; width: 100%;">
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 2px 6px 2px 0; white-space: nowrap;"><i
+                                                class="fas fa-dollar-sign"></i></td>
+                                        <td><strong>$0.30 per message</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px 6px 2px 0; white-space: nowrap;"><i
+                                                class="fas fa-phone"></i></td>
+                                        <td>Messages from: <strong>+1 (202) 559-4813</strong> <span
+                                                class="has-text-grey-light">(USA)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px 6px 2px 0; white-space: nowrap;"><i
+                                                class="fas fa-id-badge"></i></td>
+                                        <td>Sender ID: <strong>LochStudios</strong> <span
+                                                class="has-text-grey-light">(Australia &amp; New Zealand)</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <?php
