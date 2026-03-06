@@ -323,10 +323,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Handle SMS verification code sending
+$codeSentJustNow = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_sms_verification') {
     $result = $userModel->sendSmsVerificationCode($_SESSION['user_id']);
     if ($result['success']) {
         $success_message = $result['message'];
+        $codeSentJustNow = true; // Keep verification field visible after reload
     } else {
         $error_message = $result['message'];
     }
@@ -337,6 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $verificationCode = trim($_POST['verification_code'] ?? '');
     if (empty($verificationCode)) {
         $error_message = 'Please enter the verification code.';
+        $codeSentJustNow = true; // Keep field open
     } else {
         $result = $userModel->verifySmsCode($_SESSION['user_id'], $verificationCode);
         if ($result['success']) {
@@ -853,8 +856,8 @@ ob_start();
                             </form>
                         </div>
 
-                        <!-- Verification Code Input Field (Hidden Initially) -->
-                        <div id="verification-field" style="display: none;">
+                        <!-- Verification Code Input Field -->
+                        <div id="verification-field" style="<?= $codeSentJustNow ? '' : 'display: none;' ?>">
                             <form method="POST" action="profile.php">
                                 <input type="hidden" name="action" value="verify_sms_code">
                                 <input type="hidden" name="csrf_token"
