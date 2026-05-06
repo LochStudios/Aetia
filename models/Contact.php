@@ -29,8 +29,8 @@ class Contact {
             $geoData = null;
             if ($ipAddress && $ipAddress !== '127.0.0.1' && $ipAddress !== '::1') {
                 try {
-                    // Use ip-api.com (free service, 1000 requests/hour)
-                    $geoUrl = "http://ip-api.com/json/{$ipAddress}?fields=status,message,country,countryCode,region,regionName,city,lat,lon,timezone,query";
+                    // Use ip-api.com (free service, 1000 requests/hour) over HTTPS
+                    $geoUrl = "https://ip-api.com/json/" . urlencode($ipAddress) . "?fields=status,message,country,countryCode,region,regionName,city,lat,lon,timezone,query";
                     $context = stream_context_create([
                         'http' => [
                             'timeout' => 5, // 5 second timeout
@@ -110,11 +110,12 @@ class Contact {
             $urlPattern = '/https?:\/\/|www\.|t\.me\/|wa\.me\/|telegram\.me\//i';
             preg_match_all($urlPattern, $message, $urlMatches);
             $urlCount = count($urlMatches[0]);
-            if ($urlCount > 0) {
-                $isSpam = true; // any external link is suspicious for contact form
+            if ($urlCount >= 1) {
                 $spamReasons[] = 'contains_url_count:' . $urlCount;
             }
-            if ($urlCount >= 2) {
+            // Only treat 3+ links as spam; legitimate creators commonly link a single profile/portfolio
+            if ($urlCount >= 3) {
+                $isSpam = true;
                 $spamReasons[] = 'multiple_links';
             }
             // Detect phone numbers or long digit sequences that look like contact numbers

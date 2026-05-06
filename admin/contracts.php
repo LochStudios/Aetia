@@ -1,5 +1,6 @@
 <?php
 // admin/contracts.php - Contract management interface
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Check if user is logged in and is admin
@@ -756,11 +757,11 @@ async function viewContract(contractId) {
             `;
             document.getElementById('contract-modal').classList.add('is-active');
         } else {
-            alert('Failed to load contract: ' + data.error);
+            Aetia.error('Failed to load contract', data.error);
         }
     } catch (error) {
         console.error('Error loading contract:', error);
-        alert('Failed to load contract');
+        Aetia.error('Failed to load contract');
     }
 }
 
@@ -769,7 +770,6 @@ async function editContract(contractId) {
     try {
         const response = await fetch(`../api/contracts.php?action=get&id=${contractId}`);
         const data = await response.json();
-        
         if (data.success) {
             const contract = data.contract;
             document.getElementById('edit-contract-id').value = contract.id;
@@ -779,11 +779,11 @@ async function editContract(contractId) {
             document.getElementById('edit-status').value = contract.status;
             document.getElementById('edit-modal').classList.add('is-active');
         } else {
-            alert('Failed to load contract: ' + data.error);
+            Aetia.error('Failed to load contract', data.error);
         }
     } catch (error) {
         console.error('Error loading contract:', error);
-        alert('Failed to load contract');
+        Aetia.error('Failed to load contract');
     }
 }
 
@@ -794,85 +794,65 @@ function saveContract() {
 
 // Regenerate PDF
 async function regeneratePDF(contractId) {
-    if (confirm('Regenerate the PDF for this contract? This will delete the current PDF and replace it with a new one generated from the latest contract content.')) {
-        try {
-            const formData = new FormData();
-            formData.append('action', 'regenerate_pdf');
-            formData.append('contract_id', contractId);
-            
-            const response = await fetch('', {
-                method: 'POST',
-                body: formData
-            });
-            
-            location.reload(); // Reload to see the updated status
-        } catch (error) {
-            console.error('Error regenerating PDF:', error);
-            alert('Failed to regenerate PDF');
-        }
+    const ok = await Aetia.confirm('Regenerate PDF?', 'This will delete the current PDF and replace it with a new one from the latest contract content.', { confirmText: 'Regenerate' });
+    if (!ok.isConfirmed) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'regenerate_pdf');
+        formData.append('contract_id', contractId);
+        await fetch('', { method: 'POST', body: formData });
+        location.reload();
+    } catch (error) {
+        console.error('Error regenerating PDF:', error);
+        Aetia.error('Failed to regenerate PDF');
     }
 }
 
 // Generate PDF
 async function generatePDF(contractId) {
-    if (confirm('Generate and upload PDF for this contract? This will also mark the contract as "sent".')) {
-        try {
-            const formData = new FormData();
-            formData.append('action', 'generate_pdf');
-            formData.append('contract_id', contractId);
-            
-            const response = await fetch('', {
-                method: 'POST',
-                body: formData
-            });
-            
-            location.reload(); // Reload to see the updated status
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Failed to generate PDF');
-        }
+    const ok = await Aetia.confirm('Generate and upload PDF?', 'This will also mark the contract as "sent".', { confirmText: 'Generate' });
+    if (!ok.isConfirmed) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'generate_pdf');
+        formData.append('contract_id', contractId);
+        await fetch('', { method: 'POST', body: formData });
+        location.reload();
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        Aetia.error('Failed to generate PDF');
     }
 }
 
 // Delete contract
 async function deleteContract(contractId) {
-    if (confirm('Are you sure you want to delete this contract? This action cannot be undone.')) {
-        try {
-            const formData = new FormData();
-            formData.append('action', 'delete_contract');
-            formData.append('contract_id', contractId);
-            
-            const response = await fetch('', {
-                method: 'POST',
-                body: formData
-            });
-            
-            location.reload(); // Reload to see the changes
-        } catch (error) {
-            console.error('Error deleting contract:', error);
-            alert('Failed to delete contract');
-        }
+    const ok = await Aetia.dangerConfirm('Delete this contract?', 'This action cannot be undone.', { confirmText: 'Delete' });
+    if (!ok.isConfirmed) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'delete_contract');
+        formData.append('contract_id', contractId);
+        await fetch('', { method: 'POST', body: formData });
+        location.reload();
+    } catch (error) {
+        console.error('Error deleting contract:', error);
+        Aetia.error('Failed to delete contract');
     }
 }
 
 // Refresh contract with latest user data
 async function refreshContract(contractId) {
-    if (confirm('Update this contract with the latest user profile information? This will overwrite the current contract content with fresh data from the user\'s profile.')) {
-        try {
-            const formData = new FormData();
-            formData.append('action', 'refresh_contract');
-            formData.append('contract_id', contractId);
-            
-            const response = await fetch('', {
-                method: 'POST',
-                body: formData
-            });
-            
-            location.reload(); // Reload to see the changes
-        } catch (error) {
-            console.error('Error refreshing contract:', error);
-            alert('Failed to refresh contract');
-        }
+    const ok = await Aetia.confirm('Refresh contract content?', 'This will overwrite the current content with fresh data from the user\'s profile.', { confirmText: 'Refresh' });
+    if (!ok.isConfirmed) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'refresh_contract');
+        formData.append('contract_id', contractId);
+        await fetch('', { method: 'POST', body: formData });
+        location.reload();
+    } catch (error) {
+        console.error('Error refreshing contract:', error);
+        Aetia.error('Failed to refresh contract');
     }
 }
 
@@ -934,7 +914,7 @@ async function sendContract(contractId) {
             location.reload(); // Reload to see the changes
         } catch (error) {
             console.error('Error sending contract:', error);
-            alert('Failed to send contract');
+            Aetia.error('Failed to send contract');
         }
     });
     

@@ -1,5 +1,6 @@
 <?php
 // auth/twitch-callback.php - Twitch OAuth callback handler
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 require_once __DIR__ . '/../models/User.php';

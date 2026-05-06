@@ -1,5 +1,6 @@
 <?php
 // forgot-password.php - Password reset request page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Redirect if already logged in
@@ -31,7 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = 'Please enter a valid email address.';
     } else {
         // If Turnstile is configured for this page, verify the response first.
-        if (empty($errors) && !empty($turnstile_site_key) && in_array('forgot', $turnstile_enabled_for)) {
+        $turnstilePassed = true;
+        if (!empty($turnstile_site_key) && in_array('forgot', $turnstile_enabled_for)) {
             $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
             $idempotency = $_POST['turnstile_idempotency_key'] ?? '';
             // derive remote IP (honour common proxy headers)
@@ -39,9 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (strpos($remoteIp, ',') !== false) $remoteIp = trim(explode(',', $remoteIp)[0]);
             $verify = verifyTurnstileResponse($turnstile_response, $turnstileConfig['secret_key'] ?? '', $remoteIp, $idempotency, 'forgot', $_SERVER['SERVER_NAME']);
             if (!$verify['success']) {
-                $errors[] = 'There was a problem verifying the anti-spam challenge: ' . ($verify['message'] ?? 'verification failed');
+                $turnstilePassed = false;
+                $error_message = 'There was a problem verifying the anti-spam challenge: ' . ($verify['message'] ?? 'verification failed');
             }
         }
+        if (!$turnstilePassed) {
+            // Skip the rest of the password reset logic on Turnstile failure
+        } else {
         // Check if the email belongs to a valid client account
         $emailCheck = $userModel->checkEmailExists($email);
         // Always show the same success message for security (prevent email enumeration)
@@ -82,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log("Password reset requested for ineligible account: " . $email . " - " . $emailCheck['message']);
             }
         }
+        } // end turnstilePassed
     }
 }
 

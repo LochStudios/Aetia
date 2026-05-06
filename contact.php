@@ -1,5 +1,6 @@
 <?php
 // contact.php - Contact page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 require_once __DIR__ . '/models/Contact.php';
@@ -169,9 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = 'Contact | Aetia Talent Agency';
 ob_start();
 ?>
-<div class="card mt-6" style="width:100%;max-width:none;">
+<div class="card">
     <div class="card-content">
-        <h2 class="title is-3 mb-4"><span class="icon has-text-link"><i class="fas fa-envelope"></i></span> Contact Us</h2>
+        <h2 class="title is-2 mb-4 has-text-primary"><span class="icon"><i class="fas fa-envelope"></i></span> Contact Us</h2>
         <?php if ($message): ?>
         <div class="notification is-success is-light mb-4">
             <span class="icon-text">
@@ -298,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!name || !email || !message) {
             e.preventDefault();
-            alert('Please fill in all required fields.');
+            (window.Aetia ? Aetia.error('Missing fields', 'Please fill in all required fields.') : alert('Please fill in all required fields.'));
             return;
         }
         

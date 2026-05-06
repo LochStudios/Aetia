@@ -1,5 +1,6 @@
 <?php
 // admin/index.php - Main admin dashboard for Aetia Talent Agency
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -68,10 +69,10 @@ $messageStats = [
 $result = $mysqli->query("SELECT COUNT(*) as total FROM messages");
 $messageStats['total'] = $result->fetch_assoc()['total'];
 
-$result = $mysqli->query("SELECT COUNT(*) as unread FROM messages WHERE status = 'open'");
+$result = $mysqli->query("SELECT COUNT(*) as unread FROM messages WHERE status = 'unread'");
 $messageStats['unread'] = $result->fetch_assoc()['unread'];
 
-$result = $mysqli->query("SELECT COUNT(*) as archived FROM messages WHERE status = 'closed'");
+$result = $mysqli->query("SELECT COUNT(*) as archived FROM messages WHERE status = 'archived'");
 $messageStats['archived'] = $result->fetch_assoc()['archived'];
 
 $result = $mysqli->query("SELECT COUNT(*) as recent FROM messages WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");

@@ -1,5 +1,6 @@
 <?php
 // admin/view-user-profile-image.php - Admin endpoint for viewing user profile images
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Security check - user must be logged in and be an admin

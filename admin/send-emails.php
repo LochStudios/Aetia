@@ -1,5 +1,6 @@
 <?php
 // admin/send-emails.php - Admin interface for sending emails to clients
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -355,8 +356,10 @@ ob_start();
                 <p class="help has-text-light">This will be sent to all active users. Professional platform communications only.</p>
             </div>
             
-            <button type="submit" name="send_newsletter" class="button is-warning" 
-                    onclick="return confirm('This will send an email to ALL active users. Are you sure?')">
+            <button type="submit" name="send_newsletter" class="button is-warning"
+                    data-confirm="Send newsletter to ALL active users?"
+                    data-confirm-detail="This will email every active user on the platform. There's no undo."
+                    data-confirm-text="Send to all">
                 <span class="icon">
                     <i class="fas fa-newspaper"></i>
                 </span>

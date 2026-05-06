@@ -1,5 +1,6 @@
 <?php
 // admin/generate-bills.php - Admin interface for generating client bills based on messages
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -448,8 +449,10 @@ ob_start();
                 <div class="field">
                     <div class="control">
                         <?php if (!empty($billData)): ?>
-                        <form method="POST" action="" style="display: inline-block;" 
-                              onsubmit="return confirm('Export billing data for <?= count($billData) ?> clients for manual Wise.com invoice creation?');">
+                        <form method="POST" action="" style="display: inline-block;"
+                              data-confirm="Export billing data?"
+                              data-confirm-detail="Export billing data for <?= count($billData) ?> clients for manual Wise.com invoice creation."
+                              data-confirm-text="Export">
                             <input type="hidden" name="action" value="export_for_wise">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($securityManager->getCsrfToken()) ?>">
                             <button type="submit" class="button is-success is-medium">

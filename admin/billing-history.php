@@ -1,5 +1,6 @@
 <?php
 // admin/billing-history.php - Admin interface for managing user billing history
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -23,15 +24,8 @@ if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true)
     exit;
 }
 
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../models/Message.php';
-require_once __DIR__ . '/../services/BillingService.php';
-require_once __DIR__ . '/../includes/SecurityManager.php';
 require_once __DIR__ . '/../includes/SecurityException.php';
 
-$userModel = new User();
-$messageModel = new Message();
-$billingService = new BillingService();
 $securityManager = new SecurityManager();
 
 // Initialize secure session
@@ -1363,8 +1357,8 @@ function togglePaymentFields() {
 
 function sendInvoiceEmail() {
     const billId = document.getElementById('status_bill_id').value;
-    
-    if (confirm('Send invoice email to the user?')) {
+    Aetia.confirm('Send invoice email to the user?', '', { confirmText: 'Send' }).then(function (res) {
+        if (!res.isConfirmed) return;
         const form = document.createElement('form');
         form.method = 'POST';
         form.innerHTML = `
@@ -1373,7 +1367,7 @@ function sendInvoiceEmail() {
         `;
         document.body.appendChild(form);
         form.submit();
-    }
+    });
 }
 
 function showBillDetails(billId) {
@@ -1461,23 +1455,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Show link document modal
 function showDeleteBillModal(billId, billPeriod) {
-    if (confirm(`Are you sure you want to delete the bill for ${billPeriod}?\n\nThis will:\n• Delete the bill record\n• Remove all invoice document links\n• Keep the actual invoice files in the user's documents\n\nThis action cannot be undone.`)) {
+    Aetia.dangerConfirm(
+        `Delete bill for ${billPeriod}?`,
+        'This will delete the bill record and remove invoice document links. The invoice files will remain in the user\'s documents. This action cannot be undone.',
+        { confirmText: 'Delete bill' }
+    ).then(function (res) {
+        if (!res.isConfirmed) return;
         document.getElementById('delete_bill_id').value = billId;
         document.getElementById('deleteBillPeriod').textContent = billPeriod;
         document.getElementById('deleteBillModal').classList.add('is-active');
-    }
+    });
 }
 
 function showDeleteDocumentModal(documentId, documentName, billId = null) {
-    let message = `Are you sure you want to permanently delete "${documentName}"?\n\nThis will:\n• Delete the document file from storage\n• Remove the document record from the database`;
-    
-    if (billId) {
-        message += '\n• Remove the link from the associated bill';
-    }
-    
-    message += '\n\nThis action cannot be undone.';
-    
-    if (confirm(message)) {
+    let detail = 'This will delete the document file from storage and remove the database record.';
+    if (billId) detail += ' It will also remove the link from the associated bill.';
+    detail += ' This action cannot be undone.';
+    Aetia.dangerConfirm(`Delete "${documentName}"?`, detail, { confirmText: 'Delete' }).then(function (res) {
+        if (!res.isConfirmed) return;
         document.getElementById('delete_document_id').value = documentId;
         document.getElementById('deleteDocumentName').textContent = documentName;
         
@@ -1493,7 +1488,7 @@ function showDeleteDocumentModal(documentId, documentName, billId = null) {
         }
         
         document.getElementById('deleteDocumentModal').classList.add('is-active');
-    }
+    });
 }
 
 // Auto-populate invoice number from selected file

@@ -97,7 +97,6 @@ class Database {
                 deactivated_by VARCHAR(100),
                 deactivation_date TIMESTAMP NULL,
                 signup_email_sent BOOLEAN DEFAULT FALSE,
-                public_email VARCHAR(100) NULL,
                 abn_acn VARCHAR(20) NULL,
                 address TEXT NULL,
                 sms_enabled BOOLEAN DEFAULT FALSE,
@@ -109,6 +108,7 @@ class Database {
                 suspension_reason TEXT,
                 suspended_by VARCHAR(100),
                 suspended_date TIMESTAMP NULL,
+                last_login TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )";
@@ -604,7 +604,8 @@ class Database {
                 'is_suspended' => 'BOOLEAN DEFAULT FALSE',
                 'suspension_reason' => 'TEXT',
                 'suspended_by' => 'VARCHAR(100)',
-                'suspended_date' => 'TIMESTAMP NULL'
+                'suspended_date' => 'TIMESTAMP NULL',
+                'last_login' => 'TIMESTAMP NULL'
             ];
             
             foreach ($columnsToAdd as $columnName => $columnDefinition) {

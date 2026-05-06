@@ -1,5 +1,6 @@
 <?php
 // reset-password.php - Password reset page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Redirect if already logged in

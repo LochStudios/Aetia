@@ -1,5 +1,6 @@
 <?php
 // layout.php - Main layout template for Aetia Talent Agency
+// Custom dark theme — Bulma removed. FontAwesome v7 + SweetAlert2 only.
 
 // Set UTF-8 content type header
 header('Content-Type: text/html; charset=UTF-8');
@@ -17,209 +18,187 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 if (!isset($pageTitle)) $pageTitle = 'Aetia Talent Agency';
 if (!isset($content)) $content = '';
+
+// Cache-busting via file modification time (so users always pick up the latest theme).
+$aetia_css_path = __DIR__ . '/css/custom.css';
+$aetia_js_path  = __DIR__ . '/js/aetia-ui.js';
+$aetia_css_v = file_exists($aetia_css_path) ? filemtime($aetia_css_path) : time();
+$aetia_js_v  = file_exists($aetia_js_path)  ? filemtime($aetia_js_path)  : time();
+
+// Pull any flash messages from session for SweetAlert2 toast display
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError   = $_SESSION['flash_error'] ?? null;
+$flashInfo    = $_SESSION['flash_info'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_info']);
 ?>
 <!DOCTYPE html>
-<html lang="en" style="height:100%;">
+<html lang="en" data-theme="dark" style="height:100%;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07090f">
+    <meta name="color-scheme" content="dark">
     <title><?= htmlspecialchars($pageTitle) ?></title>
-    <link rel="icon" type="image/x-icon" href="../img/logo.ico">
-    <!-- Bulma CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
-    <!-- Font Awesome -->
+    <link rel="icon" type="image/x-icon" href="/img/logo.ico">
+    <!-- Font Awesome v7 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/custom.css?v=<?= uniqid() ?>">
+    <!-- Custom Theme -->
+    <link rel="stylesheet" href="/css/custom.css?v=<?= $aetia_css_v ?>">
 </head>
-<body style="min-height:100vh;display:flex;flex-direction:column;">
+<body>
     <!-- Navigation Bar -->
-    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="index.php">
-          <img src="../img/logo.png" alt="Aetia Talent Agency Logo" style="max-height: 3rem;">
-        </a>
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-      <div id="navbarBasic" class="navbar-menu">
-        <div class="navbar-start">
-          <a class="navbar-item" href="../index.php">Home</a>
-          <a class="navbar-item" href="../about.php">About</a>
-          <a class="navbar-item" href="../services.php">Services</a>
-          <a class="navbar-item" href="../pricing.php">Pricing</a>
-          <a class="navbar-item" href="../contact.php">Contact</a>
-          <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
-          <hr class="navbar-divider">
-          <a class="navbar-item" href="../messages.php">
-            <span class="icon"><i class="fas fa-envelope"></i></span>
-            <span>Your Messages</span>
-          </a>
-          <a class="navbar-item" href="../documents.php">
-            <span class="icon"><i class="fas fa-file-contract"></i></span>
-            <span>My Documents</span>
-          </a>
-          <a class="navbar-item" href="../billing.php">
-            <span class="icon"><i class="fas fa-file-invoice-dollar"></i></span>
-            <span>Billing</span>
-          </a>
-          <a class="navbar-item" href="../contracts.php">
-            <span class="icon"><i class="fas fa-handshake"></i></span>
-            <span>My Contracts</span>
-          </a>
-          <?php endif; ?>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/index.php" aria-label="Aetia home">
+                <img src="/img/logo.png" alt="Aetia Talent Agency" style="max-height: 2.4rem;">
+            </a>
+            <button type="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </button>
         </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="buttons">
-              <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
-                <?php 
-                // Check if user is admin for navigation
-                $showAdminLink = false;
-                if (isset($_SESSION['user_id'])) {
-                    require_once __DIR__ . '/models/User.php';
-                    $userModel = new User();
-                    $showAdminLink = $userModel->isUserAdmin($_SESSION['user_id']);
-                }
-                ?>
-                <div class="dropdown is-hoverable">
-                  <div class="dropdown-trigger">
-                    <button class="button is-light is-small" aria-haspopup="true" aria-controls="dropdown-menu">
-                      <?php if (isset($_SESSION['social_data']['profile_image_url'])): ?>
-                        <img src="<?= htmlspecialchars($_SESSION['social_data']['profile_image_url']) ?>" alt="Profile" style="width:20px;height:20px;border-radius:50%;margin-right:0.5rem;">
-                      <?php else: ?>
-                        <span class="icon"><i class="fas fa-user"></i></span>
-                      <?php endif; ?>
-                      <span><?= htmlspecialchars($_SESSION['username'] ?? 'User') ?></span>
-                      <span class="icon is-small">
-                        <i class="fas fa-angle-down" aria-hidden="true"></i>
-                      </span>
-                    </button>
-                  </div>
-                  <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                    <div class="dropdown-content">
-                      <div class="dropdown-item is-static">
-                        <p class="is-size-7 has-text-grey">
-                          Logged in via <?= ucfirst($_SESSION['account_type'] ?? 'manual') ?>
-                        </p>
-                      </div>
-                      <hr class="dropdown-divider">
-                      <a href="../profile.php" class="dropdown-item">
-                        <span class="icon"><i class="fas fa-user-cog"></i></span>
-                        <span>Profile Settings</span>
-                      </a>
-                      <a href="../logout.php" class="dropdown-item">
-                        <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
-                        <span>Logout</span>
-                      </a>
-                      <?php if ($showAdminLink): ?>
-                      <hr class="dropdown-divider">
-                      <a href="../admin/" class="dropdown-item">
-                        <span class="icon"><i class="fas fa-users-cog"></i></span>
-                        <span>Admin Panel</span>
-                      </a>
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                </div>
-              <?php else: ?>
-                <a class="button is-primary is-small" href="../login.php">
-                  <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
-                  <span>Login</span>
-                </a>
-              <?php endif; ?>
+        <div id="navbarMain" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="/index.php"><i class="fas fa-home"></i> Home</a>
+                <a class="navbar-item" href="/about.php"><i class="fas fa-circle-info"></i> About</a>
+                <a class="navbar-item" href="/services.php"><i class="fas fa-stars"></i> Services</a>
+                <a class="navbar-item" href="/pricing.php"><i class="fas fa-tag"></i> Pricing</a>
+                <a class="navbar-item" href="/contact.php"><i class="fas fa-envelope"></i> Contact</a>
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true): ?>
+                <span class="navbar-divider" aria-hidden="true"></span>
+                <a class="navbar-item" href="/messages.php"><i class="fas fa-comments"></i> Messages</a>
+                <a class="navbar-item" href="/documents.php"><i class="fas fa-file-lines"></i> Documents</a>
+                <a class="navbar-item" href="/billing.php"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+                <a class="navbar-item" href="/contracts.php"><i class="fas fa-file-signature"></i> Contracts</a>
+                <?php endif; ?>
             </div>
-          </div>
+            <div class="navbar-end">
+                <?php if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true):
+                    $showAdminLink = false;
+                    if (isset($_SESSION['user_id'])) {
+                        require_once __DIR__ . '/models/User.php';
+                        $userModel = new User();
+                        $showAdminLink = $userModel->isUserAdmin($_SESSION['user_id']);
+                    }
+                ?>
+                <div class="dropdown is-right is-hoverable">
+                    <div class="dropdown-trigger">
+                        <button type="button" class="button is-light is-small" aria-haspopup="true" aria-controls="user-dropdown-menu">
+                            <?php if (!empty($_SESSION['social_data']['profile_image_url'])): ?>
+                                <img src="<?= htmlspecialchars($_SESSION['social_data']['profile_image_url']) ?>" alt="" style="width:20px;height:20px;border-radius:50%;">
+                            <?php else: ?>
+                                <span class="icon"><i class="fas fa-user"></i></span>
+                            <?php endif; ?>
+                            <span><?= htmlspecialchars($_SESSION['username'] ?? 'User') ?></span>
+                            <span class="icon is-small"><i class="fas fa-chevron-down"></i></span>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu" id="user-dropdown-menu" role="menu">
+                        <div class="dropdown-content">
+                            <div class="dropdown-item is-static">
+                                <span class="is-size-7 has-text-grey">Logged in via <?= htmlspecialchars(ucfirst($_SESSION['account_type'] ?? 'manual')) ?></span>
+                            </div>
+                            <hr class="dropdown-divider">
+                            <a href="/profile.php" class="dropdown-item"><i class="fas fa-user-gear"></i> Profile Settings</a>
+                            <a href="/logout.php" class="dropdown-item"><i class="fas fa-right-from-bracket"></i> Logout</a>
+                            <?php if ($showAdminLink): ?>
+                            <hr class="dropdown-divider">
+                            <a href="/admin/" class="dropdown-item"><i class="fas fa-users-gear"></i> Admin Panel</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <?php else: ?>
+                <a class="button is-primary is-small" href="/login.php"><i class="fas fa-right-to-bracket"></i> Login</a>
+                <?php endif; ?>
+            </div>
         </div>
-      </div>
     </nav>
-    <section class="section" style="flex:1 0 auto;">
+
+    <!-- Main content -->
+    <main class="section" style="flex:1 0 auto;">
         <div class="container">
             <?= $content ?>
         </div>
-    </section>
-    <footer class="footer has-background-dark has-text-light mt-6" style="padding-top:2rem;padding-bottom:2rem;flex-shrink:0;">
-      <div class="content has-text-centered">
-        <p>
-          <img src="../img/logo.png" alt="Aetia Logo" style="max-height:2rem;vertical-align:middle;filter:brightness(0) invert(1);"> <strong class="has-text-light">Aetia Talent Agency</strong><br>
-          <span class="icon-text">
-            <span class="icon has-text-info"><i class="fas fa-envelope"></i></span>
-            <span><a href="mailto:talent@aetia.com.au" class="has-text-info">talent@aetia.com.au</a></span>
-          </span>
-        </p>
-        <p class="is-size-7 has-text-grey-light">&copy; <?= date('Y') ?> Aetia Talent Agency. All rights reserved.</p>
-        <hr class="my-2" style="background:rgba(255,255,255,0.08);height:1px;border:none;">
-        <p class="is-size-7 has-text-grey-light mb-0">
-          Aetia Talent Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
-        </p>
-        <p class="is-size-7 has-text-grey-light mt-2">
-          <a href="terms-of-service.php" class="has-text-grey-light">Terms of Service</a>
-          &nbsp;&middot;&nbsp;
-          <a href="privacy-policy.php" class="has-text-grey-light">Privacy Policy</a>
-        </p>
-      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <img src="/img/logo.png" alt="Aetia Logo" style="max-height:1.8rem;vertical-align:middle;">
+                <strong class="has-text-light">Aetia Talent Agency</strong><br>
+                <span class="icon-text mt-2">
+                    <span class="icon has-text-primary"><i class="fas fa-envelope"></i></span>
+                    <a href="mailto:talent@aetia.com.au">talent@aetia.com.au</a>
+                </span>
+            </p>
+            <p class="is-size-7 has-text-grey">&copy; <?= date('Y') ?> Aetia Talent Agency. All rights reserved.</p>
+            <hr>
+            <p class="is-size-7 has-text-grey mb-0">
+                Aetia Talent Agency is registered as a subsidiary under LochStudios (ABN: 20 447 022 747).
+            </p>
+            <p class="is-size-7 has-text-grey mt-2">
+                <a href="/terms-of-service.php">Terms of Service</a>
+                &nbsp;&middot;&nbsp;
+                <a href="/privacy-policy.php">Privacy Policy</a>
+            </p>
+        </div>
     </footer>
-    <script src="../js/navbar.js"></script>
+
+    <!-- Aetia UI helpers (SweetAlert wrappers, navbar burger, dropdown, etc.) -->
+    <script src="/js/aetia-ui.js?v=<?= $aetia_js_v ?>"></script>
     <script>
-        // Handle notification dismissal
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteButtons = document.querySelectorAll('.notification .delete');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    this.parentElement.style.display = 'none';
-                });
-            });
-            
-            // Detect and store user's timezone
-            detectUserTimezone();
-        });
-        
-        function detectUserTimezone() {
+        // Detect and persist timezone on first visit
+        (function () {
             try {
-                // Get user's timezone using Intl API
-                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                
-                // Store in session via AJAX if different from current
-                const currentTimezone = getCookie('user_timezone');
-                if (userTimezone !== currentTimezone) {
-                    setCookie('user_timezone', userTimezone, 30); // Store for 30 days
-                    
-                    // Also send to server for session storage
-                    fetch('<?= $_SERVER['PHP_SELF'] ?>', {
+                var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                var cur = (function (n) {
+                    var a = document.cookie.split(';');
+                    for (var i = 0; i < a.length; i++) {
+                        var c = a[i].trim();
+                        if (c.indexOf(n + '=') === 0) return c.substring(n.length + 1);
+                    }
+                    return null;
+                })('user_timezone');
+                if (tz && tz !== cur) {
+                    var d = new Date();
+                    d.setTime(d.getTime() + 30 * 24 * 3600 * 1000);
+                    document.cookie = 'user_timezone=' + tz + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+                    fetch(<?= json_encode($_SERVER['PHP_SELF']) ?>, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: 'action=set_timezone&timezone=' + encodeURIComponent(userTimezone)
-                    }).catch(e => console.log('Timezone sync failed:', e));
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'action=set_timezone&timezone=' + encodeURIComponent(tz),
+                        credentials: 'same-origin'
+                    }).catch(function () { /* swallow */ });
                 }
-            } catch (e) {
-                console.log('Timezone detection failed:', e);
-            }
-        }
-        
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
-        }
-        
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
+            } catch (e) { /* noop */ }
+        })();
     </script>
+    <?php if ($flashSuccess): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            window.Aetia && Aetia.toast(<?= json_encode($flashSuccess) ?>, 'success');
+        });
+    </script>
+    <?php endif; ?>
+    <?php if ($flashError): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            window.Aetia && Aetia.error('Error', <?= json_encode($flashError) ?>);
+        });
+    </script>
+    <?php endif; ?>
+    <?php if ($flashInfo): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            window.Aetia && Aetia.toast(<?= json_encode($flashInfo) ?>, 'info');
+        });
+    </script>
+    <?php endif; ?>
     <?php if (isset($scripts) && !empty($scripts)): ?>
     <?= $scripts ?>
     <?php endif; ?>

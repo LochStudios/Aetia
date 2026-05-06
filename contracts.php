@@ -1,5 +1,6 @@
 <?php
 // contracts.php - User contract viewing page
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Redirect if not logged in
@@ -199,39 +200,37 @@ async function viewContract(contractId) {
             document.getElementById('contract-content').innerHTML = content;
             document.getElementById('contract-modal').classList.add('is-active');
         } else {
-            alert('Failed to load contract: ' + data.error);
+            Aetia.error('Failed to load contract', data.error);
         }
     } catch (error) {
         console.error('Error loading contract:', error);
-        alert('Failed to load contract');
+        Aetia.error('Failed to load contract');
     }
 }
 
 // Accept contract
 async function acceptContract(contractId) {
-    if (confirm('Do you accept this Communications Services Agreement? This action cannot be undone.')) {
-        try {
-            const formData = new FormData();
-            formData.append('action', 'user_accept');
-            formData.append('contract_id', contractId);
-            
-            const response = await fetch('api/contracts.php', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert('Contract accepted successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error accepting contract:', error);
-            alert('Failed to accept contract');
+    const ok = await Aetia.confirm(
+        'Accept this Communications Services Agreement?',
+        'This action cannot be undone.',
+        { confirmText: 'Accept', cancelText: 'Cancel' }
+    );
+    if (!ok.isConfirmed) return;
+    try {
+        const formData = new FormData();
+        formData.append('action', 'user_accept');
+        formData.append('contract_id', contractId);
+        const response = await fetch('api/contracts.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+            await Aetia.success('Contract accepted', 'Thanks — your acceptance has been recorded.');
+            location.reload();
+        } else {
+            Aetia.error('Could not accept contract', result.message);
         }
+    } catch (error) {
+        console.error('Error accepting contract:', error);
+        Aetia.error('Failed to accept contract');
     }
 }
 
@@ -244,34 +243,26 @@ function signContract(contractId) {
 async function submitSignature() {
     const signatureName = document.getElementById('signature-name').value.trim();
     const confirmed = document.getElementById('signature-confirm').checked;
-    
     if (!signatureName || !confirmed) {
-        alert('Please complete all required fields');
+        Aetia.error('Missing details', 'Please complete all required fields.');
         return;
     }
-    
     try {
         const formData = new FormData();
         formData.append('action', 'sign_contract');
         formData.append('contract_id', currentContractId);
         formData.append('signature_name', signatureName);
-        
-        const response = await fetch('api/user-contracts.php', {
-            method: 'POST',
-            body: formData
-        });
-        
+        const response = await fetch('api/user-contracts.php', { method: 'POST', body: formData });
         const data = await response.json();
-        
         if (data.success) {
-            alert('Contract signed successfully!');
+            await Aetia.success('Contract signed', 'Your signature has been recorded.');
             location.reload();
         } else {
-            alert('Failed to sign contract: ' + data.error);
+            Aetia.error('Failed to sign contract', data.error);
         }
     } catch (error) {
         console.error('Error signing contract:', error);
-        alert('Failed to sign contract');
+        Aetia.error('Failed to sign contract');
     }
 }
 

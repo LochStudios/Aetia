@@ -100,7 +100,7 @@ function verifyTurnstileResponseShared($token, $secret, $remoteIp = null, $idemp
             $db = new Database();
             $mysqli = $db->getConnection();
             $tokenHash = hash('sha256', $token);
-            $responseJson = $mysqli->real_escape_string(json_encode($decoded));
+            $responseJson = json_encode($decoded);
             $successInt = !empty($decoded['success']) ? 1 : 0;
             $idempKey = $idempotencyKey;
             $action = !empty($decoded['action']) ? $decoded['action'] : null;
@@ -114,12 +114,12 @@ function verifyTurnstileResponseShared($token, $secret, $remoteIp = null, $idemp
             $errorCodesJson = null;
             if (!empty($decoded['error-codes']) || !empty($decoded['error_codes'])) {
                 $ec = !empty($decoded['error-codes']) ? $decoded['error-codes'] : ($decoded['error_codes'] ?? null);
-                $errorCodesJson = $mysqli->real_escape_string(json_encode($ec));
+                $errorCodesJson = json_encode($ec);
             }
-            $insertSql = "INSERT INTO turnstile_verifications (token_hash, idempotency_key, remoteip, success, response_json, action, cdata, ephemeral_id, hostname, challenge_ts, error_codes) VALUES ('{$tokenHash}', ?, ?, {$successInt}, '{$responseJson}', ?, ?, ?, ?, ?, ?)";
+            $insertSql = "INSERT INTO turnstile_verifications (token_hash, idempotency_key, remoteip, success, response_json, action, cdata, ephemeral_id, hostname, challenge_ts, error_codes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $mysqli->prepare($insertSql);
             if ($stmt) {
-                $stmt->bind_param('ssssssssss', $idempKey, $remoteIp, $action, $cdata, $ephemeral, $hostname, $challengeTs, $errorCodesJson);
+                $stmt->bind_param('sssisssssss', $tokenHash, $idempKey, $remoteIp, $successInt, $responseJson, $action, $cdata, $ephemeral, $hostname, $challengeTs, $errorCodesJson);
                 $stmt->execute();
                 $stmt->close();
             }

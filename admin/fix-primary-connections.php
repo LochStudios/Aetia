@@ -1,5 +1,6 @@
 <?php
 // admin/fix-primary-connections.php - Fix users with multiple primary social connections
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Redirect if not logged in
@@ -196,7 +197,10 @@ ob_start();
         
         <?php if (!$fix_mode && (!empty($issues) || !empty($no_primary_issues))): ?>
             <div class="mt-5">
-                <form method="POST" onsubmit="return confirm('Are you sure you want to fix these primary connection issues? This action cannot be undone.');">
+                <form method="POST"
+                    data-confirm="Fix primary connection issues?"
+                    data-confirm-detail="This action cannot be undone."
+                    data-confirm-text="Fix" data-confirm-danger="1">
                     <input type="hidden" name="fix_issues" value="yes">
                     <button type="submit" class="button is-warning is-medium">
                         <span class="icon"><i class="fas fa-wrench"></i></span>

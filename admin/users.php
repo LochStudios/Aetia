@@ -1,5 +1,6 @@
 <?php
 // admin/users.php - Unified admin interface for managing all users
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -701,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
             Swal.fire({
                 title: 'Mark Contact Attempt',
-                html: `Record contact attempt for <strong style="color: #333;">${decodedUsername}</strong>:<br><br>`,
+                html: `Record contact attempt for <strong style="color:#19d3ff;">${decodedUsername}</strong>:<br><br>`,
                 icon: 'info',
                 input: 'textarea',
                 inputPlaceholder: 'Enter contact notes (optional)...',
@@ -733,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
             Swal.fire({
                 title: 'Approve User?',
-                html: `Are you sure you want to approve <strong style="color: #333;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
+                html: `Are you sure you want to approve <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#48c78e',
@@ -762,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Mark as Admin?',
-                html: `Are you sure you want to mark <strong style="color: #333;">${decodedUsername}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
+                html: `Are you sure you want to mark <strong style="color:#19d3ff;">${decodedUsername}</strong> as an administrator?<br><br><strong>This will:</strong><br>• Automatically approve their account<br>• Grant full admin privileges<br>• Allow them to manage other users`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3e8ed0',
@@ -791,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Make Admin?',
-                html: `Are you sure you want to make <strong style="color: #333;">${decodedUsername}</strong> an administrator?<br><br><strong>This will grant them:</strong><br>• Full admin privileges<br>• Ability to manage other users<br>• Access to admin-only features`,
+                html: `Are you sure you want to make <strong style="color:#19d3ff;">${decodedUsername}</strong> an administrator?<br><br><strong>This will grant them:</strong><br>• Full admin privileges<br>• Ability to manage other users<br>• Access to admin-only features`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3e8ed0',
@@ -820,7 +821,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Remove Admin Privileges?',
-                html: `Are you sure you want to remove admin privileges from <strong style="color: #333;">${decodedUsername}</strong>?<br><br><strong>This will:</strong><br>• Remove all admin privileges<br>• Restrict access to admin features<br>• Convert them to a regular user`,
+                html: `Are you sure you want to remove admin privileges from <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br><strong>This will:</strong><br>• Remove all admin privileges<br>• Restrict access to admin features<br>• Convert them to a regular user`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ffdd57',
@@ -849,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || username;
             Swal.fire({
                 title: 'Reject User?',
-                html: `Are you sure you want to reject <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for rejection:`,
+                html: `Are you sure you want to reject <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>Please provide a reason for rejection:`,
                 icon: 'warning',
                 input: 'textarea',
                 inputPlaceholder: 'Enter rejection reason...',
@@ -886,7 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Verify User?',
-                html: `Are you sure you want to verify <strong style="color: #333;">${decodedUsername}</strong>?<br><br>This will mark their account as verified and trusted.`,
+                html: `Are you sure you want to verify <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>This will mark their account as verified and trusted.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#48c78e',
@@ -915,7 +916,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Deactivate User?',
-                html: `Are you sure you want to deactivate <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for deactivation:`,
+                html: `Are you sure you want to deactivate <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>Please provide a reason for deactivation:`,
                 icon: 'warning',
                 input: 'textarea',
                 inputPlaceholder: 'Enter deactivation reason...',
@@ -952,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Suspend User?',
-                html: `Are you sure you want to suspend <strong style="color: #333;">${decodedUsername}</strong>?<br><br>Please provide a reason for suspension:`,
+                html: `Are you sure you want to suspend <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>Please provide a reason for suspension:`,
                 icon: 'warning',
                 input: 'textarea',
                 inputPlaceholder: 'Enter suspension reason...',
@@ -989,7 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const decodedUsername = tempDiv.textContent || tempDiv.innerText || 'Unknown User';
             Swal.fire({
                 title: 'Unsuspend User?',
-                html: `Are you sure you want to unsuspend <strong style="color: #333;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
+                html: `Are you sure you want to unsuspend <strong style="color:#19d3ff;">${decodedUsername}</strong>?<br><br>They will be able to access their account immediately.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#48c78e',
@@ -1021,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const defaultEmail = currentEmail || `${decodedUsername}@aetia.com.au`;
             Swal.fire({
                 title: 'Edit Public Email',
-                html: `Update public email for <strong style="color: #333;">${decodedUsername}</strong>:<br><br>`,
+                html: `Update public email for <strong style="color:#19d3ff;">${decodedUsername}</strong>:<br><br>`,
                 icon: 'info',
                 input: 'email',
                 inputValue: currentEmail,

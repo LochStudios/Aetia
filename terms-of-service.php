@@ -1,5 +1,6 @@
 <?php
 // terms-of-service.php
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 $pageTitle = 'Terms of Service | Aetia Talent Agency';

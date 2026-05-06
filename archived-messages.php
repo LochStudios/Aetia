@@ -1,5 +1,6 @@
 <?php
 // archived-messages.php - User interface for viewing archived messages
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Include timezone utilities
@@ -505,10 +506,9 @@ function showImageModal(filename, imageUrl) {
         showCloseButton: true,
         width: '90%',
         padding: '1rem',
-        background: '#fff',
-        customClass: {
-            image: 'swal-image-responsive'
-        }
+        background: '#11151f',
+        color: '#e6ecf5',
+        customClass: { image: 'swal-image-responsive' }
     });
 }
 </script>

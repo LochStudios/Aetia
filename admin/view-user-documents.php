@@ -1,5 +1,6 @@
 <?php
 // admin/view-user-documents.php - View documents for a specific user (uses API)
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Redirect if not logged in

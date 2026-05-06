@@ -1,51 +1,64 @@
 <?php
 // services.php - Services page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 $pageTitle = 'Services | Aetia Talent Agency';
 ob_start();
 ?>
-<div class="content">
-    <h2 class="title is-2 has-text-info mb-4">Our Services</h2>
-    <div class="mb-5" style="max-width:700px;margin-left:auto;margin-right:auto;">
-        <p class="has-text-grey-light" style="font-size:1.1rem;">
-            At Aetia Talent Agency, we specialize in professional communications management, ensuring that every incoming message is handled with precision and care. Our dedicated team assesses all communications, routing relevant inquiries to our secure custom dashboard for your review and response.
-        </p>
-        <hr class="my-3 has-background-grey-dark">
-        <p class="has-text-grey-light" style="font-size:1.1rem;">
-            Our core services include:
+<section class="section" style="padding-top:0;">
+    <div class="has-text-centered mb-6">
+        <h1 class="title is-1 has-text-light">Our Services</h1>
+        <p class="subtitle is-4 has-text-grey">Built around how creators actually work.</p>
+        <p class="mx-auto has-text-grey" style="max-width:720px;font-size:1.05rem;">
+            We specialize in professional communications management — every incoming message is assessed, prioritized, and routed to your secure dashboard so you can decide what's worth your time.
         </p>
     </div>
-    <div class="columns is-multiline is-variable is-4">
-        <div class="column is-6-tablet is-4-desktop">
-            <div class="aetia-service-card mb-5 has-text-centered">
-                <span class="icon is-large aetia-service-icon has-text-link"><i class="fas fa-envelope fa-2x"></i></span>
-                <p class="title is-5 has-text-light">Message Assessment</p>
-                <p>We meticulously evaluate all incoming communications to identify opportunities and prioritize responses that align with your goals.</p>
+
+    <div class="columns is-multiline">
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto" style="margin-left:auto;margin-right:auto;"><i class="fas fa-envelope-open-text"></i></div>
+                <h3 class="title is-4">Message Assessment</h3>
+                <p class="has-text-grey">We meticulously evaluate every incoming communication to identify real opportunities and weed out noise — only what matters reaches you.</p>
             </div>
         </div>
-        <div class="column is-6-tablet is-4-desktop">
-            <div class="aetia-service-card mb-5 has-text-centered">
-                <span class="icon is-large aetia-service-icon has-text-primary"><i class="fas fa-tachometer-alt fa-2x"></i></span>
-                <p class="title is-5 has-text-light">Custom Dashboard</p>
-                <p>Access our intuitive dashboard to review routed messages, manage responses, and maintain control over your communications.</p>
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto"><i class="fas fa-gauge-high"></i></div>
+                <h3 class="title is-4">Custom Dashboard</h3>
+                <p class="has-text-grey">An intuitive secure dashboard to review routed messages, manage responses, and stay in full control of your communications.</p>
             </div>
         </div>
-        <div class="column is-6-tablet is-4-desktop">
-            <div class="aetia-service-card mb-5 has-text-centered">
-                <span class="icon is-large aetia-service-icon has-text-info"><i class="fas fa-comments fa-2x"></i></span>
-                <p class="title is-5 has-text-light">Communication Routing</p>
-                <p>Efficiently route pertinent messages to the appropriate channels, ensuring timely and relevant engagement with your audience.</p>
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto"><i class="fas fa-route"></i></div>
+                <h3 class="title is-4">Communication Routing</h3>
+                <p class="has-text-grey">Pertinent messages flow to the right channel, with consistent professional voice and timely engagement on your behalf.</p>
             </div>
         </div>
-        <div class="column is-6-tablet is-4-desktop">
-            <div class="aetia-service-card mb-5 has-text-centered">
-                <span class="icon is-large aetia-service-icon has-text-success"><i class="fas fa-shield-alt fa-2x"></i></span>
-                <p class="title is-5 has-text-light">Secure Management</p>
-                <p>Handle all communications with the highest standards of security and professionalism, protecting your brand and relationships.</p>
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto"><i class="fas fa-shield-halved"></i></div>
+                <h3 class="title is-4">Secure Management</h3>
+                <p class="has-text-grey">Communications handled with rigorous security and discretion — protecting your brand, your data, and your relationships.</p>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto"><i class="fas fa-file-signature"></i></div>
+                <h3 class="title is-4">Contracts &amp; Billing</h3>
+                <p class="has-text-grey">Generate, send and sign agreements; produce clean invoices and keep the paper trail tidy — all in one place.</p>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="aetia-service-card has-text-centered">
+                <div class="aetia-service-icon mx-auto"><i class="fas fa-people-group"></i></div>
+                <h3 class="title is-4">Long-Term Partnership</h3>
+                <p class="has-text-grey">We grow as you grow. Aetia's not a tool you outgrow — it's a team that scales with your audience and ambitions.</p>
             </div>
         </div>
     </div>
-</div>
+</section>
 <?php
 $content = ob_get_clean();
 include 'layout.php';

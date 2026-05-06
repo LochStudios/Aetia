@@ -1,5 +1,6 @@
 <?php
 // admin/messages.php - Admin interface for managing user messages
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone utilities
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             
                             // Get the message details to use the message owner's ID for file organization
                             $messageDetails = $messageModel->getMessage($messageId);
-                            $messageOwnerId = $messageDetails ? $messageDetails['from_user_id'] : $_SESSION['user_id'];
+                            $messageOwnerId = $messageDetails ? $messageDetails['user_id'] : $_SESSION['user_id'];
                             
                             // Process multiple files
                             $fileCount = count($_FILES['attachments']['name']);
@@ -1168,12 +1169,9 @@ function showImageModal(filename, imageUrl) {
         showCloseButton: true,
         width: '90%',
         padding: '1rem',
-        background: '#fff',
-        customClass: {
-            popup: 'has-text-dark',
-            title: 'has-text-dark',
-            image: 'swal-image-responsive'
-        }
+        background: '#11151f',
+        color: '#e6ecf5',
+        customClass: { image: 'swal-image-responsive' }
     });
 }
 

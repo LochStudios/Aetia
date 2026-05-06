@@ -1,5 +1,6 @@
 <?php
 // profile.php - User profile page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Include timezone utilities
@@ -444,7 +445,7 @@ ob_start();
                                         <br>
                                         <!-- Remove Image Button -->
                                         <form method="POST" action="profile.php" style="display:inline;"
-                                            onsubmit="return confirm('Are you sure you want to remove your profile image?')">
+                                            data-confirm="Remove profile image?" data-confirm-detail="Your profile image will be deleted." data-confirm-text="Remove" data-confirm-danger="1">
                                             <input type="hidden" name="action" value="remove_image">
                                             <button type="submit" class="button is-small is-danger">
                                                 <span class="icon is-small">
@@ -659,13 +660,14 @@ ob_start();
                                                         </form>
                                                     </div>
                                                     <div class="control">
-                                                        <form method="post" style="display: inline;">
+                                                        <form method="post" style="display: inline;"
+                                                            data-confirm="Unlink <?= htmlspecialchars(ucfirst($connection['platform'])) ?> account?"
+                                                            data-confirm-detail="You'll need to re-link to use it for sign-in again."
+                                                            data-confirm-text="Unlink" data-confirm-danger="1">
                                                             <input type="hidden" name="action" value="unlink_social">
                                                             <input type="hidden" name="platform"
                                                                 value="<?= htmlspecialchars($connection['platform']) ?>">
-                                                            <button type="submit" class="button is-small is-danger"
-                                                                title="Unlink account"
-                                                                onclick="return confirm('Are you sure you want to unlink your <?= ucfirst($connection['platform']) ?> account?')">
+                                                            <button type="submit" class="button is-small is-danger" title="Unlink account">
                                                                 <span class="icon is-small">
                                                                     <i class="fas fa-unlink"></i>
                                                                 </span>
@@ -1286,7 +1288,7 @@ ob_start();
                             ?>
                             <?php if ($googleLinkUrl): ?>
                                 <a href="<?= htmlspecialchars($googleLinkUrl) ?>" class="button"
-                                    style="background-color: #ffffff; border: 1px solid #dadce0; color: #3c4043;">
+                                    style="background:#ffffff;border-color:#ffffff;color:#1f1f1f;">
                                     <span class="icon">
                                         <i class="fab fa-google" style="color: #4285f4;"></i>
                                     </span>
@@ -1295,8 +1297,7 @@ ob_start();
                             <?php endif; ?>
                         <?php endif; ?>
                         <?php if (!$hasYouTube): ?>
-                            <button class="button"
-                                style="background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7;" disabled>
+                            <button class="button" disabled>
                                 <span class="icon">
                                     <i class="fab fa-youtube"></i>
                                 </span>
@@ -1558,34 +1559,30 @@ ob_start();
             // Validate file type
             const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             if (!allowedTypes.includes(file.type)) {
-                alert('Please select a valid image file (JPEG, PNG, GIF, or WebP).');
+                Aetia.error('Invalid image', 'Please select a JPEG, PNG, GIF, or WebP file.');
                 input.value = '';
                 return;
             }
 
             // Validate file size (5MB max)
-            const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+            const maxSize = 5 * 1024 * 1024;
             if (file.size > maxSize) {
-                alert('Image file must be smaller than 5MB.');
+                Aetia.error('Image too large', 'Image file must be smaller than 5MB.');
                 input.value = '';
                 return;
             }
 
-            // Show confirmation dialog
-            if (confirm('Are you sure you want to upload this image as your profile picture?')) {
-                // Show loading state
-                const uploadButtons = document.querySelectorAll('.button');
-                uploadButtons.forEach(btn => {
-                    btn.classList.add('is-loading');
-                    btn.disabled = true;
-                });
-
-                // Submit the form
-                document.getElementById('imageUploadForm').submit();
-            } else {
-                // Reset the input if user cancels
-                input.value = '';
-            }
+            Aetia.confirm('Upload this image as your profile picture?', '', { confirmText: 'Upload' }).then(function (res) {
+                if (res.isConfirmed) {
+                    document.querySelectorAll('.button').forEach(function (btn) {
+                        btn.classList.add('is-loading');
+                        btn.disabled = true;
+                    });
+                    document.getElementById('imageUploadForm').submit();
+                } else {
+                    input.value = '';
+                }
+            });
         }
     }
 

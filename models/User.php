@@ -698,18 +698,21 @@ class User
     }
 
     // Unsuspend user
-    public function unsuspendUser($userId)
+    public function unsuspendUser($userId, $unsuspendedBy = null)
     {
         try {
             $this->ensureConnection();
             $stmt = $this->mysqli->prepare("
-                UPDATE users 
+                UPDATE users
                 SET is_suspended = 0, suspension_reason = NULL, suspended_by = NULL, suspended_date = NULL
                 WHERE id = ?
             ");
             $stmt->bind_param("i", $userId);
             $result = $stmt->execute();
             $stmt->close();
+            if ($result && $unsuspendedBy) {
+                error_log("User #{$userId} unsuspended by {$unsuspendedBy}");
+            }
             return $result;
         } catch (Exception $e) {
             error_log("Unsuspend user error: " . $e->getMessage());
@@ -1729,8 +1732,19 @@ class User
                 return ['success' => false, 'message' => 'Phone number is required when enabling SMS notifications.'];
             }
 
-            // If SMS is being disabled, clear phone verification
-            $phoneVerified = $smsEnabled ? 0 : 0; // Reset verification when disabled
+            // Determine if phone verification should be preserved.
+            // Preserve verified status only when the user is keeping the same already-verified phone number.
+            $phoneVerified = 0;
+            if ($smsEnabled && !empty($phoneNumber)) {
+                $stmt = $this->mysqli->prepare("SELECT phone_number, phone_verified FROM users WHERE id = ?");
+                $stmt->bind_param("i", $userId);
+                $stmt->execute();
+                $existing = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                if ($existing && $existing['phone_number'] === $phoneNumber && (int)$existing['phone_verified'] === 1) {
+                    $phoneVerified = 1;
+                }
+            }
 
             $stmt = $this->mysqli->prepare("
                 UPDATE users

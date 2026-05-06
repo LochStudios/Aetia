@@ -1,5 +1,6 @@
 <?php
 // auth/youtube-link-callback.php - YouTube OAuth link callback handler for Aetia Talent Agency
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 require_once __DIR__ . '/../models/User.php';

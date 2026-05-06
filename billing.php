@@ -1,5 +1,6 @@
 <?php
 // billing.php - User billing history and invoice management
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Include timezone utilities

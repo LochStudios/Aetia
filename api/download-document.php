@@ -50,7 +50,12 @@ $safeFilename = str_replace(["\r", "\n", '"'], ['', '', ''], basename($document[
 if (file_exists($document['s3_url'])) {
     // Special handling for forced downloads to bypass browser plugins
     if ($forceDownload && !$isPreview) {
-        // Use HTML page with JavaScript to force download
+        // Build a sanitized direct URL: keep only the original GET parameters we trust, then append direct=1
+        $directParams = $_GET;
+        $directParams['direct'] = '1';
+        $directUrl = 'download-document.php?' . http_build_query($directParams);
+        $jsDirectUrl = json_encode($directUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $jsFilename  = json_encode($safeFilename, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         ?>
         <!DOCTYPE html>
         <html>
@@ -60,24 +65,21 @@ if (file_exists($document['s3_url'])) {
         <body>
             <script>
                 // Create a blob and download it to bypass browser plugins
-                fetch('<?php echo $_SERVER['REQUEST_URI']; ?>&direct=1')
+                fetch(<?php echo $jsDirectUrl; ?>)
                     .then(response => response.blob())
                     .then(blob => {
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.style.display = 'none';
                         a.href = url;
-                        a.download = '<?php echo addslashes($safeFilename); ?>';
+                        a.download = <?php echo $jsFilename; ?>;
                         document.body.appendChild(a);
                         a.click();
                         window.URL.revokeObjectURL(url);
-                        // Close the window after download starts
-                        setTimeout(() => {
-                            window.close();
-                        }, 100);
+                        setTimeout(() => { window.close(); }, 100);
                     });
             </script>
-            <p>Your download should start automatically. If it doesn't, <a href="<?php echo $_SERVER['REQUEST_URI']; ?>&direct=1" download="<?php echo htmlspecialchars($safeFilename); ?>">click here</a>.</p>
+            <p>Your download should start automatically. If it doesn't, <a href="<?php echo htmlspecialchars($directUrl, ENT_QUOTES, 'UTF-8'); ?>" download="<?php echo htmlspecialchars($safeFilename, ENT_QUOTES, 'UTF-8'); ?>">click here</a>.</p>
         </body>
         </html>
         <?php

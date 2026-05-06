@@ -126,36 +126,23 @@ class SmsService
     }
 
     /**
-     * Check if this is a legitimate server request for SMS functionality
+     * Check if this is a legitimate server-side request for SMS functionality.
+     * Only true for CLI calls or authenticated POST submissions that carry a
+     * non-empty CSRF token. URL-based path matching is NOT trusted, since the
+     * URI is fully attacker-controlled.
      */
     private function isLegitimateServerRequest()
     {
-        // Allow CLI requests (command line)
+        // Allow CLI requests (cron jobs, internal scripts)
         if (php_sapi_name() === 'cli') {
             return true;
         }
-        // Check if this is being called from a legitimate application script
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-        // Allow requests from profile.php, api endpoints, and admin pages
-        $allowedScripts = [
-            '/profile.php',
-            '/api/',
-            '/admin/',
-            '/auth/',
-        ];
-        foreach ($allowedScripts as $allowedScript) {
-            if (strpos($scriptName, $allowedScript) !== false || strpos($requestUri, $allowedScript) !== false) {
-                // This is a legitimate application request
-                return true;
-            }
-        }
-        // Check if this is a POST request with valid session (likely form submission)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in']) {
-            return true;
-        }
-        // Check if request has a valid CSRF token (indicates legitimate form submission)
-        if (isset($_POST['csrf_token']) && !empty($_POST['csrf_token'])) {
+        // Web requests: must be authenticated POST with a CSRF token present.
+        if (
+            ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+            && !empty($_SESSION['user_logged_in'])
+            && !empty($_POST['csrf_token'])
+        ) {
             return true;
         }
         return false;

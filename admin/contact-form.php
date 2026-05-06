@@ -1,5 +1,6 @@
 <?php
 // admin/contact-form.php - Admin interface for managing contact form submissions
+require_once __DIR__ . "/../includes/session_bootstrap.php";
 session_start();
 
 // Include timezone util

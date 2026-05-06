@@ -1,5 +1,6 @@
 <?php
 // verify-email.php - Page to verify user email using 6-digit code sent by admin
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 // Redirect if already logged in

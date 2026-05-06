@@ -1,5 +1,6 @@
 <?php
 // documents.php - User interface for viewing their own documents (uses API)
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 require_once 'includes/LinkConverter.php';
 

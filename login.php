@@ -1,5 +1,6 @@
 <?php
 // login.php - Login/Signup page for Aetia Talent Agency
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 require_once __DIR__ . '/models/User.php';
@@ -58,33 +59,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $result = $userModel->authenticateManualUser($username, $password);
                 
                 if ($result['success']) {
+                    // Regenerate session ID to prevent fixation
+                    session_regenerate_id(true);
                     $_SESSION['user_logged_in'] = true;
                     $_SESSION['user_id'] = $result['user']['id'];
                     $_SESSION['username'] = $result['user']['username'];
                     $_SESSION['login_time'] = time();
                     $_SESSION['account_type'] = 'manual';
-                    
+
                     // Check if this is the admin user with auto-generated credentials
                     $tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
-                    $isInitialAdminLogin = false;
-                    
                     if ($username === 'admin' && file_exists($tempPasswordFile)) {
                         // Verify this is actually the initial admin by checking approved_by field
                         $user = $userModel->getUserById($result['user']['id']);
                         if ($user && $user['approved_by'] === 'Auto-Generated') {
-                            $isInitialAdminLogin = true;
-                            // Remove the temp password file
-                            unlink($tempPasswordFile);
+                            // Remove the temp password file once the initial admin has logged in
+                            @unlink($tempPasswordFile);
+                            $_SESSION['login_success'] = 'Admin login successful! Initial setup complete. Please change your password immediately for security.';
                         }
                     }
-                    
-                    if ($isInitialAdminLogin) {
-                        $success_message = 'Admin login successful! Initial setup complete. Please change your password immediately for security. Redirecting...';
-                    } else {
-                        $success_message = 'Login successful! Redirecting...';
+
+                    if (empty($_SESSION['login_success'])) {
+                        $_SESSION['login_success'] = 'Login successful!';
                     }
-                    
-                    header('refresh:2;url=index.php');
+
+                    // Update last_login timestamp (best-effort)
+                    if (method_exists($userModel, 'updateLastLogin')) {
+                        $userModel->updateLastLogin($result['user']['id']);
+                    }
+
+                    header('Location: index.php');
+                    exit;
                 } else {
                     $error_message = $result['message'];
                 }
@@ -157,12 +162,10 @@ try {
     $youtubeAvailable = false;
 }
 
-// Check for initial admin password
-$initialAdminPassword = '';
-$tempPasswordFile = '/tmp/aetia_admin_initial_password.txt';
-if (file_exists($tempPasswordFile)) {
-    $initialAdminPassword = trim(file_get_contents($tempPasswordFile));
-}
+// Initial admin password is intentionally NOT displayed on the public login page.
+// If a temp password file was created during install, the system administrator should
+// retrieve it directly from the server filesystem (e.g. /tmp/aetia_admin_initial_password.txt)
+// and delete it after first login.
 
 $pageTitle = ($isSignupMode ? 'Sign Up' : 'Login') . ' | Aetia Talent Agency';
 ob_start();
@@ -190,48 +193,30 @@ ob_start();
                 </div>
                 <?php endif; ?>
                 
-                <?php if ($initialAdminPassword && !$isSignupMode): ?>
-                <div class="notification is-warning is-light mb-4">
-                    <div class="content">
-                        <p><strong><i class="fas fa-shield-alt"></i> Initial Admin Setup</strong></p>
-                        <p>A system administrator account has been created for first-time setup:</p>
-                        <div class="box has-background-dark has-text-light">
-                            <p><strong>Username:</strong> <code style="background:#333;color:#fff;padding:2px 6px;">admin</code></p>
-                            <p><strong>Password:</strong> <code style="background:#333;color:#fff;padding:2px 6px;"><?= htmlspecialchars($initialAdminPassword) ?></code></p>
-                        </div>
-                        <p class="is-size-7 has-text-grey">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Please login with these credentials and change the password immediately. 
-                            This notice will disappear after first login.
-                        </p>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
                 <!-- Social Login Section -->
                 <div class="mb-5">
                     <h3 class="subtitle is-6 has-text-centered mb-3">Login with Social Media</h3>
-                    <div class="buttons is-centered">
-                        <a href="<?= htmlspecialchars($twitchAuthUrl) ?>" class="button is-link is-fullwidth mb-2 has-text-white">
+                    <div class="buttons is-centered" style="flex-direction:column;align-items:stretch;">
+                        <a href="<?= htmlspecialchars($twitchAuthUrl) ?>" class="button is-fullwidth mb-2" style="background:#9146FF;border-color:#9146FF;color:#fff;">
                             <span class="icon"><i class="fab fa-twitch"></i></span>
                             <span>Continue with Twitch</span>
                         </a>
-                        <a href="<?= htmlspecialchars($discordAuthUrl) ?>" class="button is-primary is-fullwidth mb-2 has-text-white" style="background-color: #5865F2;">
+                        <a href="<?= htmlspecialchars($discordAuthUrl) ?>" class="button is-fullwidth mb-2" style="background:#5865F2;border-color:#5865F2;color:#fff;">
                             <span class="icon"><i class="fab fa-discord"></i></span>
                             <span>Continue with Discord</span>
                         </a>
                         <?php if ($googleAvailable && $googleAuthUrl): ?>
-                        <a href="<?= htmlspecialchars($googleAuthUrl) ?>" class="button is-fullwidth mb-2" style="background-color: #ffffff; border: 1px solid #dadce0; color: #3c4043;">
-                            <span class="icon"><i class="fab fa-google" style="color: #4285f4;"></i></span>
+                        <a href="<?= htmlspecialchars($googleAuthUrl) ?>" class="button is-fullwidth mb-2" style="background:#ffffff;border-color:#ffffff;color:#1f1f1f;">
+                            <span class="icon"><i class="fab fa-google" style="color:#4285f4;"></i></span>
                             <span>Continue with Google</span>
                         </a>
                         <?php else: ?>
-                        <button class="button is-fullwidth mb-2" style="background-color: #f8f9fa; border: 1px solid #dadce0; color: #5f6368;" disabled>
-                            <span class="icon"><i class="fab fa-google" style="color: #9aa0a6;"></i></span>
+                        <button class="button is-fullwidth mb-2" disabled>
+                            <span class="icon"><i class="fab fa-google"></i></span>
                             <span>Continue with Google (Currently Unavailable)</span>
                         </button>
                         <?php endif; ?>
-                        <button class="button is-fullwidth mb-2" style="background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7;" disabled>
+                        <button class="button is-fullwidth mb-2" disabled>
                             <span class="icon"><i class="fab fa-youtube"></i></span>
                             <span>Continue with YouTube (Coming Soon)</span>
                         </button>

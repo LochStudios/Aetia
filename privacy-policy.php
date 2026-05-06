@@ -1,5 +1,6 @@
 <?php
 // privacy-policy.php
+require_once __DIR__ . '/includes/session_bootstrap.php';
 session_start();
 
 $pageTitle = 'Privacy Policy | Aetia Talent Agency';

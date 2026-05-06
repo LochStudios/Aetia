@@ -47,7 +47,7 @@ try {
                     exit;
                 }
                 
-                if ($contract['contract_status'] !== 'sent') {
+                if ($contract['status'] !== 'sent') {
                     http_response_code(400);
                     echo json_encode(['error' => 'Contract is not available for signing']);
                     exit;
